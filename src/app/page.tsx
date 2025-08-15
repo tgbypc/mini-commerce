@@ -6,11 +6,16 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Product } from '@/types/product'
 
-export default function Home() {
+const currency = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+})
+
+export default function HomePage() {
   const [products, setProducts] = useState<Product[]>([])
 
   useEffect(() => {
-    getAllProducts().then((data) => setProducts(data))
+    getAllProducts().then(setProducts)
   }, [])
 
   return (
@@ -67,7 +72,9 @@ export default function Home() {
                 className="w-full h-48 object-cover rounded"
               />
               <h3 className="mt-4 font-medium">{p.title}</h3>
-              <p className="text-indigo-600 font-semibold">${p.price}</p>
+              <p className="text-indigo-600 font-semibold">
+                {currency.format(Number(p.price) || 0)}
+              </p>
             </Link>
           ))}
         </div>

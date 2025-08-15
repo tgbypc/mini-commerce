@@ -1,46 +1,37 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
+import { useCart } from '@/context/CartContext'
+import { signOut } from 'firebase/auth'
+import { auth } from '@/lib/firebase'
 
 export default function Navbar() {
   const [q, setQ] = useState('')
-  const { user, logout } = useAuth()
-
-  const [dark, setDark] = useState(false)
-  // initialize from DOM on mount
-  useEffect(() => {
-    const isDark =
-      typeof document !== 'undefined' &&
-      document.documentElement.classList.contains('dark')
-    setDark(isDark)
-  }, [])
-  function toggleTheme() {
-    const el = document.documentElement
-    const next = !el.classList.contains('dark')
-    el.classList.toggle('dark', next)
-    try {
-      localStorage.setItem('theme', next ? 'dark' : 'light')
-    } catch {}
-    setDark(next)
-  }
+  const { user, role } = useAuth()
+  const { count } = useCart()
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault()
-    // arama yönlendirmesi eklenecekse buraya
+    // arama yönlendirmesi eklenecekse buraya (/search?q=...)
   }
 
   return (
     <nav className="flex items-center justify-between whitespace-nowrap border-b border-[#e7edf4] px-10 py-3">
-      {/* Logo ve Menü */}
+      {/* Sol: Logo + menü */}
       <div className="flex items-center gap-8">
+        {/* Logo + title (anasayfa linki) */}
         <Link
           href="/"
           className="flex items-center gap-4 text-[#0d141c] hover:opacity-90"
         >
           <div className="size-4">
-            <svg viewBox="0 0 48 48" fill="currentColor">
+            <svg
+              viewBox="0 0 48 48"
+              fill="currentColor"
+              xmlns="http://www.w3.org/2000/svg"
+            >
               <path d="M24 .76 47.24 24 24 47.24.76 24 24 .76ZM21 35.76V12.24L9.24 24 21 35.76Z" />
             </svg>
           </div>
@@ -49,6 +40,7 @@ export default function Navbar() {
           </h2>
         </Link>
 
+        {/* Ana menü */}
         <div className="hidden md:flex items-center gap-9">
           <Link className="text-sm font-medium" href="/">
             Ana Sayfa
@@ -62,33 +54,37 @@ export default function Navbar() {
           <Link className="text-sm font-medium" href="#">
             İletişim
           </Link>
-          {user ? (
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600">
-                {user.email ?? 'Guest'}
-              </span>
-              <button
-                onClick={logout}
-                className="text-sm font-medium text-red-600 hover:underline"
-              >
-                Çıkış
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <Link href="/user/login" className="text-sm font-medium px-3">
-                Login
-              </Link>
-              <Link href="/user/signup" className="text-sm font-medium px-3">
-                Sign Up
-              </Link>
-            </div>
+          {/* Login link for non-logged-in users */}
+          {!user && (
+            <Link className="text-sm font-medium" href="/user/login">
+              Login
+            </Link>
+          )}
+          {/* Logout button for logged-in users */}
+          {user && (
+            <button
+              type="button"
+              onClick={() => signOut(auth)}
+              className="text-sm font-medium text-red-600 hover:underline"
+            >
+              Çıkış
+            </button>
+          )}
+          {/* Sadece adminlere görünür */}
+          {role === 'admin' && (
+            <Link
+              className="text-sm font-medium leading-normal text-red-600"
+              href="/admin"
+            >
+              Admin
+            </Link>
           )}
         </div>
       </div>
 
-      {/* Arama ve ikonlar */}
+      {/* Sağ: arama + ikonlar + auth */}
       <div className="flex flex-1 justify-end gap-3 md:gap-8">
+        {/* Arama */}
         <form onSubmit={onSubmit} className="flex min-w-40 h-10 max-w-64">
           <div className="flex w-full items-stretch rounded-xl h-full overflow-hidden">
             <div className="text-[#49739c] flex items-center justify-center pl-4 bg-[#e7edf4]">
@@ -111,8 +107,12 @@ export default function Navbar() {
           </div>
         </form>
 
-        {/* Favoriler */}
-        <button className="h-10 rounded-xl bg-[#e7edf4] px-2.5 font-bold">
+        {/* Favoriler (dummy) */}
+        <button
+          type="button"
+          className="h-10 rounded-xl bg-[#e7edf4] px-2.5 font-bold inline-flex items-center justify-center"
+          title="Favoriler"
+        >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="20"
@@ -123,41 +123,12 @@ export default function Navbar() {
           </svg>
         </button>
 
-        {/* Tema (Dark/Light) */}
-        <button
-          onClick={toggleTheme}
-          className="h-10 rounded-xl bg-[#e7edf4] px-2.5 font-bold inline-flex items-center justify-center"
-          title={dark ? 'Light mode' : 'Dark mode'}
-        >
-          {dark ? (
-            // sun icon
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              fill="#0d141c"
-              viewBox="0 0 256 256"
-            >
-              <path d="M128,84a44,44,0,1,0,44,44A44.05,44.05,0,0,0,128,84Zm0-52a12,12,0,0,1,12,12V60a12,12,0,0,1-24,0V44A12,12,0,0,1,128,32Zm0,192a12,12,0,0,1,12,12v16a12,12,0,0,1-24,0V236A12,12,0,0,1,128,224ZM44,116H28a12,12,0,0,1,0-24H44a12,12,0,0,1,0,24Zm184,0H212a12,12,0,0,1,0-24h16a12,12,0,0,1,0,24ZM54.63,54.63a12,12,0,0,1,17-17l11.31,11.31a12,12,0,0,1-17,17ZM173.05,173.05a12,12,0,0,1,17,0l11.31,11.31a12,12,0,1,1-17,17L173.05,190.05A12,12,0,0,1,173.05,173.05ZM54.63,201.37l11.31-11.31a12,12,0,1,1,17,17L71.63,218.37a12,12,0,0,1-17-17ZM201.37,54.63,190.05,65.94a12,12,0,0,1-17-17L184.37,37.63a12,12,0,0,1,17,17Z" />
-            </svg>
-          ) : (
-            // moon icon
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              fill="#0d141c"
-              viewBox="0 0 256 256"
-            >
-              <path d="M228.39,146.13a92,92,0,1,1-118.52-118.5,4,4,0,0,1,4.82,5.77,76,76,0,0,0,107.43,107.43A4,4,0,0,1,228.39,146.13Z" />
-            </svg>
-          )}
-        </button>
-
+        {/* Sepet */}
         {/* Sepet */}
         <Link
           href="/cart"
-          className="h-10 rounded-xl bg-[#e7edf4] px-2.5 font-bold inline-flex items-center justify-center"
+          className="relative h-10 rounded-xl bg-[#e7edf4] px-2.5 font-bold inline-flex items-center justify-center"
+          title="Sepet"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -167,7 +138,15 @@ export default function Navbar() {
           >
             <path d="M216,40H40A16,16,0,0,0,24,56V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40Zm0,160H40V56H216V200ZM176,88a48,48,0,0,1-96,0,8,8,0,0,1,16,0,32,32,0,0,0,64,0,8,8,0,0,1,16,0Z" />
           </svg>
+
+          {count > 0 && (
+            <span className="absolute -top-2 -right-2 min-w-5 h-5 px-1 rounded-full bg-black text-white text-xs flex items-center justify-center">
+              {count}
+            </span>
+          )}
         </Link>
+
+        {/* Auth alanı kaldırıldı */}
       </div>
     </nav>
   )

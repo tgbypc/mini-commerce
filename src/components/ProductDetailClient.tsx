@@ -5,10 +5,13 @@ import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import type { Product } from '@/types/product'
 import { getProductById } from '@/lib/products'
+import { useCart } from '@/context/CartContext'
+import toast from 'react-hot-toast'
 
 export default function ProductDetailClient({ id }: { id: string }) {
   const [p, setP] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
+  const { add } = useCart()
 
   useEffect(() => {
     let alive = true
@@ -65,7 +68,12 @@ export default function ProductDetailClient({ id }: { id: string }) {
       <div>
         <h1 className="text-2xl font-semibold">{p.title}</h1>
         <p className="mt-2 text-gray-600">{p.description}</p>
-        <p className="mt-4 text-2xl font-bold">${p.price}</p>
+        <p className="mt-4 text-2xl font-bold">
+          {new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+          }).format(Number(p.price) || 0)}
+        </p>
 
         <div className="mt-3 text-sm text-gray-500 space-y-1">
           {p.brand && <p>Brand: {p.brand}</p>}
@@ -76,28 +84,22 @@ export default function ProductDetailClient({ id }: { id: string }) {
 
         <button
           className="mt-6 inline-flex items-center justify-center rounded-xl bg-black text-white px-4 py-2 font-medium hover:opacity-90 active:opacity-80"
-          onClick={() => {
-            // Cart entegrasyonunu bir sonraki adımda gerçek Context ile yapacağız.
-            const key = 'cart'
-            type CartItem = Pick<
-              Product,
-              'id' | 'title' | 'price' | 'thumbnail'
-            > & { qty: number }
-            const prev: CartItem[] = JSON.parse(
-              localStorage.getItem(key) || '[]'
-            )
-            const existing = prev.find((it) => it.id === p.id)
-            if (existing) existing.qty += 1
-            else
-              prev.push({
-                id: p.id,
+          onClick={async () => {
+            const promise = add(
+              {
+                productId: p.id,
                 title: p.title,
-                price: p.price,
+                price: Number(p.price),
                 thumbnail: p.thumbnail,
-                qty: 1,
-              })
-            localStorage.setItem(key, JSON.stringify(prev))
-            alert('Added to cart ✅')
+              },
+              1
+            )
+            toast.promise(promise, {
+              loading: 'Sepete ekleniyor…',
+              success: 'Ürün sepete eklendi ✅',
+              error: 'Sepete eklenemedi',
+            })
+            await promise
           }}
         >
           Sepete Ekle

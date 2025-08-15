@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { Inter, Roboto_Mono } from 'next/font/google'
+import { Toaster } from 'react-hot-toast'
+import { CartProvider } from '@/context/CartContext'
 
 const GeistSans = Inter({ subsets: ['latin'], variable: '--font-geist-sans' })
 const GeistMono = Roboto_Mono({
@@ -27,10 +29,14 @@ export default function RootLayout({
       >
         <AuthProvider>
           {' '}
-          {/* ✅ Tüm uygulamayı sarmaladık */}
-          <Navbar />
-          {children}
+          <CartProvider>
+            {/* ✅ Tüm uygulamayı sarmaladık */}
+            <Navbar />
+            {children}
+          </CartProvider>
         </AuthProvider>
+
+        <Toaster position="top-right" />
       </body>
     </html>
   )

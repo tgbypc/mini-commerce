@@ -19,7 +19,7 @@ reviews: Review[];
 meta: Meta;
 images: string[];
 thumbnail: string;
-price: number; //TODO update with a decimal type
+price: number;//TODO update with a decimal type
 
 }
 

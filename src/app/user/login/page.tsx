@@ -1,60 +1,82 @@
 'use client'
 
-import { useState } from 'react'
+import * as React from 'react'
+import { useRouter } from 'next/navigation'
+import toast from 'react-hot-toast'
 import { useAuth } from '@/context/AuthContext'
 
-export default function LoginPage() {
-  const { emailLogin, loading, user, logout } = useAuth()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+export default function Page() {
+  const router = useRouter()
+  const { user, loading, emailLogin, logout } = useAuth()
+  const [email, setEmail] = React.useState('')
+  const [password, setPassword] = React.useState('')
 
-  async function handleLogin(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    const p = emailLogin(email, password)
+    toast.promise(p, {
+      loading: 'Giriş yapılıyor…',
+      success: 'Hoş geldin! 🎉',
+      error: (err) => `Giriş başarısız: ${(err as Error).message}`,
+    })
     try {
-      await emailLogin(email, password)
-    } catch (err) {
-      console.error(err)
-      alert('Login error: ' + (err as Error).message)
-    }
+      await p
+      router.replace('/')
+    } catch {}
+  }
+
+  if (loading) {
+    return <div className="max-w-sm mx-auto p-4">Yükleniyor…</div>
+  }
+
+  if (user) {
+    return (
+      <div className="max-w-sm mx-auto p-4">
+        <p className="mb-4">Giriş yapıldı: {user.email ?? 'Guest'}</p>
+        <button
+          onClick={async () => {
+            const p = logout()
+            toast.promise(p, {
+              loading: 'Çıkış yapılıyor…',
+              success: 'Çıkış yapıldı.',
+              error: (err) => `Çıkış başarısız: ${(err as Error).message}`,
+            })
+            await p
+            router.refresh()
+          }}
+          className="bg-red-500 text-white px-4 py-2 rounded"
+        >
+          Logout
+        </button>
+      </div>
+    )
   }
 
   return (
     <div className="max-w-sm mx-auto p-4">
-      {user ? (
-        <div>
-          <p className="mb-4">Logged in as: {user.email}</p>
-          <button onClick={logout} className="bg-red-500 text-white px-4 py-2">
-            Logout
-          </button>
-        </div>
-      ) : (
-        <>
-          <h1 className="text-xl font-bold mb-4">Login</h1>
-          <form onSubmit={handleLogin} className="space-y-3">
-            <input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="border p-2 w-full"
-            />
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="border p-2 w-full"
-            />
-            <button
-              type="submit"
-              disabled={loading}
-              className="bg-blue-500 text-white px-4 py-2 w-full"
-            >
-              Login
-            </button>
-          </form>
-        </>
-      )}
+      <h1 className="text-xl font-bold mb-4">Login</h1>
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="border p-2 w-full rounded"
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="border p-2 w-full rounded"
+        />
+        <button
+          type="submit"
+          className="bg-blue-600 text-white px-4 py-2 w-full rounded"
+        >
+          Login
+        </button>
+      </form>
     </div>
   )
 }
