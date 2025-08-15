@@ -4,8 +4,8 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useCart } from '@/context/CartContext'
-import { signOut } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
+import { signOut } from 'firebase/auth'
 
 export default function Navbar() {
   const [q, setQ] = useState('')
