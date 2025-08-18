@@ -3,6 +3,9 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { useCart } from '@/context/CartContext'
+import { toast } from 'react-hot-toast'
+import { useAuth } from '@/context/AuthContext'
+import { useState } from 'react'
 
 const currency = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -11,6 +14,46 @@ const currency = new Intl.NumberFormat('en-US', {
 
 export default function CartPage() {
   const { state, total, incr, decr, remove, clear } = useCart()
+  const { user } = useAuth()
+  const [loading, setLoading] = useState(false)
+
+  const handleCheckout = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/cart/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: state.items.map((it) => ({
+            productId: String(it.productId),
+            title: it.title,
+            price: Number(it.price) || 0,
+            quantity: it.qty,
+          })),
+          userId: user?.uid ?? null,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        const msg = (data && data.error) || 'Checkout failed'
+        toast.error(msg)
+        setLoading(false)
+        return
+      }
+      if (data.url) {
+        window.location.href = data.url
+      } else {
+        toast.error('No checkout URL returned')
+        setLoading(false)
+        return
+      }
+    } catch (error) {
+      toast.error('Checkout error')
+      console.error('Checkout error:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   if (state.items.length === 0) {
     return (
@@ -96,7 +139,7 @@ export default function CartPage() {
                     </button>
                   </div>
 
-                  <div className="w-24 text-right font-medium">
+                  <div className="flex w-24 justify-end font-medium">
                     {currency.format(line)}
                   </div>
 
@@ -125,9 +168,9 @@ export default function CartPage() {
           </p>
 
           <button
-            type="button"
-            className="w-full rounded-xl bg-black px-4 py-2 text-white disabled:opacity-50"
-            onClick={() => alert('Stripe checkout will be wired next ✨')}
+            onClick={handleCheckout}
+            disabled={loading}
+            className="w-full rounded-xl bg-black px-4 py-2 text-white hover:bg-zinc-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Checkout
           </button>

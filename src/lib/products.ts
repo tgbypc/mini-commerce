@@ -1,5 +1,5 @@
 // src/lib/products.ts
-import { collection, doc, getDoc, getDocs, addDoc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { collection, doc, getDoc, getDocs, setDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import type { Product } from '@/types/product'
 import { AvailabilityStatus } from '@/types/product'
@@ -62,8 +62,16 @@ export async function getAllProducts(): Promise<Product[]> {
   return snap.docs.map((d) => {
     const data = (d.data() ?? {}) as UnknownRecord
 
+    const idNum = Number(d.id)
+    const idFromData = Number((data['id'] as number | string | undefined))
+    const safeId = Number.isFinite(idNum)
+      ? idNum
+      : Number.isFinite(idFromData)
+        ? idFromData
+        : NaN
+
     const p: Product = {
-      id: toNum(d.id) || toNum(data['id']) || (data['id'] as number),
+      id: Number.isFinite(safeId) ? (safeId as number) : (data['id'] as number),
       title: (data['title'] as string) ?? '',
       description: (data['description'] as string) ?? '',
       category: (data['category'] as string) ?? '',
@@ -102,8 +110,16 @@ export async function getProductById(id: string): Promise<Product | null> {
 
   const data = (snap.data() ?? {}) as UnknownRecord
 
+  const idNum = Number(id)
+  const idFromData = Number((data['id'] as number | string | undefined))
+  const safeId = Number.isFinite(idNum)
+    ? idNum
+    : Number.isFinite(idFromData)
+      ? idFromData
+      : NaN
+
   const p: Product = {
-    id: toNum(id) || toNum(data['id']) || (data['id'] as number),
+    id: Number.isFinite(safeId) ? (safeId as number) : (data['id'] as number),
     title: (data['title'] as string) ?? '',
     description: (data['description'] as string) ?? '',
     category: (data['category'] as string) ?? '',
@@ -168,14 +184,12 @@ export async function createProduct(input: NewProductInput): Promise<{ id: strin
     meta: { createdAt: nowISO, updatedAt: nowISO, barcode: '', qrCode: '' },
   }
 
-  // If caller provided a numeric id, use it as document id
-  if (typeof input.id === 'number' && Number.isFinite(input.id)) {
-    const ref = doc(collection(db, 'products'), String(input.id))
-    await setDoc(ref, { ...base, createdAt: serverTimestamp(), updatedAt: serverTimestamp() })
-    return { id: input.id }
-  }
+  // Always use a numeric id for doc id to match Product.id:number
+  const numericId = (typeof input.id === 'number' && Number.isFinite(input.id))
+    ? input.id
+    : Date.now() // simple numeric id; unique enough for this app
 
-  // Otherwise let Firestore generate the id
-  const ref = await addDoc(collection(db, 'products'), { ...base, createdAt: serverTimestamp(), updatedAt: serverTimestamp() })
-  return { id: ref.id }
+  const ref = doc(collection(db, 'products'), String(numericId))
+  await setDoc(ref, { ...base, id: numericId, createdAt: serverTimestamp(), updatedAt: serverTimestamp() })
+  return { id: numericId }
 }

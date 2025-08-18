@@ -9,7 +9,7 @@ import {
 } from 'react'
 
 type CartItem = {
-  productId: string | number
+  productId: string
   title: string
   price: number
   thumbnail?: string
@@ -22,9 +22,9 @@ type CartState = {
 
 type Action =
   | { type: 'ADD'; payload: Omit<CartItem, 'qty'>; qty: number }
-  | { type: 'INCR'; productId: string | number }
-  | { type: 'DECR'; productId: string | number }
-  | { type: 'REMOVE'; productId: string | number }
+  | { type: 'INCR'; productId: string }
+  | { type: 'DECR'; productId: string }
+  | { type: 'REMOVE'; productId: string }
   | { type: 'CLEAR' }
   | { type: 'LOAD'; state: CartState }
 
@@ -83,10 +83,13 @@ type CartContextType = {
   state: CartState
   count: number
   total: number
-  add: (item: Omit<CartItem, 'qty'>, qty?: number) => Promise<void>
-  incr: (productId: string | number) => void
-  decr: (productId: string | number) => void
-  remove: (productId: string | number) => void
+  add: (
+    item: Omit<CartItem, 'qty' | 'productId'> & { productId: string | number },
+    qty?: number
+  ) => Promise<void>
+  incr: (productId: string) => void
+  decr: (productId: string) => void
+  remove: (productId: string) => void
   clear: () => void
 }
 
@@ -99,11 +102,38 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY)
-      if (raw) {
-        const parsed = JSON.parse(raw) as CartState
-        if (parsed?.items && Array.isArray(parsed.items)) {
-          dispatch({ type: 'LOAD', state: parsed })
-        }
+      if (!raw) return
+
+      const parsed: unknown = JSON.parse(raw)
+      if (
+        parsed &&
+        typeof parsed === 'object' &&
+        Array.isArray((parsed as { items?: unknown }).items)
+      ) {
+        const arr = (parsed as { items: unknown[] }).items
+        const normalizedItems: CartItem[] = arr.map((i): CartItem => {
+          const obj = (i ?? {}) as Record<string, unknown>
+          const productId = String(obj.productId ?? '')
+          const title =
+            typeof obj.title === 'string' ? obj.title : String(obj.title ?? '')
+          const priceValue =
+            typeof obj.price === 'number'
+              ? obj.price
+              : Number(obj.price as unknown)
+          const price = Number.isFinite(priceValue) ? priceValue : 0
+          const thumbnail =
+            typeof obj.thumbnail === 'string' ? obj.thumbnail : undefined
+          const qtyValue =
+            typeof obj.qty === 'number' ? obj.qty : Number(obj.qty as unknown)
+          const qty = Math.max(
+            1,
+            Number.isFinite(qtyValue) ? Math.floor(qtyValue) : 1
+          )
+
+          return { productId, title, price, thumbnail, qty }
+        })
+
+        dispatch({ type: 'LOAD', state: { items: normalizedItems } })
       }
     } catch {}
   }, [])
@@ -129,15 +159,25 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   )
 
   const add: CartContextType['add'] = async (item, qty = 1) => {
-    const price = Number(item.price) || 0
-    dispatch({ type: 'ADD', payload: { ...item, price }, qty })
+    const productId = String(item.productId)
+    const title = String(item.title ?? '')
+    const price = Number(item.price)
+    const thumbnail = item.thumbnail ? String(item.thumbnail) : undefined
+    const safePrice = Number.isFinite(price) ? price : 0
+    const safeQty = Math.max(1, Number(qty) || 1)
+
+    dispatch({
+      type: 'ADD',
+      payload: { productId, title, price: safePrice, thumbnail },
+      qty: safeQty,
+    })
   }
   const incr = (productId: string | number) =>
-    dispatch({ type: 'INCR', productId })
+    dispatch({ type: 'INCR', productId: String(productId) })
   const decr = (productId: string | number) =>
-    dispatch({ type: 'DECR', productId })
+    dispatch({ type: 'DECR', productId: String(productId) })
   const remove = (productId: string | number) =>
-    dispatch({ type: 'REMOVE', productId })
+    dispatch({ type: 'REMOVE', productId: String(productId) })
   const clear = () => dispatch({ type: 'CLEAR' })
 
   const value: CartContextType = {
