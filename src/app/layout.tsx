@@ -3,14 +3,14 @@ import './globals.css'
 import { Inter, Roboto_Mono } from 'next/font/google'
 import { Toaster } from 'react-hot-toast'
 import { CartProvider } from '@/context/CartContext'
+import Navbar from '@/components/Navbar'
+import { AuthProvider } from '@/context/AuthContext'
 
 const GeistSans = Inter({ subsets: ['latin'], variable: '--font-geist-sans' })
 const GeistMono = Roboto_Mono({
   subsets: ['latin'],
   variable: '--font-geist-mono',
 })
-import Navbar from '@/components/Navbar'
-import { AuthProvider } from '@/context/AuthContext' // ✅ ekledik
 
 export const metadata: Metadata = {
   title: 'MiniCommerce',
@@ -28,19 +28,12 @@ export default function RootLayout({
         className={`${GeistSans.variable} ${GeistMono.variable} antialiased`}
       >
         <AuthProvider>
-          {' '}
           <CartProvider>
-            {/* ✅ Tüm uygulamayı sarmaladık */}
             <Navbar />
-            {children}
+            <main>{children}</main>
           </CartProvider>
         </AuthProvider>
-        <Toaster
-          position="bottom-center" // 🔥 burada ayarlıyorsun
-          toastOptions={{
-            duration: 3000,
-          }}
-        />
+        <Toaster position="bottom-center" toastOptions={{ duration: 3000 }} />
       </body>
     </html>
   )

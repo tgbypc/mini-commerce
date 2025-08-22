@@ -1,208 +1,382 @@
 'use client'
 
-import { useState } from 'react'
+import { useForm, type Resolver } from 'react-hook-form'
+import { z } from 'zod'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import AdminOnly from '@/components/AdminOnly'
-import { createProduct } from '@/lib/products'
-import toast from 'react-hot-toast'
+import Link from 'next/link'
+import { zodResolver } from '@hookform/resolvers/zod'
+import Image from 'next/image'
 
-const CATEGORY_TREE: Record<string, Record<string, string[]>> = {
-  Electronics: {
-    Phones: ['Smartphones', 'Feature Phones', 'Accessories'],
-    Laptops: ['Ultrabooks', 'Gaming Laptops', 'Accessories'],
-    Audio: ['Headphones', 'Speakers', 'Soundbars'],
-  },
-  Clothing: {
-    Women: ['Dresses', 'Tops', 'Jeans'],
-    Men: ['T-Shirts', 'Shirts', 'Jeans'],
-    Kids: ['Baby', 'Girls', 'Boys'],
-  },
-  'Home & Kitchen': {
-    Appliances: ['Coffee Makers', 'Blenders', 'Microwaves'],
-    Cookware: ['Pots', 'Pans', 'Bakeware'],
-    Decor: ['Vases', 'Frames', 'Candles'],
-  },
-  Beauty: {
-    Skincare: ['Serums', 'Moisturizers', 'Cleansers'],
-    Makeup: ['Lipstick', 'Foundation', 'Mascara'],
-    Fragrance: ['Eau de Parfum', 'Eau de Toilette', 'Body Mist'],
-  },
+import { CATEGORIES } from '@/lib/constants/categories'
+import type { Category } from '@/lib/constants/categories'
+
+// Strongly-typed form values used by RHF
+export type ProductFormValues = {
+  title: string
+  price: number
+  stock: number
+  category: Category
+  brand?: string
+  thumbnail?: string
+  images?: string // comma-separated in UI; we convert to string[] before sending
+  description?: string
+  tags?: string // comma-separated in UI
 }
+
+const isCsvOfUrls = (val?: string) => {
+  const s = (val ?? '').trim()
+  if (!s) return true
+  const parts = s
+    .split(',')
+    .map((x) => x.trim())
+    .filter(Boolean)
+  if (parts.length === 0) return true
+  return parts.every((u) => {
+    try {
+      // Allow only http/https URLs
+      const parsed = new URL(u)
+      return parsed.protocol === 'http:' || parsed.protocol === 'https:'
+    } catch {
+      return false
+    }
+  })
+}
+
+const productSchema = z.object({
+  title: z.string().min(3, 'Title must be at least 3 chars'),
+  price: z.coerce.number().min(0, 'Price must be 0 or greater'),
+  stock: z.coerce.number().int().min(0, 'Stock must be 0 or greater'),
+  category: z.enum(CATEGORIES),
+  brand: z
+    .string()
+    .max(50, 'Brand must be 50 chars or less')
+    .optional()
+    .or(z.literal('')),
+  thumbnail: z
+    .string()
+    .optional()
+    .or(z.literal(''))
+    .refine(
+      (v) => {
+        const s = (v ?? '').trim()
+        if (!s) return true
+        try {
+          const u = new URL(s)
+          return u.protocol === 'http:' || u.protocol === 'https:'
+        } catch {
+          return false
+        }
+      },
+      { message: 'Invalid URL' }
+    ),
+  images: z.string().optional().default('').refine(isCsvOfUrls, {
+    message: 'Images must be comma‑separated HTTP/HTTPS URLs',
+  }),
+  description: z
+    .string()
+    .min(50, 'Description must be at least 50 characters')
+    .max(2000, 'Description is too long')
+    .optional()
+    .or(z.literal('')),
+  tags: z.string().optional().default(''),
+})
 
 export default function AdminNewProductPage() {
   const router = useRouter()
-  const [form, setForm] = useState({
-    id: '',
-    title: '',
-    price: '',
-    thumbnail: '',
-    category: '',
-    description: '',
-    stock: '',
-    brand: '',
+  const [submitting, setSubmitting] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [selectedFileName, setSelectedFileName] = useState<string>('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+    watch,
+  } = useForm<ProductFormValues>({
+    resolver: zodResolver(productSchema) as Resolver<ProductFormValues>,
+    defaultValues: {
+      title: '',
+      price: 0,
+      stock: 0,
+      category: CATEGORIES[0],
+      brand: '',
+      thumbnail: '',
+      // Zod şeması bu iki alanı formda string olarak bekliyor (input text);
+      // transform aşamasında string -> string[]'e çevrilecek.
+      images: '',
+      description: '',
+      tags: '',
+    },
   })
-  const [loading, setLoading] = useState(false)
 
-  const categories = Object.keys(CATEGORY_TREE)
-
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setLoading(true)
-    const p = createProduct({
-      id: form.id ? Number(form.id) : undefined,
-      title: form.title,
-      price: form.price,
-      thumbnail: form.thumbnail,
-      category: form.category,
-      description: form.description,
-      stock: form.stock,
-      brand: form.brand,
-    })
-    toast.promise(p, {
-      loading: 'Kaydediliyor…',
-      success: 'Ürün kaydedildi ✅',
-      error: (err) => `Hata: ${(err as Error).message}`,
-    })
+  async function onSubmit(values: ProductFormValues) {
+    setSubmitting(true)
     try {
-      const { id } = await p
-      router.replace(`/products/${id}`)
-    } finally {
-      setLoading(false)
-    }
-  }
+      const toArr = (s?: string) =>
+        (s ?? '')
+          .split(',')
+          .map((x) => x.trim())
+          .filter(Boolean)
 
-  function set<K extends keyof typeof form>(key: K) {
-    return (
-      e: React.ChangeEvent<
-        HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-      >
-    ) => {
-      const val = e.target.value
-      setForm((f) => ({ ...f, [key]: val }))
+      const payload = {
+        ...values,
+        images: toArr(values.images),
+        tags: toArr(values.tags),
+      } as const
+
+      const res = await fetch('/api/admin/product', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      const data: unknown = await res.json()
+
+      if (!res.ok) {
+        const msg =
+          (typeof data === 'object' &&
+            data &&
+            'error' in data &&
+            typeof (data as { error: string }).error === 'string' &&
+            (data as { error: string }).error) ||
+          'Failed to create product'
+        alert(msg)
+        return
+      }
+
+      // Başarılı → admin ürün listesine ya da anasayfaya yönlendir
+      router.push('/admin/product')
+    } catch (e) {
+      console.error(e)
+      alert('Request failed')
+    } finally {
+      setSubmitting(false)
     }
   }
 
   return (
-    <AdminOnly>
-      <div className="max-w-2xl mx-auto p-6">
-        <h1 className="text-2xl font-semibold mb-4">Yeni Ürün Ekle</h1>
+    <div className="max-w-2xl mx-auto p-6">
+      <h1 className="text-2xl font-semibold mb-4">Add New Product</h1>
 
-        <form onSubmit={onSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <label className="block">
-              <span className="text-sm text-zinc-600">
-                ID (opsiyonel, sayı)
-              </span>
-              <input
-                className="mt-1 w-full border rounded p-2"
-                value={form.id}
-                onChange={set('id')}
-                placeholder="1"
-              />
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        {/* Title */}
+        <div>
+          <label className="block text-sm text-zinc-600 mb-1">Title</label>
+          <input
+            {...register('title')}
+            className="w-full rounded-xl border px-3 py-2"
+            placeholder="Product title"
+          />
+          {errors.title && (
+            <p className="text-red-600 text-sm">{errors.title.message}</p>
+          )}
+        </div>
+
+        {/* Price & Stock */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm text-zinc-600 mb-1">
+              Price (USD)
             </label>
+            <input
+              type="number"
+              step="0.01"
+              {...register('price')}
+              className="w-full rounded-xl border px-3 py-2"
+              placeholder="99.90"
+            />
+            {errors.price && (
+              <p className="text-red-600 text-sm">{errors.price.message}</p>
+            )}
+          </div>
+          <div>
+            <label className="block text-sm text-zinc-600 mb-1">Stock</label>
+            <input
+              type="number"
+              {...register('stock')}
+              className="w-full rounded-xl border px-3 py-2"
+              placeholder="10"
+            />
+            {errors.stock && (
+              <p className="text-red-600 text-sm">{errors.stock.message}</p>
+            )}
+          </div>
+        </div>
 
-            <label className="block">
-              <span className="text-sm text-zinc-600">Başlık *</span>
-              <input
-                required
-                className="mt-1 w-full border rounded p-2"
-                value={form.title}
-                onChange={set('title')}
-                placeholder="Akıllı Telefon"
-              />
-            </label>
+        {/* Category */}
+        <div>
+          <label className="block text-sm text-zinc-600 mb-1">Category</label>
+          <select
+            {...register('category')}
+            className="w-full rounded-xl border px-3 py-2 bg-white"
+          >
+            {CATEGORIES.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+          {errors.category && (
+            <p className="text-red-600 text-sm">{errors.category.message}</p>
+          )}
+        </div>
 
-            <label className="block">
-              <span className="text-sm text-zinc-600">Fiyat *</span>
-              <input
-                required
-                type="number"
-                step="0.01"
-                className="mt-1 w-full border rounded p-2"
-                value={form.price}
-                onChange={set('price')}
-                placeholder="199.99"
-              />
-            </label>
+        {/* Brand */}
+        <div>
+          <label className="block text-sm text-zinc-600 mb-1">Brand</label>
+          <input
+            {...register('brand')}
+            className="w-full rounded-xl border px-3 py-2"
+            placeholder="Apple"
+          />
+          {errors.brand && (
+            <p className="text-red-600 text-sm">{errors.brand.message}</p>
+          )}
+        </div>
 
-            <label className="block">
-              <span className="text-sm text-zinc-600">Stok</span>
-              <input
-                type="number"
-                className="mt-1 w-full border rounded p-2"
-                value={form.stock}
-                onChange={set('stock')}
-                placeholder="10"
-              />
-            </label>
+        {/* Thumbnail */}
+        <div>
+          <label className="block text-sm text-zinc-600 mb-1">
+            Thumbnail URL
+          </label>
+          <input
+            {...register('thumbnail')}
+            className="w-full rounded-xl border px-3 py-2"
+            placeholder="https://..."
+          />
+          {errors.thumbnail && (
+            <p className="text-red-600 text-sm">{errors.thumbnail.message}</p>
+          )}
+        </div>
 
-            <label className="block md:col-span-2">
-              <span className="text-sm text-zinc-600">
-                Görsel (thumbnail URL)
-              </span>
-              <input
-                className="mt-1 w-full border rounded p-2"
-                value={form.thumbnail}
-                onChange={set('thumbnail')}
-                placeholder="https://…"
-              />
-            </label>
+        {/* Upload image (Vercel Blob) */}
+        <div>
+          <label className="block text-sm text-zinc-600 mb-1">
+            Upload image
+          </label>
+          <div className="w-full rounded-xl border px-3 py-2 bg-white">
+            {/* Hidden native file input */}
+            <input
+              ref={fileInputRef}
+              id="thumbnailFile"
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={async (e) => {
+                const file = e.target.files && e.target.files[0]
+                if (!file) return
+                setSelectedFileName(file.name)
+                setUploading(true)
+                try {
+                  const fd = new FormData()
+                  fd.append('file', file)
+                  const res = await fetch('/api/admin/upload', {
+                    method: 'POST',
+                    body: fd,
+                  })
+                  if (!res.ok) {
+                    console.error('Upload failed')
+                    return
+                  }
+                  const data: { url: string } = await res.json()
+                  setValue('thumbnail', data.url, {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  })
+                } catch (err) {
+                  console.error(err)
+                } finally {
+                  setUploading(false)
+                }
+              }}
+            />
 
-            <label className="block">
-              <span className="text-sm text-zinc-600">Kategori</span>
-              <select
-                className="mt-1 w-full border rounded p-2"
-                value={form.category}
-                onChange={set('category')}
+            {/* Trigger button + filename */}
+            <div className="flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="rounded-xl border px-3 py-2 text-sm disabled:opacity-50"
               >
-                <option value="">Seçiniz…</option>
-                {categories.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="block">
-              <span className="text-sm text-zinc-600">Marka</span>
-              <input
-                className="mt-1 w-full border rounded p-2"
-                value={form.brand}
-                onChange={set('brand')}
-                placeholder="Acme"
-              />
-            </label>
-
-            <label className="block md:col-span-2">
-              <span className="text-sm text-zinc-600">Açıklama</span>
-              <textarea
-                className="mt-1 w-full border rounded p-2"
-                rows={4}
-                value={form.description}
-                onChange={set('description')}
-                placeholder="Ürün açıklaması…"
-              />
-            </label>
+                {uploading ? 'Uploading…' : 'Choose image'}
+              </button>
+              <div className="text-xs text-zinc-600 truncate">
+                {selectedFileName || 'No file selected'}
+              </div>
+            </div>
           </div>
+          {watch('thumbnail') ? (
+            <div className="mt-2 relative w-32 h-32 rounded border overflow-hidden">
+              <Image
+                src={watch('thumbnail')!}
+                alt="Preview"
+                fill
+                sizes="128px"
+                className="object-cover"
+              />
+            </div>
+          ) : null}
+        </div>
 
-          <div className="flex gap-3">
-            <button
-              disabled={loading}
-              className="px-4 py-2 rounded bg-black text-white disabled:opacity-50"
-            >
-              Kaydet
-            </button>
-            <button
-              type="button"
-              onClick={() => history.back()}
-              className="px-4 py-2 rounded border"
-            >
-              Vazgeç
-            </button>
-          </div>
-        </form>
-      </div>
-    </AdminOnly>
+        {/* Images */}
+        <div>
+          <label className="block text-sm text-zinc-600 mb-1">
+            Images (comma separated URLs)
+          </label>
+          <input
+            {...register('images')}
+            className="w-full rounded-xl border px-3 py-2"
+            placeholder="https://... , https://..."
+          />
+          {errors.images && (
+            <p className="text-red-600 text-sm">{errors.images.message}</p>
+          )}
+          {/* images dönüşümü transform ile string -> string[] yapıldığı için error olmayabilir */}
+        </div>
+
+        {/* Tags */}
+        <div>
+          <label className="block text-sm text-zinc-600 mb-1">
+            Tags (comma separated)
+          </label>
+          <input
+            {...register('tags')}
+            className="w-full rounded-xl border px-3 py-2"
+            placeholder="new, sale"
+          />
+        </div>
+
+        {/* Description */}
+        <div>
+          <label className="block text-sm text-zinc-600 mb-1">
+            Description
+          </label>
+          <textarea
+            {...register('description')}
+            className="w-full rounded-xl border px-3 py-2 min-h-[100px]"
+            placeholder="Short description..."
+          />
+          {errors.description && (
+            <p className="text-red-600 text-sm">{errors.description.message}</p>
+          )}
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            type="submit"
+            disabled={submitting}
+            className="rounded-xl bg-black text-white px-4 py-2 disabled:opacity-50"
+          >
+            {submitting ? 'Saving...' : 'Save product'}
+          </button>
+          <Link href="/admin/product" className="rounded-xl border px-4 py-2">
+            Cancel
+          </Link>
+        </div>
+      </form>
+    </div>
   )
 }

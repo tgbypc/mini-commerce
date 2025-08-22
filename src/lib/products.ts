@@ -1,5 +1,6 @@
 // src/lib/products.ts
-import { collection, doc, getDoc, getDocs, setDoc, serverTimestamp } from 'firebase/firestore'
+import { collection, doc, getDoc, getDocs, setDoc, serverTimestamp, deleteDoc } from 'firebase/firestore'
+import { del } from '@vercel/blob'
 import { db } from '@/lib/firebase'
 import type { Product } from '@/types/product'
 import { AvailabilityStatus } from '@/types/product'
@@ -77,7 +78,7 @@ export async function getAllProducts(): Promise<Product[]> {
       category: (data['category'] as string) ?? '',
       discountPercentage: toNum(data['discountPercentage']),
       rating: toNum(data['rating']),
-      stock: toNum(data['stock']),
+      stock: toNum(data['stock'], 999), 
       tags: Array.isArray(data['tags']) ? (data['tags'] as string[]) : [],
       brand: (data['brand'] as string) ?? '',
       sku: (data['sku'] as string) ?? '',
@@ -192,4 +193,43 @@ export async function createProduct(input: NewProductInput): Promise<{ id: strin
   const ref = doc(collection(db, 'products'), String(numericId))
   await setDoc(ref, { ...base, id: numericId, createdAt: serverTimestamp(), updatedAt: serverTimestamp() })
   return { id: numericId }
+}
+
+/** Vercel Blob URL kontrolü */
+function isBlobUrl(url: unknown): url is string {
+  return typeof url === 'string' && /\bblob\.vercel-storage\.com\b/.test(url)
+}
+
+/** Ürünü ve varsa Vercel Blob görsellerini siler */
+export async function deleteProductAndBlobs(id: string): Promise<{ ok: true }> {
+  const ref = doc(collection(db, 'products'), id)
+  const snap = await getDoc(ref)
+
+  // Silinecek blob URL’lerini topla
+  const urls: string[] = []
+  if (snap.exists()) {
+    const data = snap.data() as Record<string, unknown>
+    const image = data['image']
+    const thumbnail = data['thumbnail']
+    const images = data['images']
+
+    if (isBlobUrl(image)) urls.push(image)
+    if (isBlobUrl(thumbnail)) urls.push(thumbnail)
+    if (Array.isArray(images)) {
+      for (const u of images) if (isBlobUrl(u)) urls.push(u)
+    }
+  }
+
+  // Blob'ları sil (birinde hata olsa bile devam)
+  for (const url of urls) {
+    try {
+      await del(url)
+    } catch {
+      // yut – ürün silme engellenmesin
+    }
+  }
+
+  // En sonda Firestore dokümanını sil
+  await deleteDoc(ref)
+  return { ok: true }
 }

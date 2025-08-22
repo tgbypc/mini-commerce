@@ -1,186 +1,234 @@
-// src/components/ProductDetailClient.tsx
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Image from 'next/image'
-import Link from 'next/link'
-import type { Product } from '@/types/product'
-import { getProductById } from '@/lib/products'
+import { doc, onSnapshot } from 'firebase/firestore'
+import { db } from '@/lib/firebase'
 import { useCart } from '@/context/CartContext'
 import { toast } from 'react-hot-toast'
 
-function money(n: number, currency = 'USD') {
-  try {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency,
-    }).format(n || 0)
-  } catch {
-    return `$${(n || 0).toFixed(2)}`
-  }
+// ——— UI model (PDP) ———
+// Firestore doc id is string. Keep optional fields defensive.
+// We listen with onSnapshot so stock / title updates reflect live on PDP.
+
+type PDPProduct = {
+  id: string
+  title: string
+  price: number
+  image?: string // main image (Vercel Blob or remote)
+  thumbnail?: string // backward-compat (older docs)
+  description?: string
+  category?: string
+  brand?: string
+  stock?: number // optional in PRD but supported if present
 }
 
-type Row = { label: string; value?: string }
-
 export default function ProductDetailClient({ id }: { id: string }) {
-  const [product, setProduct] = useState<Product | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [broken, setBroken] = useState(false)
   const { add } = useCart()
+  const [product, setProduct] = useState<PDPProduct | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [qty, setQty] = useState(1)
 
   useEffect(() => {
-    const sid = String(id ?? '').trim()
-    if (!sid) {
-      setProduct(null)
-      setLoading(false)
-      return
-    }
-    let alive = true
-    setLoading(true)
-    getProductById(sid).then((p) => {
-      if (alive) {
-        setProduct(p)
+    const ref = doc(db, 'products', id)
+    const unsub = onSnapshot(
+      ref,
+      (snap) => {
         setLoading(false)
+        if (!snap.exists()) {
+          setProduct(null)
+          return
+        }
+        const data = snap.data() as Record<string, unknown>
+        const p: PDPProduct = {
+          id: String(data.id ?? id),
+          title: String(data.title ?? 'Item'),
+          price: Number.isFinite(Number(data.price)) ? Number(data.price) : 0,
+          image:
+            typeof data.image === 'string' ? (data.image as string) : undefined,
+          thumbnail:
+            typeof data.thumbnail === 'string'
+              ? (data.thumbnail as string)
+              : undefined,
+          description:
+            typeof data.description === 'string'
+              ? (data.description as string)
+              : undefined,
+          category:
+            typeof data.category === 'string'
+              ? (data.category as string)
+              : undefined,
+          brand: typeof data.brand === 'string' ? data.brand : undefined,
+          stock: typeof data.stock === 'number' ? data.stock : undefined,
+        }
+        setProduct(p)
+      },
+      (err) => {
+        console.error(err)
+        setLoading(false)
+        setProduct(null)
+        toast.error('Failed to load product')
       }
-    })
-    return () => {
-      alive = false
-    }
+    )
+    return () => unsub()
   }, [id])
 
-  const rows = useMemo<Row[]>(() => {
-    const p = product
-    return [
-      { label: 'Brand', value: p?.brand },
-      { label: 'Category', value: p?.category },
-      {
-        label: 'Stock',
-        value: typeof p?.stock === 'number' ? String(p.stock) : undefined,
-      },
-      { label: 'SKU', value: p?.sku },
-      { label: 'Warranty', value: p?.warrantyInformation },
-      { label: 'Shipping', value: p?.shippingInformation },
-    ]
-  }, [product])
-
-  const handleAdd = () => {
-    if (!product) return
-    add(
-      {
-        productId: String(product.id),
-        title: product.title,
-        price: Number(product.price) || 0,
-        thumbnail: product.thumbnail,
-      },
-      1
-    )
-    toast.success(`${product.title} added to cart!`)
-  }
-
+  // ——— Loading skeleton ———
   if (loading) {
     return (
-      <div className="mx-auto w-full max-w-[960px] px-4 md:px-0 py-6 animate-pulse">
-        <div className="h-[28px] w-40 bg-slate-200 rounded mb-4" />
-        <div className="relative w-full aspect-[4/5] bg-slate-200 rounded-xl" />
-        <div className="h-6 bg-slate-200 rounded w-2/3 mt-6" />
-        <div className="h-4 bg-slate-200 rounded w-full mt-3" />
-        <div className="h-4 bg-slate-200 rounded w-5/6 mt-2" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+        <div className="aspect-square w-full rounded-xl border bg-slate-100 animate-pulse" />
+        <div className="space-y-4">
+          <div className="h-7 w-64 bg-slate-200 rounded animate-pulse" />
+          <div className="h-5 w-40 bg-slate-200 rounded animate-pulse" />
+          <div className="h-20 w-full bg-slate-100 rounded animate-pulse" />
+          <div className="h-10 w-48 bg-slate-200 rounded animate-pulse" />
+        </div>
       </div>
     )
   }
 
   if (!product) {
     return (
-      <div className="mx-auto w-full max-w-[960px] px-4 md:px-0 py-10 text-center">
-        <p className="text-lg">Product not found.</p>
-        <Link href="/" className="text-indigo-600 underline">
-          Go back
-        </Link>
+      <div className="rounded-xl border p-6 text-sm text-zinc-600">
+        Product not found.
       </div>
     )
   }
 
-  const price = money(Number(product.price) || 0)
-  const imgSrc = broken
-    ? '/placeholder.png'
-    : product.thumbnail || '/placeholder.png'
+  const inStock = (product.stock ?? 0) > 0
+  const maxQty = Math.min(product.stock ?? 10, 10) // UI limit: 10 per purchase
+  const displayImg = product.image ?? product.thumbnail
+
+  const handleAdd = async () => {
+    try {
+      await add(
+        {
+          productId: String(product.id),
+          title: product.title,
+          price: product.price,
+          thumbnail: displayImg,
+        },
+        qty
+      )
+      toast.success('Added to cart')
+    } catch (e) {
+      console.error(e)
+      toast.error('Failed to add to cart')
+    }
+  }
 
   return (
-    <div className="mx-auto w-full max-w-[960px] px-4 md:px-0 py-6">
-      {/* Breadcrumb */}
-      <nav className="text-sm text-slate-500 mb-3">
-        <Link href="/" className="hover:underline">
-          Shop
-        </Link>
-        <span className="mx-1">/</span>
-        <span className="capitalize">{product.category || 'General'}</span>
-      </nav>
-
-      {/* Big image */}
-      <div className="relative w-full md:max-w-[640px] mx-auto aspect-[3/4] rounded-xl overflow-hidden bg-slate-100">
-        <Image
-          src={imgSrc}
-          alt={product.title}
-          fill
-          sizes="(max-width: 768px) 50vw, 640px"
-          className="object-cover"
-          onError={() => setBroken(true)}
-          priority
-        />
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+      {/* ——— Left: Media ——— */}
+      <div>
+        {displayImg ? (
+          <div className="relative w-full aspect-square rounded-xl border overflow-hidden">
+            <Image
+              src={displayImg}
+              alt={product.title}
+              fill
+              className="object-cover"
+            />
+          </div>
+        ) : (
+          <div className="w-full aspect-square rounded-xl border bg-slate-100" />
+        )}
+        {/* Secondary info cards */}
+        <div className="mt-4 grid sm:grid-cols-3 gap-3 text-sm">
+          <div className="rounded-lg border p-3">🚚 Free returns (14 days)</div>
+          <div className="rounded-lg border p-3">🔒 Secure checkout</div>
+          <div className="rounded-lg border p-3">💬 Support 7/24</div>
+        </div>
       </div>
 
-      {/* Text & specs */}
-      <div className="mt-6">
-        <h1 className="text-xl md:text-2xl font-semibold text-[#0d141c]">
-          {product.title}
-        </h1>
+      {/* ——— Right: Buy box ——— */}
+      <div className="space-y-5">
+        <div className="space-y-2">
+          <h1 className="text-2xl font-semibold leading-tight">
+            {product.title}
+          </h1>
+          <div className="text-xl font-medium">${product.price.toFixed(2)}</div>
+          <div className="flex items-center gap-3 text-sm">
+            {inStock ? (
+              <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 text-emerald-700 px-3 py-1 border border-emerald-200">
+                <span className="h-2 w-2 rounded-full bg-emerald-500" /> In
+                stock
+                {typeof product.stock === 'number'
+                  ? ` · ${product.stock} left`
+                  : ''}
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-2 rounded-full bg-rose-50 text-rose-700 px-3 py-1 border border-rose-200">
+                <span className="h-2 w-2 rounded-full bg-rose-500" /> Out of
+                stock
+              </span>
+            )}
+            {product.category && (
+              <span className="text-zinc-500">
+                Category: {product.category}
+              </span>
+            )}
+            {product.brand && (
+              <span className="text-zinc-500">Brand: {product.brand}</span>
+            )}
+          </div>
+        </div>
+
         {product.description && (
-          <p className="mt-2 text-slate-600 leading-relaxed max-w-prose">
+          <p className="text-zinc-700 leading-relaxed whitespace-pre-line">
             {product.description}
           </p>
         )}
 
-        <h2 className="mt-6 text-sm font-semibold text-slate-600">
-          Key Features
-        </h2>
-        <div className="mt-2 rounded-xl border border-slate-200">
-          <dl className="divide-y divide-slate-200">
-            {rows.map((r) => (
-              <div
-                key={r.label}
-                className="grid grid-cols-3 md:grid-cols-6 px-4 py-3"
-              >
-                <dt className="col-span-1 text-xs md:text-sm text-slate-500">
-                  {r.label}
-                </dt>
-                <dd className="col-span-2 md:col-span-5 text-xs md:text-sm text-slate-800">
-                  {r.value || '-'}
-                </dd>
-              </div>
-            ))}
-            <div className="grid grid-cols-3 md:grid-cols-6 px-4 py-3">
-              <dt className="col-span-1 text-xs md:text-sm text-slate-500">
-                Price
-              </dt>
-              <dd className="col-span-2 md:col-span-5 text-xs md:text-sm text-slate-800">
-                {price}
-              </dd>
-            </div>
-          </dl>
+        {/* Quantity + Add to Cart */}
+        <div className="flex items-end gap-4">
+          <label className="block text-sm">
+            <span className="block mb-1 text-zinc-600">Quantity</span>
+            <select
+              className="rounded-lg border px-3 py-2"
+              value={qty}
+              onChange={(e) => setQty(Number(e.target.value))}
+              disabled={!inStock}
+            >
+              {Array.from({ length: Math.max(maxQty, 1) }, (_, i) => i + 1).map(
+                (n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                )
+              )}
+            </select>
+          </label>
+
+          <button
+            onClick={handleAdd}
+            disabled={!inStock}
+            className={`rounded-xl px-5 h-11 ${
+              inStock
+                ? 'bg-black text-white hover:opacity-90'
+                : 'bg-zinc-300 text-zinc-600 cursor-not-allowed'
+            }`}
+          >
+            {inStock ? 'Add to Cart' : 'Out of stock'}
+          </button>
         </div>
 
-        <div className="mt-6">
-          <button
-            type="button"
-            onClick={handleAdd}
-            disabled={
-              typeof product.stock === 'number' ? product.stock <= 0 : false
-            }
-            className="inline-flex h-10 items-center justify-center rounded-xl bg-[#0d141c] px-5 text-white font-semibold hover:opacity-90 transition-transform duration-150 hover:scale-105 active:scale-95 active:bg-[#1a202c] disabled:opacity-50 disabled:cursor-not-allowed"
-            aria-label="Add to cart"
-          >
-            Add to Cart
-          </button>
+        {/* Specs section (collapsible-ready; simple for now) */}
+        <div className="pt-6 border-t space-y-2 text-sm">
+          <div className="font-medium">Product details</div>
+          <ul className="list-disc ml-5 text-zinc-700">
+            {product.category && <li>Category: {product.category}</li>}
+            {product.brand && <li>Brand: {product.brand}</li>}
+            <li>Price: ${product.price.toFixed(2)}</li>
+            {typeof product.stock === 'number' && (
+              <li>Stock: {product.stock}</li>
+            )}
+          </ul>
+        </div>
+
+        <div className="pt-4 border-t text-sm text-zinc-600">
+          * Actual inventory decreases after a successful checkout.
         </div>
       </div>
     </div>
