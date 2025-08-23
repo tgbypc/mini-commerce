@@ -10,6 +10,7 @@ export default function AdminProducts() {
   const [items, setItems] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [syncing, setSyncing] = useState(false)
 
   useEffect(() => {
     let alive = true
@@ -34,16 +35,64 @@ export default function AdminProducts() {
     }
   }, [])
 
+  const handleSyncStripe = async () => {
+    if (syncing) return
+    setSyncing(true)
+    try {
+      const res = await fetch('/api/admin/stripe/sync', { method: 'POST' })
+      const data: unknown = await res.json()
+
+      // Show a brief summary to the admin
+      let summary = 'Stripe sync completed.'
+      if (typeof data === 'object' && data) {
+        const obj = data as Record<string, unknown>
+        const processed =
+          typeof obj.processed === 'number' ? obj.processed : undefined
+        const skipped =
+          typeof obj.skipped === 'number' ? obj.skipped : undefined
+        let errorsCount: number | undefined
+        const maybeErrors = (obj as Record<string, unknown>).errors
+        if (Array.isArray(maybeErrors)) {
+          errorsCount = maybeErrors.length
+        }
+        summary = `Processed: ${processed ?? '-'} | Skipped: ${
+          skipped ?? '-'
+        } | Errors: ${errorsCount ?? '-'}`
+      }
+
+      alert(summary)
+
+      try {
+        const list = await getAllProducts()
+        setItems(list)
+      } catch {}
+    } catch {
+      alert('Failed to sync Stripe IDs')
+    } finally {
+      setSyncing(false)
+    }
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Products</h2>
-        <Link
-          href="/admin/product/new"
-          className="rounded-lg bg-black px-3 py-2 text-sm text-white"
-        >
-          + Add
-        </Link>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleSyncStripe}
+            disabled={syncing}
+            className="rounded-lg border px-3 py-2 text-sm disabled:opacity-50"
+          >
+            {syncing ? 'Syncing…' : 'Sync Stripe IDs'}
+          </button>
+          <Link
+            href="/admin/product/new"
+            className="rounded-lg bg-black px-3 py-2 text-sm text-white"
+          >
+            + Add
+          </Link>
+        </div>
       </div>
 
       {loading ? (

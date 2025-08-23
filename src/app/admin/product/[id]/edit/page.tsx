@@ -142,7 +142,7 @@ export default function EditProductPage() {
     })
 
     // Stripe senkronizasyonu (price değişimi vb.)
-    await fetch('/admin/stripe/sync-product', {
+    await fetch('/api/admin/stripe/sync', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: String(initial.id) }),

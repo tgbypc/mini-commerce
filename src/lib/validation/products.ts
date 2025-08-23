@@ -1,4 +1,4 @@
-// src/lib/validations/product.ts
+// src/lib/validation/products.ts
 import { z } from 'zod'
 import { AvailabilityStatus } from '@/types/product'
 import { CATEGORIES } from '@/lib/constants/categories'
@@ -26,7 +26,7 @@ export const productSchema = z.object({
 
   brand: z.preprocess(
     normalizeString,
-    z.string().min(2, 'Brand min 2 chars').max(40)
+    z.string().max(40).optional().or(z.literal(''))
   ),
 
   price: z.preprocess(

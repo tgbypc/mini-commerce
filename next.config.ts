@@ -9,6 +9,8 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "pixabay.com" }, // kullanıyorsan
       { protocol: "https", hostname: "cdn.pixabay.com" }, // bazı pixabay görselleri
       { protocol: "https", hostname: "blob.vercel-storage.com" }, // ileride upload için
+      { protocol: 'https', hostname: '**.public.blob.vercel-storage.com' },
+      { protocol: 'https', hostname: '**.blob.vercel-storage.com' },
     ],
   },
 };

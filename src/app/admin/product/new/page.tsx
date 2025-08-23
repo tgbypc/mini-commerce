@@ -316,6 +316,7 @@ export default function AdminNewProductPage() {
                 fill
                 sizes="128px"
                 className="object-cover"
+                unoptimized
               />
             </div>
           ) : null}
