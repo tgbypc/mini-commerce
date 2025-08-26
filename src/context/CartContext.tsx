@@ -91,6 +91,7 @@ type CartContextType = {
   decr: (productId: string) => void
   remove: (productId: string) => void
   clear: () => void
+  reloadFromStorage: () => void
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
@@ -98,10 +99,11 @@ const CartContext = createContext<CartContextType | undefined>(undefined)
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(reducer, { items: [] })
 
-  // Load from LS once
-  useEffect(() => {
+  function loadFromStorage() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY)
+      // Prefer current key; fall back to legacy key if present
+      const raw =
+        localStorage.getItem(STORAGE_KEY) ?? localStorage.getItem('mc_cart')
       if (!raw) return
 
       const parsed: unknown = JSON.parse(raw)
@@ -136,6 +138,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         dispatch({ type: 'LOAD', state: { items: normalizedItems } })
       }
     } catch {}
+  }
+
+  // Load from LS once
+  useEffect(() => {
+    loadFromStorage()
   }, [])
 
   // Persist to LS on change
@@ -144,6 +151,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
     } catch {}
   }, [state])
+
+  useEffect(() => {
+    function onStorage(e: StorageEvent) {
+      if (!e.key) return
+      if (e.key === STORAGE_KEY || e.key === 'mc_cart') {
+        loadFromStorage()
+      }
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [])
 
   const count = useMemo(
     () => state.items.reduce((sum, it) => sum + it.qty, 0),
@@ -178,7 +196,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'DECR', productId: String(productId) })
   const remove = (productId: string | number) =>
     dispatch({ type: 'REMOVE', productId: String(productId) })
-  const clear = () => dispatch({ type: 'CLEAR' })
+  const clear = () => {
+    dispatch({ type: 'CLEAR' })
+    try {
+      localStorage.removeItem(STORAGE_KEY)
+    } catch {}
+    try {
+      localStorage.removeItem('mc_cart')
+    } catch {}
+  }
 
   const value: CartContextType = {
     state,
@@ -189,6 +215,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     decr,
     remove,
     clear,
+    reloadFromStorage: loadFromStorage,
   }
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>

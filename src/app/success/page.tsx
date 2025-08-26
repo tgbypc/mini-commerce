@@ -60,6 +60,7 @@ export default function SuccessPage() {
       try {
         const res = await fetch(`/api/admin/session/${id}`, {
           signal: ac.signal,
+          cache: 'no-store',
         })
         const data = await res.json()
 
@@ -95,6 +96,9 @@ export default function SuccessPage() {
 
         if (s.payment_status === 'paid') {
           clear()
+          try {
+            localStorage.removeItem('mc_cart')
+          } catch {}
           toast.success('Payment successful. Your cart was cleared.')
         }
       } catch (e) {
