@@ -1,148 +1,196 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { collection, getDocs, orderBy, query } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
-import { useAuth } from '@/context/AuthContext'
 import Link from 'next/link'
+import { onAuthStateChanged } from 'firebase/auth'
+import { collection, getDocs, Timestamp } from 'firebase/firestore'
+import { auth, db } from '@/lib/firebase'
 
-type OrderItem = {
-  title: string
-  quantity: number
-  unitAmount: number | null
-  currency: string | null
-}
-
+type OrderItem = { productId: string; quantity: number }
 type OrderDoc = {
-  orderId: string
-  amountTotal: number
-  currency: string
-  createdAt?: { seconds: number; nanoseconds: number }
-  items: OrderItem[]
+  id: string
+  total?: number | null // cents
+  currency?: string | null // 'try' | 'usd'...
+  createdAt?: Timestamp | Date | null
+  items?: OrderItem[]
 }
 
-function fmt(n: number, c = 'USD') {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: c,
-  }).format(n)
-}
+const fmt = (amountCents = 0, currency = 'TRY') =>
+  new Intl.NumberFormat('tr-TR', { style: 'currency', currency }).format(
+    (amountCents || 0) / 100
+  )
 
-export default function UserOrdersPage() {
-  const { user, loading } = useAuth()
+export default function OrdersPage() {
+  const [uid, setUid] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
   const [orders, setOrders] = useState<OrderDoc[]>([])
-  const [busy, setBusy] = useState(false)
 
   useEffect(() => {
-    if (loading) {
-      // Auth is still resolving; don't show orders spinner yet.
-      setBusy(false)
-      return
-    }
-    if (!user) {
-      // Not logged in; ensure we're not stuck in loading.
-      setBusy(false)
-      return
-    }
+    const unsub = onAuthStateChanged(auth, (u) => {
+      setUid(u?.uid ?? null)
+    })
+    return () => unsub()
+  }, [])
 
+  useEffect(() => {
+    if (!uid) {
+      setOrders([])
+      setLoading(false)
+      return
+    }
+    let cancelled = false
     ;(async () => {
-      setBusy(true)
       try {
-        const q = query(
-          collection(db, 'users', user.uid, 'orders'),
-          orderBy('createdAt', 'desc')
-        )
-        const snap = await getDocs(q)
-        const rows = snap.docs.map((d) => {
-          const data = d.data() as Partial<OrderDoc>
-          return {
-            orderId: data.orderId ?? d.id,
-            amountTotal: Number(data.amountTotal ?? 0),
-            currency: String(data.currency ?? 'USD').toUpperCase(),
-            createdAt: data.createdAt,
-            items: Array.isArray(data.items) ? (data.items as OrderItem[]) : [],
-          }
+        const snap = await getDocs(collection(db, 'users', uid, 'orders'))
+        const list: OrderDoc[] = []
+        snap.forEach((d) => {
+          const data = d.data() as Partial<OrderDoc> & Record<string, unknown>
+          list.push({
+            id: d.id,
+            total: data?.total ?? null,
+            currency: (data?.currency ?? 'try') as string,
+            createdAt:
+              data?.createdAt instanceof Timestamp ||
+              data?.createdAt instanceof Date
+                ? (data.createdAt as Timestamp | Date)
+                : null,
+            items: (data?.items ?? []) as OrderItem[],
+          })
         })
-        setOrders(rows)
-      } catch (e) {
-        console.error('[orders] fetch error:', e)
-        setOrders([])
+        // newest first
+        list.sort((a, b) => {
+          const ad =
+            a.createdAt && 'toDate' in a.createdAt
+              ? a.createdAt.toDate()
+              : (a.createdAt as Date | null)
+          const bd =
+            b.createdAt && 'toDate' in b.createdAt
+              ? b.createdAt.toDate()
+              : (b.createdAt as Date | null)
+          return (bd?.getTime?.() ?? 0) - (ad?.getTime?.() ?? 0)
+        })
+        if (!cancelled) setOrders(list)
       } finally {
-        setBusy(false)
+        if (!cancelled) setLoading(false)
       }
     })()
-  }, [user, loading])
+    return () => {
+      cancelled = true
+    }
+  }, [uid])
 
-  if (loading) {
-    return <div className="max-w-3xl mx-auto p-6">Checking your session…</div>
-  }
-  if (busy) {
-    return <div className="max-w-3xl mx-auto p-6">Loading orders…</div>
-  }
-
-  if (!user) {
+  if (uid === null) {
     return (
-      <div className="max-w-3xl mx-auto p-6">
-        <h1 className="text-xl font-semibold mb-2">Please sign in</h1>
-        <p className="text-zinc-600">
-          You need to be logged in to view your orders.
+      <div className="mx-auto max-w-3xl p-6">
+        <h1 className="text-2xl font-semibold">Siparişlerim</h1>
+        <p className="mt-2 text-zinc-600">
+          Lütfen siparişlerinizi görmek için giriş yapın.
         </p>
         <Link
-          href="/"
-          className="inline-block mt-3 rounded-xl border px-4 py-2"
+          href="/login"
+          className="mt-4 inline-flex rounded-xl bg-black px-4 py-2 text-sm font-medium text-white"
         >
-          Go home
+          Giriş Yap
         </Link>
       </div>
     )
   }
 
-  if (orders.length === 0) {
+  if (loading) {
     return (
-      <div className="max-w-3xl mx-auto p-6">
-        <h1 className="text-xl font-semibold mb-2">Your orders</h1>
-        <p className="text-zinc-600">No orders yet.</p>
+      <div className="mx-auto max-w-3xl p-6">
+        <div className="h-6 w-40 bg-gray-200 rounded mb-3 animate-pulse" />
+        <div className="h-4 w-64 bg-gray-100 rounded mb-4 animate-pulse" />
+        <div className="h-24 w-full bg-gray-50 rounded animate-pulse" />
+      </div>
+    )
+  }
+
+  if (!orders.length) {
+    return (
+      <div className="mx-auto max-w-3xl p-6">
+        <h1 className="text-2xl font-semibold">Siparişlerim</h1>
+        <p className="mt-2 text-zinc-600">Henüz bir siparişiniz yok.</p>
         <Link
           href="/"
-          className="inline-block mt-3 rounded-xl border px-4 py-2"
+          className="mt-4 inline-flex rounded-xl border px-4 py-2 text-sm font-medium hover:bg-zinc-50"
         >
-          Continue shopping
+          Alışverişe Devam Et
         </Link>
       </div>
     )
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-6 space-y-4">
-      <h1 className="text-2xl font-semibold">Your orders</h1>
-      {orders.map((o) => (
-        <div key={o.orderId} className="rounded-xl border p-4">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-sm text-zinc-600">
-              Order #{o.orderId.slice(0, 8)}
-            </div>
-            <div className="font-medium">{fmt(o.amountTotal, o.currency)}</div>
-          </div>
-          <div className="space-y-1 text-sm">
-            {o.items.map((it, i) => (
-              <div key={i} className="flex items-center justify-between">
-                <div>
-                  {it.title}{' '}
-                  <span className="text-zinc-500">× {it.quantity}</span>
-                </div>
-                <div>
-                  {it.unitAmount != null
-                    ? fmt(
-                        (it.unitAmount / 100) * it.quantity,
-                        (it.currency ?? o.currency).toUpperCase()
-                      )
-                    : '-'}
+    <div className="mx-auto max-w-3xl p-6 space-y-4">
+      <h1 className="text-2xl font-semibold">Siparişlerim</h1>
+
+      {orders.map((o) => {
+        const date =
+          o.createdAt instanceof Timestamp
+            ? o.createdAt.toDate()
+            : o.createdAt instanceof Date
+            ? o.createdAt
+            : null
+        const when = date ? date.toLocaleString('tr-TR') : ''
+        const count = o.items?.reduce((n, it) => n + (it.quantity ?? 0), 0) ?? 0
+        const currency = (o.currency ?? 'TRY').toUpperCase()
+
+        return (
+          <div key={o.id} className="rounded-2xl border bg-white p-4 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm text-zinc-600">Sipariş No</div>
+                <div className="text-base font-semibold">#{o.id}</div>
+              </div>
+              <div className="text-right">
+                <div className="text-sm text-zinc-600">Tutar</div>
+                <div className="text-base font-semibold">
+                  {fmt(o.total ?? 0, currency)}
                 </div>
               </div>
-            ))}
+            </div>
+
+            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="rounded-xl bg-zinc-50 p-3">
+                <div className="text-xs text-zinc-600">Tarih</div>
+                <div className="text-sm">{when}</div>
+              </div>
+              <div className="rounded-xl bg-zinc-50 p-3">
+                <div className="text-xs text-zinc-600">Kalem Sayısı</div>
+                <div className="text-sm">{count}</div>
+              </div>
+              <div className="rounded-xl bg-zinc-50 p-3">
+                <div className="text-xs text-zinc-600">Ödeme</div>
+                <div className="text-sm">Kredi Kartı</div>
+              </div>
+            </div>
+
+            {o.items && o.items.length > 0 && (
+              <ul className="mt-3 divide-y rounded-xl border bg-zinc-50">
+                {(o.items ?? []).map((it, i) => (
+                  <li
+                    key={i}
+                    className="flex items-center justify-between p-3 text-sm"
+                  >
+                    <span className="text-zinc-900">{it.productId}</span>
+                    <span className="text-zinc-600">× {it.quantity}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
-        </div>
-      ))}
+        )
+      })}
+
+      <div className="pt-2">
+        <Link
+          href="/"
+          className="inline-flex rounded-xl bg-black px-4 py-2 text-sm font-medium text-white"
+        >
+          Alışverişe Devam Et
+        </Link>
+      </div>
     </div>
   )
 }
