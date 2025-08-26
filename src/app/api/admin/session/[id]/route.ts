@@ -8,10 +8,10 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(
   _req: Request,
-  ctx: { params: Promise<{ id: string | string[] }> }
+  { params }: { params: Promise<{ id: string | string[] }> }
 ) {
   try {
-    const { id } = await ctx.params
+    const { id } = await params
     const sessionId = Array.isArray(id) ? id[0] : id
     if (!sessionId) {
       return NextResponse.json({ error: 'Missing session id' }, { status: 400 })

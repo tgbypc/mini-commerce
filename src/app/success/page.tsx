@@ -5,15 +5,32 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useCart } from '@/context/CartContext'
 import { toast } from 'react-hot-toast'
-import Stripe from 'stripe'
 
 type Line = { title: string; qty: number; amount: number; currency: string }
 const fmt = (n: number, c = 'USD') =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: c }).format(n)
 
-type StripeSession = Stripe.Checkout.Session & {
-  line_items?: { data: Stripe.LineItem[] }
+type StripeLineItem = {
+  description?: string | null
+  quantity?: number | null
+  price?: {
+    unit_amount?: number | null
+    currency?: string | null
+    product?: { name?: string | null } | string | null
+  } | null
 }
+
+type StripeSession = {
+  id: string
+  amount_total?: number | null
+  currency?: string | null
+  payment_status?: 'paid' | 'unpaid' | 'no_payment_required' | string
+  line_items?: { data: StripeLineItem[] }
+}
+
+type NamedProduct = { name?: string | null }
+const isNamedProduct = (p: unknown): p is NamedProduct =>
+  !!p && typeof p === 'object' && 'name' in (p as Record<string, unknown>)
 
 export default function SuccessPage() {
   const sp = useSearchParams()
@@ -59,10 +76,10 @@ export default function SuccessPage() {
 
         const lns: Line[] =
           s.line_items?.data.map((li) => {
+            const prod = li.price?.product
             const title =
               li.description ??
-              (li.price?.product as Stripe.Product | null)?.name ??
-              'Item'
+              (isNamedProduct(prod) ? prod.name ?? 'Item' : 'Item')
             const qty = li.quantity ?? 0
             const unit = (li.price?.unit_amount ?? 0) / 100
             const curr =

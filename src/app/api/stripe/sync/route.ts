@@ -91,24 +91,33 @@ export async function POST(req: Request) {
       }
 
       try {
-        // Create Stripe Product if needed
+        // Ensure Stripe Product exists and has metadata.firestoreId; ensure Price exists
         let stripeProductId = existingProductId
         if (!stripeProductId) {
           const prod = await stripe.products.create({
             name,
             description: data.description ?? undefined,
             images: images.length ? images : undefined,
+            metadata: { firestoreId: id },
           })
           stripeProductId = prod.id
+        } else {
+          // Guarantee legacy products have the firestoreId metadata
+          try {
+            await stripe.products.update(stripeProductId, {
+              metadata: { firestoreId: id },
+            })
+          } catch {
+            // ignore metadata update failure
+          }
         }
 
-        // Create Stripe Price if needed (USD, one-time)
         let stripePriceId = existingPriceId
         if (!stripePriceId) {
           const price = await stripe.prices.create({
             currency: 'usd',
             unit_amount: amount,
-            product: (stripeProductId as string),
+            product: stripeProductId,
           })
           stripePriceId = price.id
         }

@@ -12,7 +12,7 @@ export default function CartPage() {
   const checkout = async () => {
     try {
       setLoading(true)
-      const res = await fetch('/cart/checkout', {
+      const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

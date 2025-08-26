@@ -33,6 +33,7 @@ export async function upsertStripeForProduct({
     currency: 'usd',
     unit_amount: Math.round(price * 100),
     product: product.id,
+    metadata: { productId }, // add this line
   })
 
   // 3) Firestore’a yaz

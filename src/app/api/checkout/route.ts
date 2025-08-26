@@ -34,26 +34,31 @@ export async function POST(req: Request) {
     // price_data ile ilerliyoruz (senin mevcut akışına uyum).
     const origin = req.headers.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 
-    const line_items = await Promise.all(items.map(async (it) => {
-      const productDoc = await getDoc(doc(db, 'products', it.productId))
-      if (!productDoc.exists()) {
+    const line_items: { price: string; quantity: number }[] = []
+    for (const it of items) {
+      // quantity guard: integer >= 1
+      const qty = Math.max(1, Math.floor(it.quantity || 1))
+
+      // Fetch product from Firestore and validate stripePriceId
+      const productRef = doc(db, 'products', it.productId)
+      const productSnap = await getDoc(productRef)
+      if (!productSnap.exists()) {
         throw new Error(`Product not found: ${it.productId}`)
       }
-      const productData = productDoc.data()
-      const stripePriceId = productData?.stripePriceId
-      if (!stripePriceId) {
-        throw new Error(`Missing stripePriceId for product: ${it.productId}`)
+      const productData = productSnap.data() as { stripePriceId?: unknown }
+      const priceId = typeof productData.stripePriceId === 'string' ? productData.stripePriceId : ''
+      if (!priceId || !priceId.startsWith('price_')) {
+        throw new Error(`Missing or invalid stripePriceId for product: ${it.productId}`)
       }
-      return {
-        price: stripePriceId,
-        quantity: it.quantity,
-      }
-    }))
+
+      line_items.push({ price: priceId, quantity: qty })
+    }
 
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       payment_method_types: ['card'],
       line_items,
+      allow_promotion_codes: true,
       metadata: userId ? { userId } : undefined,
       success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/cart`,
