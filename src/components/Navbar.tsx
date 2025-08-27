@@ -10,7 +10,7 @@ import { signOut } from 'firebase/auth'
 export default function Navbar() {
   const [q, setQ] = useState('')
   const [isOpen, setIsOpen] = useState(false)
-  const { user, role } = useAuth()
+  const { user, role, loading } = useAuth()
   const { count } = useCart()
 
   function onSubmit(e: React.FormEvent) {
@@ -96,12 +96,8 @@ export default function Navbar() {
               Çıkış
             </button>
           )}
-          {/* Sadece adminlere görünür */}
-          {role === 'admin' && (
-            <Link
-              className="text-sm font-medium leading-normal text-red-600"
-              href="/admin"
-            >
+          {!loading && role === 'admin' && (
+            <Link className="text-sm font-medium" href="/admin">
               Admin
             </Link>
           )}
@@ -231,11 +227,11 @@ export default function Navbar() {
               >
                 İletişim
               </Link>
-              {role === 'admin' && (
+              {!loading && role === 'admin' && (
                 <Link
                   href="/admin"
                   onClick={() => setIsOpen(false)}
-                  className="py-2 text-sm font-medium text-red-600"
+                  className="py-2 text-sm font-medium"
                 >
                   Admin
                 </Link>

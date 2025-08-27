@@ -2,10 +2,10 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import AdminOnly from '@/components/AdminOnly'
 import { useAuth } from '@/context/AuthContext'
 import { signOut } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
+import AdminOnly from '@/components/AdminOnly'
 
 export default function AdminLayout({
   children,
@@ -55,10 +55,11 @@ export default function AdminLayout({
 
           <button
             type="button"
-            onClick={() => signOut(auth)}
-            className="mt-2 w-full rounded-lg border px-3 py-2 text-sm hover:bg-zinc-50"
+            disabled={!user}
+            onClick={() => (user ? signOut(auth) : undefined)}
+            className="mt-2 w-full rounded-lg border px-3 py-2 text-sm hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Sign out
+            {user ? 'Sign out' : 'Not signed in'}
           </button>
         </aside>
 

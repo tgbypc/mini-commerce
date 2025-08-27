@@ -115,15 +115,25 @@ export default function AdminNewProductPage() {
   async function onSubmit(values: ProductFormValues) {
     setSubmitting(true)
     try {
-      const toArr = (s?: string) =>
-        (s ?? '')
-          .split(',')
-          .map((x) => x.trim())
-          .filter(Boolean)
+      const toArr = (s?: string) => {
+        const set = new Set(
+          (s ?? '')
+            .split(',')
+            .map((x) => x.trim())
+            .filter(Boolean)
+        )
+        return Array.from(set)
+      }
 
       const payload = {
-        ...values,
+        title: values.title.trim(),
+        price: Number(values.price),
+        stock: Math.max(0, Number(values.stock) || 0),
+        category: values.category,
+        brand: values.brand?.trim() || undefined,
+        thumbnail: values.thumbnail?.trim() || undefined,
         images: toArr(values.images),
+        description: values.description?.trim() || undefined,
         tags: toArr(values.tags),
       } as const
 
@@ -133,6 +143,12 @@ export default function AdminNewProductPage() {
         body: JSON.stringify(payload),
       })
       const data: unknown = await res.json()
+
+      // Optional: if API returns created product doc id
+      const createdId =
+        typeof data === 'object' && data && 'id' in data
+          ? (data as { id?: string }).id
+          : undefined
 
       if (!res.ok) {
         const msg =
@@ -145,6 +161,12 @@ export default function AdminNewProductPage() {
         alert(msg)
         return
       }
+
+      if (createdId) {
+        // no-op: you could route to `/admin/product/${createdId}/edit` if desired
+      }
+      // refresh list after redirect
+      router.refresh()
 
       // Başarılı → admin ürün listesine ya da anasayfaya yönlendir
       router.push('/admin/product')

@@ -4,9 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import { getProductById } from '@/lib/products'
 import type { Product } from '@/types/product'
-import { deleteProductAndBlobs } from '@/lib/products'
 
 export default function DeleteProductPage() {
   const { id } = useParams<{ id: string }>()
@@ -21,12 +19,13 @@ export default function DeleteProductPage() {
     let alive = true
     ;(async () => {
       try {
-        const p = await getProductById(String(id))
+        const res = await fetch(`/api/admin/product?id=${id}`)
         if (!alive) return
-        if (!p) {
+        if (!res.ok) {
           setError('Product not found')
           return
         }
+        const p = await res.json()
         setProduct(p)
       } catch (e) {
         if (!alive) return
@@ -44,7 +43,13 @@ export default function DeleteProductPage() {
     if (!product) return
     setDeleting(true)
     try {
-      await deleteProductAndBlobs(String(product.id))
+      const res = await fetch(`/api/admin/product?id=${product.id}`, {
+        method: 'DELETE',
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.message || 'Failed to delete product')
+      }
       router.push('/admin/product')
     } catch (e) {
       setDeleting(false)

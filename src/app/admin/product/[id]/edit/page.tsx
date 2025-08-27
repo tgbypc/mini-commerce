@@ -6,8 +6,7 @@ import { useForm } from 'react-hook-form'
 import type { Resolver, SubmitHandler } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
+// Firestore update is handled by API; keep only types/helpers if needed
 import { getProductById } from '@/lib/products'
 import type { Product } from '@/types/product'
 import { CATEGORIES } from '@/lib/constants/categories'
@@ -113,42 +112,46 @@ export default function EditProductPage() {
 
   const onSubmit: SubmitHandler<FormValues> = async (values) => {
     if (!initial) return
-    const imagesArr: string[] = values.images
-      ? values.images
-          .split(',')
-          .map((s) => s.trim())
-          .filter((s) => s.length > 0)
-      : []
-    const tagsArr: string[] = values.tags
-      ? values.tags
-          .split(',')
-          .map((s) => s.trim())
-          .filter((s) => s.length > 0)
-      : []
 
-    // Firestore update
-    const ref = doc(db, 'products', String(initial.id))
-    await updateDoc(ref, {
-      title: values.title,
+    const toArr = (s?: string) =>
+      Array.from(
+        new Set(
+          (s ?? '')
+            .split(',')
+            .map((x) => x.trim())
+            .filter(Boolean)
+        )
+      )
+
+    const payload = {
+      id: String(initial.id),
+      title: values.title.trim(),
+      description: values.description?.trim() || undefined,
       price: Number(values.price) || 0,
-      stock: typeof values.stock === 'number' ? values.stock : 0,
+      stock: Math.max(0, Number(values.stock) || 0),
       category: values.category,
-      brand: values.brand || null,
-      thumbnail: values.thumbnail || null,
-      images: imagesArr,
-      description: values.description || null,
-      tags: tagsArr,
-      updatedAt: serverTimestamp(),
+      brand: values.brand?.trim() || undefined,
+      thumbnail: values.thumbnail?.trim() || undefined,
+      images: toArr(values.images),
+      tags: toArr(values.tags),
+    } as const
+
+    const res = await fetch('/api/admin/product', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
     })
 
-    // Stripe senkronizasyonu (price değişimi vb.)
-    await fetch('/api/admin/stripe/sync', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: String(initial.id) }),
-    })
+    const data = await res.json()
+    if (!res.ok) {
+      throw new Error(data?.error || 'Update failed')
+    }
+
+    // İsteğe bağlı: backend priceChanged döndürebilir
+    // const { priceChanged } = data as { priceChanged?: boolean }
 
     router.push('/admin/product')
+    router.refresh()
   }
 
   const title = useMemo(

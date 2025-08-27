@@ -27,6 +27,22 @@ export default function AdminHome() {
           <div className="text-sm text-zinc-600">Edit or remove products</div>
         </Link>
 
+        <Link
+          href="/admin/orders"
+          className="rounded-xl border p-4 hover:bg-zinc-50"
+        >
+          <div className="font-medium">Manage Orders</div>
+          <div className="text-sm text-zinc-600">View customer orders</div>
+        </Link>
+
+        <Link
+          href="/admin/users"
+          className="rounded-xl border p-4 hover:bg-zinc-50"
+        >
+          <div className="font-medium">Manage Users</div>
+          <div className="text-sm text-zinc-600">View registered users</div>
+        </Link>
+
         {/* İleride Orders / Users / Reports kutuları eklenebilir */}
       </div>
     </div>

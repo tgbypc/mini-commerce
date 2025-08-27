@@ -7,7 +7,7 @@ import {
   signInWithEmailAndPassword,
   signOut,
 } from 'firebase/auth'
-import { doc, getDoc } from 'firebase/firestore'
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, db } from '@/lib/firebase'
 
 type Role = 'admin' | 'user' | null
@@ -31,19 +31,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       try {
         if (firebaseUser) {
+          setLoading(true)
           setUser(firebaseUser)
-          // Firestore'dan rol bilgisini çek
+          // Firestore'dan rol bilgisini çek; doküman yoksa otomatik oluştur (seed)
           try {
             const ref = doc(db, 'users', firebaseUser.uid)
             const snap = await getDoc(ref)
-            if (snap.exists()) {
-              const data = snap.data() as { role?: Role }
-              setRole((data.role as Role) ?? 'user')
+
+            if (!snap.exists()) {
+              // İlk giriş: users/{uid} dokümanı oluştur
+              await setDoc(
+                ref,
+                {
+                  email: firebaseUser.email ?? '',
+                  role: 'user', // default rol
+                  createdAt: serverTimestamp(),
+                },
+                { merge: true }
+              )
+              setRole('user')
+              console.log('AuthContext: role set to', 'user (seeded)')
             } else {
-              setRole('user') // varsayılan
+              const data = snap.data() as { role?: Role }
+              const r = (data?.role as Role) ?? 'user'
+              setRole(r)
+              console.log('AuthContext: role set to', r)
             }
           } catch {
             setRole('user')
+            console.log('AuthContext: role set to', 'user (fallback)')
           }
         } else {
           setUser(null)
