@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { Timestamp } from 'firebase/firestore'
+import { fmtCurrency } from '@/lib/money'
 import { useAuth } from '@/context/AuthContext'
 import { useParams } from 'next/navigation'
 
@@ -20,14 +21,13 @@ type OrderDetail = {
   amountTotal?: number | null
   currency?: string | null
   paymentStatus?: string | null
+  status?: 'paid' | 'fulfilled' | 'shipped' | 'delivered' | 'canceled'
+  shipping?: { method?: string | null; amountTotal?: number | null; address?: any; name?: string | null } | null
   createdAt?: Timestamp | Date | null
   items?: LineItem[]
 }
 
-const fmt = (n: number | null | undefined, c = 'TRY') =>
-  new Intl.NumberFormat('tr-TR', { style: 'currency', currency: c }).format(
-    typeof n === 'number' ? n : 0
-  )
+const fmt = (n: number | null | undefined, c = 'USD') => fmtCurrency(n ?? 0, c)
 
 export default function OrderDetailPage() {
   const [loading, setLoading] = useState(true)
@@ -90,12 +90,13 @@ export default function OrderDetailPage() {
   const when = date ? date.toLocaleString('tr-TR') : ''
   const currency = (order.currency ?? 'TRY').toUpperCase()
 
-  const steps = [
+  const steps: { key: NonNullable<OrderDetail['status']>; label: string }[] = [
     { key: 'paid', label: 'Ödeme Onaylandı' },
-    { key: 'preparing', label: 'Hazırlanıyor' },
+    { key: 'fulfilled', label: 'Hazırlanıyor' },
     { key: 'shipped', label: 'Kargoya Verildi' },
+    { key: 'delivered', label: 'Teslim Edildi' },
   ]
-  const activeIdx = 0 // Basic: payment confirmed only; extend with shipping later
+  const activeIdx = Math.max(0, steps.findIndex((s) => s.key === (order.status || 'paid')))
 
   return (
     <div className="max-w-3xl mx-auto p-6 space-y-4">
@@ -150,11 +151,40 @@ export default function OrderDetailPage() {
         ) : (
           <p className="text-sm text-zinc-600">Kalem bulunamadı.</p>
         )}
-        <div className="mt-4 flex items-center justify-end gap-6 text-sm">
-          <div className="text-zinc-600">Toplam</div>
-          <div className="font-semibold">{fmt(order.amountTotal ?? 0, currency)}</div>
-        </div>
+        {(() => {
+          const subtotal = (order.items || []).reduce((s, it) => s + ((it.unitAmount || 0) * (it.quantity || 0)), 0)
+          const shipping = order.shipping?.amountTotal || 0
+          return (
+            <div className="mt-4 flex flex-col items-end gap-1 text-sm">
+              <div className="flex items-center justify-end gap-6">
+                <div className="text-zinc-600">Ara Toplam</div>
+                <div className="font-medium">{fmt(subtotal, currency)}</div>
+              </div>
+              <div className="flex items-center justify-end gap-6">
+                <div className="text-zinc-600">Kargo{order.shipping?.method ? ` (${order.shipping.method})` : ''}</div>
+                <div className="font-medium">{fmt(shipping, currency)}</div>
+              </div>
+              <div className="flex items-center justify-end gap-6">
+                <div className="text-zinc-600">Toplam</div>
+                <div className="font-semibold">{fmt((order.amountTotal || 0), currency)}</div>
+              </div>
+            </div>
+          )
+        })()}
       </div>
+
+      {/* Shipping address */}
+      {order.shipping?.address && (
+        <div className="rounded-2xl border bg-white p-4 shadow-sm">
+          <h2 className="text-lg font-semibold mb-2">Teslimat Adresi</h2>
+          <div className="text-sm text-zinc-700">
+            {order.shipping?.name && <div>{order.shipping.name}</div>}
+            <div>{order.shipping.address.line1} {order.shipping.address.line2}</div>
+            <div>{order.shipping.address.postal_code} {order.shipping.address.city || order.shipping.address.town} {order.shipping.address.state}</div>
+            <div>{order.shipping.address.country}</div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

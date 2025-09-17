@@ -4,6 +4,7 @@ import { stripe } from '@/lib/stripe'
 import { adminDb, FieldValue } from '@/lib/firebaseAdmin'
 import { productSchema } from '@/lib/validation/products'
 import { del as blobDel } from '@vercel/blob'
+import { requireAdminFromRequest } from '@/lib/adminAuth'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -18,6 +19,8 @@ const deArray = <T,>(v: T | T[]) => (Array.isArray(v) ? v[0] : v)
 
 export async function POST(req: Request) {
   try {
+    const gate = await requireAdminFromRequest(req)
+    if ('error' in gate) return NextResponse.json({ error: gate.error }, { status: gate.status })
     const raw = await req.json()
 
     const normalized = {
@@ -59,7 +62,7 @@ export async function POST(req: Request) {
     // --- Firestore: ürün ---
     
 
-    const productDoc = {
+    const productDoc: Record<string, unknown> = {
       id: numericId,
       title: input.title,
       description: input.description ?? '',
@@ -84,6 +87,25 @@ export async function POST(req: Request) {
       updatedAt: FieldValue.serverTimestamp(),
     }
 
+    // Optional localized fields if provided by client
+    try {
+      const { title_en, title_nb, description_en, description_nb } = raw || {}
+      const te = typeof title_en === 'string' ? title_en.trim() : ''
+      const tn = typeof title_nb === 'string' ? title_nb.trim() : ''
+      const de = typeof description_en === 'string' ? description_en.trim() : ''
+      const dn = typeof description_nb === 'string' ? description_nb.trim() : ''
+      if (te) productDoc['title_en'] = te
+      if (tn) productDoc['title_nb'] = tn
+      if (de) productDoc['description_en'] = de
+      if (dn) productDoc['description_nb'] = dn
+      // Lowercase keys for case-insensitive search
+      if (te) productDoc['title_en_lc'] = te.toLowerCase()
+      if (tn) productDoc['title_nb_lc'] = tn.toLowerCase()
+      // Set base fields from default locale (en) for fallback/search
+      if (te) productDoc['title'] = te
+      if (de) productDoc['description'] = de
+    } catch {}
+
     const ref = adminDb.collection('products').doc(String(numericId))
     await ref.set(productDoc)
 
@@ -101,6 +123,8 @@ export async function POST(req: Request) {
 
 export async function PUT(req: Request) {
   try {
+    const gate = await requireAdminFromRequest(req)
+    if ('error' in gate) return NextResponse.json({ error: gate.error }, { status: gate.status })
     const raw = await req.json()
 
     const normalized = {
@@ -214,6 +238,28 @@ export async function PUT(req: Request) {
       'meta.updatedAt': new Date().toISOString(),
       updatedAt: FieldValue.serverTimestamp(),
     }
+
+    // Optional localized fields on update
+    try {
+      const { title_en, title_nb, description_en, description_nb } = raw || {}
+      const te = typeof title_en === 'string' ? title_en.trim() : ''
+      const tn = typeof title_nb === 'string' ? title_nb.trim() : ''
+      const de = typeof description_en === 'string' ? description_en.trim() : ''
+      const dn = typeof description_nb === 'string' ? description_nb.trim() : ''
+      if (title_en !== undefined) {
+        updateDoc['title_en'] = te
+        updateDoc['title_en_lc'] = te ? te.toLowerCase() : ''
+      }
+      if (title_nb !== undefined) {
+        updateDoc['title_nb'] = tn
+        updateDoc['title_nb_lc'] = tn ? tn.toLowerCase() : ''
+      }
+      if (description_en !== undefined) updateDoc['description_en'] = de
+      if (description_nb !== undefined) updateDoc['description_nb'] = dn
+      // Keep base fields aligned with default (en) if provided
+      if (te) updateDoc['title'] = te
+      if (de) updateDoc['description'] = de
+    } catch {}
     if (newStripePriceId) {
       updateDoc['stripePriceId'] = newStripePriceId
     }
@@ -235,6 +281,8 @@ export async function PUT(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
+    const gate = await requireAdminFromRequest(req)
+    if ('error' in gate) return NextResponse.json({ error: gate.error }, { status: gate.status })
     // Support both body JSON and query string (?id=...)
     let id: string | null = null
     try {

@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import type { Resolver, SubmitHandler } from 'react-hook-form'
 import { z } from 'zod'
+import { useI18n } from '@/context/I18nContext'
 import { zodResolver } from '@hookform/resolvers/zod'
 // Firestore update is handled by API; keep only types/helpers if needed
 import { getProductById } from '@/lib/products'
@@ -12,9 +13,12 @@ import type { Product } from '@/types/product'
 import { CATEGORIES } from '@/lib/constants/categories'
 import type { Category } from '@/lib/constants/categories'
 import Image from 'next/image'
+import { useAuth } from '@/context/AuthContext'
 
 const schema = z.object({
-  title: z.string().min(3, 'Min 3 karakter'),
+  title: z.string().optional().or(z.literal('')),
+  title_en: z.string().optional().or(z.literal('')),
+  title_nb: z.string().optional().or(z.literal('')),
   price: z.coerce.number().nonnegative('Fiyat negatif olamaz'),
   stock: z.coerce
     .number()
@@ -33,11 +37,9 @@ const schema = z.object({
     .transform((s) => s.trim())
     .optional()
     .or(z.literal('')),
-  description: z
-    .string()
-    .min(10, 'En az 10 karakter')
-    .optional()
-    .or(z.literal('')),
+  description: z.string().optional().or(z.literal('')),
+  description_en: z.string().optional().or(z.literal('')),
+  description_nb: z.string().optional().or(z.literal('')),
   tags: z
     .string()
     .transform((s) => s.trim())
@@ -48,11 +50,14 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>
 
 export default function EditProductPage() {
+  const { t } = useI18n()
+  const { user } = useAuth()
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
   const [initial, setInitial] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [activeLocale, setActiveLocale] = useState<'en' | 'nb'>('en')
 
   const {
     register,
@@ -126,7 +131,11 @@ export default function EditProductPage() {
     const payload = {
       id: String(initial.id),
       title: values.title.trim(),
+      title_en: values.title_en?.trim() || undefined,
+      title_nb: values.title_nb?.trim() || undefined,
       description: values.description?.trim() || undefined,
+      description_en: values.description_en?.trim() || undefined,
+      description_nb: values.description_nb?.trim() || undefined,
       price: Number(values.price) || 0,
       stock: Math.max(0, Number(values.stock) || 0),
       category: values.category,
@@ -136,9 +145,13 @@ export default function EditProductPage() {
       tags: toArr(values.tags),
     } as const
 
+    const token = await user?.getIdToken().catch(() => undefined)
     const res = await fetch('/api/admin/product', {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
       body: JSON.stringify(payload),
     })
 
@@ -154,10 +167,7 @@ export default function EditProductPage() {
     router.refresh()
   }
 
-  const title = useMemo(
-    () => (initial ? `Edit: ${initial.title}` : 'Edit product'),
-    [initial]
-  )
+  const title = useMemo(() => (initial ? `Edit: ${initial.title}` : 'Edit product'), [initial])
 
   if (loading) {
     return (
@@ -189,20 +199,42 @@ export default function EditProductPage() {
       <h1 className="text-2xl font-semibold">{title}</h1>
 
       <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
-        <label className="block">
-          <span className="block text-sm text-zinc-600 mb-1">Title</span>
-          <input
-            className="w-full rounded-lg border px-3 py-2"
-            {...register('title')}
-          />
-          {errors.title && (
-            <p className="text-sm text-rose-600">{errors.title.message}</p>
-          )}
-        </label>
+        {/* Base title removed; use localized fields below */}
+
+        <div className="inline-flex gap-2 rounded-lg bg-zinc-100 p-1">
+          {(['en', 'nb'] as const).map((loc) => (
+            <button key={loc} type="button" onClick={() => setActiveLocale(loc)} className={`px-3 py-1 text-sm rounded ${activeLocale === loc ? 'bg-white border' : ''}`}>
+              {loc.toUpperCase()}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => {
+              const src = activeLocale === 'en' ? 'title_en' : 'title_nb'
+              const dst = activeLocale === 'en' ? 'title_nb' : 'title_en'
+              const target = activeLocale === 'en' ? 'nb' : 'en'
+              const val = (watch(src) as string) || ''
+              if (!val.trim()) return
+              setValue(dst as any, val, { shouldDirty: true, shouldValidate: true })
+              setActiveLocale(target)
+            }}
+            className="ml-2 text-xs rounded border px-2"
+          >
+            {t('admin.copyTo').replace('{loc}', activeLocale === 'en' ? 'NB' : 'EN')}
+          </button>
+        </div>
+
+        <div>
+          <label className="block text-sm text-zinc-600 mb-1">{t('admin.localeTitle').replace('{loc}', activeLocale.toUpperCase())}</label>
+          <input {...register('title_en')} className={`w-full rounded-lg border px-3 py-2 ${activeLocale !== 'en' ? 'hidden' : ''}`} />
+          <input {...register('title_nb')} className={`w-full rounded-lg border px-3 py-2 ${activeLocale !== 'nb' ? 'hidden' : ''}`} />
+        </div>
+
+        
 
         <div className="grid grid-cols-2 gap-4">
           <label className="block">
-            <span className="block text-sm text-zinc-600 mb-1">Price</span>
+            <span className="block text-sm text-zinc-600 mb-1">{t('admin.price')}</span>
             <input
               type="number"
               step="0.01"
@@ -215,7 +247,7 @@ export default function EditProductPage() {
           </label>
 
           <label className="block">
-            <span className="block text-sm text-zinc-600 mb-1">Stock</span>
+            <span className="block text-sm text-zinc-600 mb-1">{t('admin.stock')}</span>
             <input
               type="number"
               className="w-full rounded-lg border px-3 py-2"
@@ -228,7 +260,7 @@ export default function EditProductPage() {
         </div>
 
         <label className="block">
-          <span className="block text-sm text-zinc-600 mb-1">Category</span>
+          <span className="block text-sm text-zinc-600 mb-1">{t('admin.category')}</span>
           <select
             className="w-full rounded-lg border px-3 py-2"
             {...register('category')}
@@ -245,7 +277,7 @@ export default function EditProductPage() {
         </label>
 
         <label className="block">
-          <span className="block text-sm text-zinc-600 mb-1">Brand</span>
+          <span className="block text-sm text-zinc-600 mb-1">{t('admin.brand')}</span>
           <input
             className="w-full rounded-lg border px-3 py-2"
             {...register('brand')}
@@ -316,19 +348,38 @@ export default function EditProductPage() {
           />
         </label>
 
-        <label className="block">
-          <span className="block text-sm text-zinc-600 mb-1">Description</span>
-          <textarea
-            rows={5}
-            className="w-full rounded-lg border px-3 py-2"
-            {...register('description')}
-          />
-          {errors.description && (
-            <p className="text-sm text-rose-600">
-              {errors.description.message}
-            </p>
-          )}
-        </label>
+        {/* Base description removed; use localized fields below */}
+
+        <div className="inline-flex gap-2 rounded-lg bg-zinc-100 p-1">
+          {(['en', 'nb'] as const).map((loc) => (
+            <button key={loc} type="button" onClick={() => setActiveLocale(loc)} className={`px-3 py-1 text-sm rounded ${activeLocale === loc ? 'bg-white border' : ''}`}>
+              {loc.toUpperCase()}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => {
+              const src = activeLocale === 'en' ? 'description_en' : 'description_nb'
+              const dst = activeLocale === 'en' ? 'description_nb' : 'description_en'
+              const target = activeLocale === 'en' ? 'nb' : 'en'
+              const val = (watch(src) as string) || ''
+              if (!val.trim()) return
+              setValue(dst as any, val, { shouldDirty: true, shouldValidate: true })
+              setActiveLocale(target)
+            }}
+            className="ml-2 text-xs rounded border px-2"
+          >
+            {t('admin.copyTo').replace('{loc}', activeLocale === 'en' ? 'NB' : 'EN')}
+          </button>
+        </div>
+
+        <div>
+          <label className="block text-sm text-zinc-600 mb-1">{t('admin.localeDescription').replace('{loc}', activeLocale.toUpperCase())}</label>
+          <textarea {...register('description_en')} rows={4} className={`w-full rounded-lg border px-3 py-2 ${activeLocale !== 'en' ? 'hidden' : ''}`} />
+          <textarea {...register('description_nb')} rows={4} className={`w-full rounded-lg border px-3 py-2 ${activeLocale !== 'nb' ? 'hidden' : ''}`} />
+        </div>
+
+        
 
         <label className="block">
           <span className="block text-sm text-zinc-600 mb-1">
@@ -346,14 +397,14 @@ export default function EditProductPage() {
             disabled={isSubmitting}
             className="rounded-xl bg-black text-white px-4 py-2"
           >
-            {isSubmitting ? 'Saving…' : 'Save changes'}
+            {isSubmitting ? t('admin.saving') : t('admin.saveChanges')}
           </button>
           <button
             type="button"
             onClick={() => router.push('/admin/product')}
             className="rounded-xl border px-4 py-2"
           >
-            Cancel
+            {t('admin.cancel')}
           </button>
         </div>
       </form>

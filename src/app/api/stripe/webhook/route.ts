@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { adminDb, FieldValue } from '@/lib/firebaseAdmin'
+import { queueEmail } from '@/lib/emailFirebase'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -42,7 +43,7 @@ export async function POST(req: Request) {
       null
 
     const full = await stripe.checkout.sessions.retrieve(s.id, {
-      expand: ['line_items.data.price.product'],
+      expand: ['line_items.data.price.product', 'shipping_cost.shipping_rate'],
     })
 
     const items: Array<{
@@ -96,12 +97,20 @@ export async function POST(req: Request) {
     const orderDoc = {
       sessionId: s.id,
       paymentStatus: s.payment_status,
+      status: 'paid',
       amountTotal: (s.amount_total ?? 0) / 100,
       currency: s.currency ?? 'usd',
       email: s.customer_details?.email ?? null,
       userId: uid,
       items,
+      shipping: {
+        method: (full.shipping_cost as any)?.shipping_rate?.display_name || null,
+        amountTotal: typeof (full.shipping_cost as any)?.amount_total === 'number' ? ((full.shipping_cost as any).amount_total / 100) : null,
+        address: (full.shipping_details as any)?.address || null,
+        name: (full.shipping_details as any)?.name || null,
+      },
       createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     }
 
     // stok düş (transaction ile; availabilityStatus güncelle)
@@ -156,6 +165,48 @@ export async function POST(req: Request) {
       }
     } catch {
       // cart cleanup is best-effort; ignore errors
+    }
+
+    // Best-effort: send order confirmation email to customer via Firebase Extension (mail collection)
+    try {
+      const toEmail = s.customer_details?.email ?? null
+      if (toEmail) {
+        const currency = (orderDoc.currency as string | undefined)?.toUpperCase() || 'USD'
+        const rows = items
+          .map((it) => {
+            const qty = it.quantity ?? 0
+            const unit = typeof it.unitAmount === 'number' ? (it.unitAmount / 100).toFixed(2) : ''
+            const title = it.title || 'Item'
+            return `<tr><td style="padding:6px 8px;border-bottom:1px solid #eee">${title}</td><td style="padding:6px 8px;border-bottom:1px solid #eee">${qty}</td><td style=\"padding:6px 8px;border-bottom:1px solid #eee\">${unit} ${currency}</td></tr>`
+          })
+          .join('')
+
+        const html = `
+          <div style="font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto">
+            <h2 style="margin:0 0 12px">Siparişiniz Onaylandı</h2>
+            <p style="margin:0 0 12px">Sipariş No: <strong>${s.id}</strong></p>
+            <table cellpadding="0" cellspacing="0" style="border-collapse:collapse;min-width:300px">
+              <thead>
+                <tr>
+                  <th style="text-align:left;padding:6px 8px;border-bottom:2px solid #333">Ürün</th>
+                  <th style="text-align:left;padding:6px 8px;border-bottom:2px solid #333">Adet</th>
+                  <th style="text-align:left;padding:6px 8px;border-bottom:2px solid #333">Birim</th>
+                </tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+            <p style="margin:12px 0 0">Toplam: <strong>${(orderDoc.amountTotal as number).toFixed(2)} ${currency}</strong></p>
+          </div>`
+
+        await queueEmail({
+          to: toEmail,
+          subject: `Sipariş Onayı #${s.id}`,
+          html,
+          text: `Siparişiniz onaylandı. Sipariş No: ${s.id}. Toplam: ${(orderDoc.amountTotal as number).toFixed(2)} ${currency}`,
+        })
+      }
+    } catch {
+      // ignore email errors
     }
   }
 

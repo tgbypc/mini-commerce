@@ -11,6 +11,8 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { useAuth } from '@/context/AuthContext'
+import { useI18n } from '@/context/I18nContext'
+import EmptyState from '@/components/ui/EmptyState'
 import { useRouter } from 'next/navigation'
 
 type OrderItem = {
@@ -26,6 +28,7 @@ type OrderDoc = {
   amountTotal?: number | null // major currency (webhook'ta /100 yapılmıştı)
   currency?: string | null // 'try' | 'usd'...
   paymentStatus?: string | null
+  status?: string | null
   createdAt?: Timestamp | Date | null
   items?: OrderItem[]
 }
@@ -62,6 +65,7 @@ const fmtMajor = (amountMajor = 0, currency = 'TRY') =>
   )
 
 export default function OrdersPage() {
+  const { t } = useI18n()
   const [loading, setLoading] = useState(true)
   const [orders, setOrders] = useState<OrderDoc[]>([])
 
@@ -105,16 +109,9 @@ export default function OrdersPage() {
   if (!user && !authLoading) {
     return (
       <div className="mx-auto max-w-3xl p-6">
-        <h1 className="text-2xl font-semibold">Siparişlerim</h1>
-        <p className="mt-2 text-zinc-600">
-          Lütfen siparişlerinizi görmek için giriş yapın.
-        </p>
-        <Link
-          href="/user/login"
-          className="mt-4 inline-flex rounded-xl bg-black px-4 py-2 text-sm font-medium text-white"
-        >
-          Giriş Yap
-        </Link>
+        <h1 className="text-2xl font-semibold">{t('orders.title')}</h1>
+        <p className="mt-2 text-zinc-600">{t('orders.loginPrompt')}</p>
+        <Link href="/user/login" className="mt-4 inline-flex rounded-xl bg-black px-4 py-2 text-sm font-medium text-white">{t('nav.login')}</Link>
       </div>
     )
   }
@@ -132,14 +129,11 @@ export default function OrdersPage() {
   if (!orders.length) {
     return (
       <div className="mx-auto max-w-3xl p-6">
-        <h1 className="text-2xl font-semibold">Siparişlerim</h1>
-        <p className="mt-2 text-zinc-600">Henüz bir siparişiniz yok.</p>
-        <Link
-          href="/"
-          className="mt-4 inline-flex rounded-xl border px-4 py-2 text-sm font-medium hover:bg-zinc-50"
-        >
-          Alışverişe Devam Et
-        </Link>
+        <h1 className="text-2xl font-semibold">{t('orders.title')}</h1>
+        <EmptyState
+          message={t('orders.empty')}
+          action={<Link href="/" className="inline-flex rounded-xl border px-4 py-2 text-sm font-medium hover:bg-zinc-50">{t('fav.continue')}</Link>}
+        />
       </div>
     )
   }
@@ -184,8 +178,8 @@ export default function OrdersPage() {
                 <div className="text-sm">{count}</div>
               </div>
               <div className="rounded-xl bg-zinc-50 p-3">
-                <div className="text-xs text-zinc-600">Ödeme</div>
-                <div className="text-sm">Kredi Kartı</div>
+                <div className="text-xs text-zinc-600">Durum</div>
+                <div className="text-sm">{(o.status || 'paid').toUpperCase()}</div>
               </div>
             </div>
 

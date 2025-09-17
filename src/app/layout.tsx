@@ -5,6 +5,7 @@ import { Toaster } from 'react-hot-toast'
 import { CartProvider } from '@/context/CartContext'
 import { FavoritesProvider } from '@/context/FavoritesContext'
 import Navbar from '@/components/Navbar'
+import { I18nProvider } from '@/context/I18nContext'
 import { AuthProvider } from '@/context/AuthContext'
 
 const GeistSans = Inter({ subsets: ['latin'], variable: '--font-geist-sans' })
@@ -29,12 +30,14 @@ export default function RootLayout({
         className={`${GeistSans.variable} ${GeistMono.variable} antialiased`}
       >
         <AuthProvider>
-          <CartProvider>
-            <FavoritesProvider>
-              <Navbar />
-              <main>{children}</main>
-            </FavoritesProvider>
-          </CartProvider>
+          <I18nProvider>
+            <CartProvider>
+              <FavoritesProvider>
+                <Navbar />
+                <main>{children}</main>
+              </FavoritesProvider>
+            </CartProvider>
+          </I18nProvider>
         </AuthProvider>
         <Toaster position="bottom-center" toastOptions={{ duration: 3000 }} />
       </body>

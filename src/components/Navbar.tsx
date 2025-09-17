@@ -2,11 +2,15 @@
 
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import { useCart } from '@/context/CartContext'
 import { useFavorites } from '@/context/FavoritesContext'
+import { useI18n } from '@/context/I18nContext'
 
 export default function Navbar() {
+  const { t, locale, setLocale } = useI18n()
+  const router = useRouter()
   const [q, setQ] = useState('')
   const [isOpen, setIsOpen] = useState(false)
   const { user, role, loading, logout } = useAuth()
@@ -23,7 +27,8 @@ export default function Navbar() {
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault()
-    // arama yönlendirmesi eklenecekse buraya (/search?q=...)
+    const s = q.trim()
+    router.push(s ? `/?q=${encodeURIComponent(s)}` : '/')
   }
 
   return (
@@ -77,22 +82,22 @@ export default function Navbar() {
         {/* Ana menü */}
         <div className="hidden md:flex items-center gap-9">
           <Link className="text-sm font-medium" href="/">
-            Ana Sayfa
+            {t('nav.home')}
           </Link>
           <Link className="text-sm font-medium" href="#">
-            Mağaza
+            {t('nav.store')}
           </Link>
           <Link className="text-sm font-medium" href="#">
-            Hakkımızda
+            {t('nav.about')}
           </Link>
           <Link className="text-sm font-medium" href="#">
-            İletişim
+            {t('nav.contact')}
           </Link>
           {/* Auth UI */}
           {!user ? (
             <>
-              <Link className="text-sm font-medium" href="/user/login">Login</Link>
-              <Link className="text-sm font-medium" href="/user/register">Register</Link>
+              <Link className="text-sm font-medium" href="/user/login">{t('nav.login')}</Link>
+              <Link className="text-sm font-medium" href="/user/register">{t('nav.register')}</Link>
             </>
           ) : (
             <div className="relative">
@@ -112,14 +117,14 @@ export default function Navbar() {
                     onClick={() => setProfileOpen(false)}
                     className="block rounded-lg px-3 py-2 text-sm hover:bg-zinc-50"
                   >
-                    Profilim
+                    {t('nav.profile')}
                   </Link>
                   <Link
                     href="/user/orders"
                     onClick={() => setProfileOpen(false)}
                     className="block rounded-lg px-3 py-2 text-sm hover:bg-zinc-50"
                   >
-                    Siparişlerim
+                    {t('nav.orders')}
                   </Link>
                   {role === 'admin' && (
                     <Link
@@ -127,7 +132,7 @@ export default function Navbar() {
                       onClick={() => setProfileOpen(false)}
                       className="block rounded-lg px-3 py-2 text-sm hover:bg-zinc-50"
                     >
-                      Admin Paneli
+                      {t('nav.admin')}
                     </Link>
                   )}
                   <button
@@ -135,7 +140,7 @@ export default function Navbar() {
                     onClick={() => { setProfileOpen(false); logout() }}
                     className="block w-full text-left rounded-lg px-3 py-2 text-sm text-red-600 hover:bg-zinc-50"
                   >
-                    Çıkış Yap
+                    {t('nav.logout')}
                   </button>
                 </div>
               )}
@@ -155,33 +160,29 @@ export default function Navbar() {
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Search"
+              placeholder={t('home.searchPlaceholder')}
               className="flex-1 border-none bg-[#e7edf4] outline-none px-4 rounded-r-xl text-base"
             />
           </div>
         </form>
 
-        {/* Favoriler */}
+        {/* Favoriler (sade — sayı rozeti yok) */}
         <Link
           href="/favorites"
           className="relative h-10 rounded-xl bg-[#e7edf4] px-2.5 font-bold inline-flex items-center justify-center"
-          title="Favoriler"
+          title={t('nav.favorites')}
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 32 32">
             <path fill="currentColor" d="M22.45 6a5.47 5.47 0 0 1 3.91 1.64a5.7 5.7 0 0 1 0 8L16 26.13L5.64 15.64a5.7 5.7 0 0 1 0-8a5.48 5.48 0 0 1 7.82 0l2.54 2.6l2.53-2.58A5.44 5.44 0 0 1 22.45 6m0-2a7.47 7.47 0 0 0-5.34 2.24L16 7.36l-1.11-1.12a7.49 7.49 0 0 0-10.68 0a7.72 7.72 0 0 0 0 10.82L16 29l11.79-11.94a7.72 7.72 0 0 0 0-10.82A7.49 7.49 0 0 0 22.45 4Z" />
           </svg>
-          {favCount > 0 && (
-            <span className="absolute -top-2 -right-2 min-w-5 h-5 px-1 rounded-full bg-black text-white text-xs flex items-center justify-center">
-              {favCount}
-            </span>
-          )}
+          {/* Favori sayısını göstermiyoruz; sade ikon */}
         </Link>
 
         {/* Sepet */}
         <Link
           href="/cart"
           className="relative h-10 rounded-xl bg-[#e7edf4] px-2.5 font-bold inline-flex items-center justify-center"
-          title="Sepet"
+          title={t('nav.cart')}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -206,7 +207,25 @@ export default function Navbar() {
           )}
         </Link>
 
-        {/* Auth alanı kaldırıldı */}
+        {/* Language switcher */}
+        <div className="hidden md:flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setLocale('en')}
+            className={`text-xs px-2 py-1 rounded ${locale === 'en' ? 'bg-zinc-900 text-white' : 'border'}`}
+            aria-pressed={locale === 'en'}
+          >
+            EN
+          </button>
+          <button
+            type="button"
+            onClick={() => setLocale('nb')}
+            className={`text-xs px-2 py-1 rounded ${locale === 'nb' ? 'bg-zinc-900 text-white' : 'border'}`}
+            aria-pressed={locale === 'nb'}
+          >
+            NB
+          </button>
+        </div>
       </div>
 
       {isOpen && (
@@ -241,28 +260,28 @@ export default function Navbar() {
                 onClick={() => setIsOpen(false)}
                 className="py-2 text-sm font-medium"
               >
-                Ana Sayfa
+                {t('nav.home')}
               </Link>
               <Link
                 href="#"
                 onClick={() => setIsOpen(false)}
                 className="py-2 text-sm font-medium"
               >
-                Mağaza
+                {t('nav.store')}
               </Link>
               <Link
                 href="#"
                 onClick={() => setIsOpen(false)}
                 className="py-2 text-sm font-medium"
               >
-                Hakkımızda
+                {t('nav.about')}
               </Link>
               <Link
                 href="#"
                 onClick={() => setIsOpen(false)}
                 className="py-2 text-sm font-medium"
               >
-                İletişim
+                {t('nav.contact')}
               </Link>
               {!loading && user && (
                 <Link
@@ -270,7 +289,7 @@ export default function Navbar() {
                   onClick={() => setIsOpen(false)}
                   className="py-2 text-sm font-medium"
                 >
-                  Profilim
+                  {t('nav.profile')}
                 </Link>
               )}
               {!loading && role === 'admin' && (
@@ -279,7 +298,7 @@ export default function Navbar() {
                   onClick={() => setIsOpen(false)}
                   className="py-2 text-sm font-medium"
                 >
-                  Admin
+                  {t('nav.admin')}
                 </Link>
               )}
               {!user ? (
@@ -289,14 +308,14 @@ export default function Navbar() {
                     onClick={() => setIsOpen(false)}
                     className="text-sm font-medium"
                   >
-                    Login
+                    {t('nav.login')}
                   </Link>
                   <Link
                     href="/user/register"
                     onClick={() => setIsOpen(false)}
                     className="text-sm font-medium"
                   >
-                    Register
+                    {t('nav.register')}
                   </Link>
                 </div>
               ) : (
@@ -308,7 +327,7 @@ export default function Navbar() {
                   }}
                   className="py-2 text-left text-sm font-medium text-red-600"
                 >
-                  Çıkış
+                  {t('nav.logout')}
                 </button>
               )}
               <Link
@@ -316,7 +335,7 @@ export default function Navbar() {
                 onClick={() => setIsOpen(false)}
                 className="py-2 text-sm font-medium inline-flex items-center gap-2"
               >
-                <span>Favoriler</span>
+                <span>{t('nav.favorites')}</span>
                 {/* (opsiyonel) kalp ikonu */}
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -336,7 +355,7 @@ export default function Navbar() {
                 onClick={() => setIsOpen(false)}
                 className="py-2 text-sm font-medium inline-flex items-center gap-2"
               >
-                <span>Sepet</span>
+                <span>{t('nav.cart')}</span>
                 {count > 0 && (
                   <span className="min-w-5 h-5 px-1 rounded-full bg-black text-white text-xs flex items-center justify-center">
                     {count}

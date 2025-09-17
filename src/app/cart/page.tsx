@@ -21,7 +21,8 @@ export default function CartPage() {
         return
       }
       setLoading(true)
-      const payload: any = {
+      type CheckoutBody = { items: { productId: string; quantity: number }[]; uid?: string }
+      const payload: CheckoutBody = {
         items: state.items.map((i) => ({ productId: i.productId, quantity: i.qty })),
       }
       if (user?.uid) payload.uid = user.uid

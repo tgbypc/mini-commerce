@@ -45,6 +45,7 @@ export default function AdminLayout({
           <nav className="space-y-1">
             <NavLink href="/admin" label="Dashboard" />
             <NavLink href="/admin/product" label="Products" />
+            <NavLink href="/admin/orders" label="Orders" />
             <NavLink href="/admin/product/new" label="Add Product" />
             {/* ileride: Orders, Users, Settings */}
           </nav>

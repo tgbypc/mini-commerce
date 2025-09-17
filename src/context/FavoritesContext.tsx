@@ -38,10 +38,16 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
     const unsub = onSnapshot(
       ref,
       (snap) => {
-        const rows: FavoriteItem[] = snap.docs.map((d) => ({
-          productId: d.id,
-          ...(d.data() as any),
-        }))
+        const rows: FavoriteItem[] = snap.docs.map((d) => {
+          const raw = d.data() as Partial<FavoriteItem>
+          return {
+            productId: d.id,
+            title: raw.title,
+            thumbnail: raw.thumbnail,
+            price: typeof raw.price === 'number' ? raw.price : undefined,
+            addedAt: raw.addedAt,
+          }
+        })
         setItems(rows)
       },
       (err) => {

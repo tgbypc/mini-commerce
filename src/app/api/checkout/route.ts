@@ -18,6 +18,7 @@ const ItemSchema = z.object({
 const BodySchema = z.object({
   items: z.array(ItemSchema).min(1),
   uid: z.string().optional(),
+  shippingMethod: z.enum(['standard', 'express']).optional(),
 })
 
 export async function POST(req: Request) {
@@ -29,7 +30,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: msg }, { status: 400 })
     }
 
-    const { items, uid } = parsed.data
+    const { items, uid, shippingMethod } = parsed.data
 
     // Not: Şu an products koleksiyonundan stripePriceId aramıyoruz,
     // price_data ile ilerliyoruz (senin mevcut akışına uyum).
@@ -60,7 +61,13 @@ export async function POST(req: Request) {
       payment_method_types: ['card'],
       line_items,
       allow_promotion_codes: true,
+      shipping_address_collection: { allowed_countries: ['NO', 'US', 'TR'] },
+      shipping_options: [
+        { shipping_rate_data: { display_name: 'Standard', fixed_amount: { amount: 500, currency: 'usd' }, type: 'fixed_amount' } },
+        { shipping_rate_data: { display_name: 'Express', fixed_amount: { amount: 1200, currency: 'usd' }, type: 'fixed_amount' } },
+      ],
       ...(uid && uid.trim().length > 0 ? { client_reference_id: uid, metadata: { uid } } : {}),
+      ...(shippingMethod ? { metadata: { ...(uid ? { uid } : {}), shippingMethod } } : {}),
       success_url: `${origin}/success?id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/cart`,
     })

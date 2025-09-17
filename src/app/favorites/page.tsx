@@ -4,9 +4,12 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useFavorites } from '@/context/FavoritesContext'
 import { useAuth } from '@/context/AuthContext'
+import { useI18n } from '@/context/I18nContext'
+import EmptyState from '@/components/ui/EmptyState'
 import { useEffect, useState } from 'react'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
+import { pickI18nString } from '@/lib/i18nContent'
 
 type ProductDoc = {
   id?: string
@@ -16,6 +19,7 @@ type ProductDoc = {
 }
 
 export default function FavoritesPage() {
+  const { t, locale } = useI18n()
   const { user, loading: authLoading } = useAuth()
   const { items } = useFavorites()
   const [enriched, setEnriched] = useState<Array<ProductDoc & { productId: string }>>([])
@@ -42,10 +46,11 @@ export default function FavoritesPage() {
             try {
               const snap = await getDoc(doc(db, 'products', pid))
               if (snap.exists()) {
-                const d = snap.data() as ProductDoc
-                title = title ?? d.title
-                thumbnail = thumbnail ?? d.thumbnail
-                price = typeof price === 'number' ? price : d.price
+                const d = snap.data() as Record<string, unknown>
+                title = title ?? pickI18nString(d, 'title', locale)
+                const thumb = (d['thumbnail'] as string | undefined) ?? undefined
+                thumbnail = thumbnail ?? thumb
+                price = typeof price === 'number' ? price : (d['price'] as number | undefined)
               }
             } catch {}
           }
@@ -63,9 +68,9 @@ export default function FavoritesPage() {
   if (!user && !authLoading) {
     return (
       <div className="mx-auto max-w-3xl p-6">
-        <h1 className="text-2xl font-semibold">Favorilerim</h1>
-        <p className="mt-2 text-zinc-600">Favorilerinizi görmek için lütfen giriş yapın.</p>
-        <Link href="/user/login" className="mt-4 inline-flex rounded-xl bg-black px-4 py-2 text-sm font-medium text-white">Giriş Yap</Link>
+        <h1 className="text-2xl font-semibold">{t('fav.title')}</h1>
+        <p className="mt-2 text-zinc-600">{t('fav.loginPrompt')}</p>
+        <Link href="/user/login" className="mt-4 inline-flex rounded-xl bg-black px-4 py-2 text-sm font-medium text-white">{t('nav.login')}</Link>
       </div>
     )
   }
@@ -83,12 +88,12 @@ export default function FavoritesPage() {
   if (!enriched.length) {
     return (
       <div className="mx-auto max-w-3xl p-6">
-        <h1 className="text-2xl font-semibold">Favorilerim</h1>
-        <div className="mt-3 rounded-2xl border bg-white p-5 shadow-sm">
-          <p className="text-zinc-600">Henüz favori ürününüz yok.</p>
-          <div className="pt-3">
-            <Link href="/" className="inline-flex rounded-xl border px-4 py-2 text-sm font-medium hover:bg-zinc-50">Alışverişe Devam Et</Link>
-          </div>
+        <h1 className="text-2xl font-semibold">{t('fav.title')}</h1>
+        <div className="mt-3">
+          <EmptyState
+            message={t('fav.empty')}
+            action={<Link href="/" className="inline-flex rounded-xl border px-4 py-2 text-sm font-medium hover:bg-zinc-50">{t('fav.continue')}</Link>}
+          />
         </div>
       </div>
     )
@@ -98,7 +103,7 @@ export default function FavoritesPage() {
 
   return (
     <div className="mx-auto max-w-3xl p-6">
-      <h1 className="text-2xl font-semibold">Favorilerim</h1>
+      <h1 className="text-2xl font-semibold">{t('fav.title')}</h1>
       <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
         {enriched.map((p) => (
           <Link key={p.productId} href={`/products/${p.productId}`} className="rounded-xl border bg-white p-3 shadow-sm hover:shadow-md transition">
@@ -113,4 +118,3 @@ export default function FavoritesPage() {
     </div>
   )
 }
-

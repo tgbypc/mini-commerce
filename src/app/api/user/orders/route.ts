@@ -36,7 +36,7 @@ export async function GET(req: Request) {
       .orderBy('createdAt', 'desc')
       .get()
 
-    const subOrders = subSnap.docs.map((d) => ({ id: d.id, ...d.data() }))
+    const subOrders = subSnap.docs.map((d) => ({ id: d.id, ...d.data() })) as Array<Record<string, unknown> & { id: string }>
 
     // Also attempt top-level orders filtered by userId (webhook also writes here)
     const topSnap = await adminDb
@@ -44,15 +44,27 @@ export async function GET(req: Request) {
       .where('userId', '==', uid)
       .get()
 
-    const topOrders = topSnap.docs.map((d) => ({ id: d.id, ...d.data() }))
+    const topOrders = topSnap.docs.map((d) => ({ id: d.id, ...d.data() })) as Array<Record<string, unknown> & { id: string }>
 
     // Merge by id and sort desc by createdAt
-    const map = new Map<string, Record<string, any>>()
+    const map = new Map<string, Record<string, unknown>>()
     for (const o of [...subOrders, ...topOrders]) map.set(o.id, o)
+    function toMillis(v: unknown): number {
+      const withToMillis = v as { toMillis?: () => number } | null
+      if (withToMillis && typeof withToMillis.toMillis === 'function') {
+        try { return withToMillis.toMillis!() } catch { /* no-op */ }
+      }
+      const withSeconds = v as { seconds?: number } | null
+      if (withSeconds && typeof withSeconds.seconds === 'number') {
+        return withSeconds.seconds! * 1000
+      }
+      return 0
+    }
+
     const merged = Array.from(map.values()).sort((a, b) => {
-      const aTs = (a.createdAt as any)?.toMillis?.() ?? (a.createdAt as any)?.seconds ?? 0
-      const bTs = (b.createdAt as any)?.toMillis?.() ?? (b.createdAt as any)?.seconds ?? 0
-      return bTs - aTs
+      const aCreated = (a as { createdAt?: unknown }).createdAt
+      const bCreated = (b as { createdAt?: unknown }).createdAt
+      return toMillis(aCreated) < toMillis(bCreated) ? 1 : -1
     })
 
     return NextResponse.json(merged)

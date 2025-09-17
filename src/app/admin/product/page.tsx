@@ -5,6 +5,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import type { Product } from '@/types/product'
 import { getAllProducts } from '@/lib/products'
+import { useI18n } from '@/context/I18nContext'
+import { useAuth } from '@/context/AuthContext'
 
 function normalizeImageSrc(input: string): string {
   try {
@@ -20,10 +22,15 @@ function normalizeImageSrc(input: string): string {
 }
 
 export default function AdminProducts() {
+  const { t } = useI18n()
+  const { user } = useAuth()
   const [items, setItems] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [syncing, setSyncing] = useState(false)
+  const [backfilling, setBackfilling] = useState(false)
+  const [backfillingLC, setBackfillingLC] = useState(false)
+  const [i18nMap, setI18nMap] = useState<Record<string, { en: boolean; nb: boolean }>>({})
 
   useEffect(() => {
     let alive = true
@@ -47,6 +54,32 @@ export default function AdminProducts() {
       alive = false
     }
   }, [])
+
+  useEffect(() => {
+    let alive = true
+    ;(async () => {
+      try {
+        if (!items.length) return
+        const token = await user?.getIdToken().catch(() => undefined)
+        const res = await fetch('/api/admin/products/i18n-status', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ ids: items.map((p) => String(p.id)) }),
+        })
+        if (!res.ok) return
+        const data = (await res.json()) as { items?: { id: string; en: boolean; nb: boolean }[] }
+        const map: Record<string, { en: boolean; nb: boolean }> = {}
+        for (const row of data.items || []) map[row.id] = { en: row.en, nb: row.nb }
+        if (alive) setI18nMap(map)
+      } catch {}
+    })()
+    return () => {
+      alive = false
+    }
+  }, [items, user])
 
   const handleSyncStripe = async () => {
     if (syncing) return
@@ -86,10 +119,60 @@ export default function AdminProducts() {
     }
   }
 
+  const handleBackfill = async () => {
+    if (backfilling) return
+    setBackfilling(true)
+    try {
+      const token = await user?.getIdToken().catch(() => undefined)
+      const res = await fetch('/api/admin/products/backfill-i18n?mode=copy-base-to-en', {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
+      const data = await res.json()
+      const summary = res.ok
+        ? `Backfill OK — updated: ${data?.updated ?? '-'} / processed: ${data?.processed ?? '-'}`
+        : `Backfill failed: ${data?.error ?? res.status}`
+      alert(summary)
+      try {
+        const list = await getAllProducts()
+        setItems(list)
+      } catch {}
+    } catch {
+      alert('Backfill request failed')
+    } finally {
+      setBackfilling(false)
+    }
+  }
+
+  const handleBackfillTitleLC = async () => {
+    if (backfillingLC) return
+    setBackfillingLC(true)
+    try {
+      const token = await user?.getIdToken().catch(() => undefined)
+      const res = await fetch('/api/admin/products/backfill-titlelc', {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
+      const data = await res.json()
+      const summary = res.ok
+        ? `title_lc backfill — updated: ${data?.updated ?? '-'} / total: ${data?.total ?? '-'}`
+        : `Backfill failed: ${data?.error ?? res.status}`
+      alert(summary)
+      try {
+        const list = await getAllProducts()
+        setItems(list)
+      } catch {}
+    } catch {
+      alert('Backfill title_lc request failed')
+    } finally {
+      setBackfillingLC(false)
+    }
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Products</h2>
+        <h2 className="text-lg font-semibold">{t('admin.products')}</h2>
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -97,13 +180,31 @@ export default function AdminProducts() {
             disabled={syncing}
             className="rounded-lg border px-3 py-2 text-sm disabled:opacity-50"
           >
-            {syncing ? 'Syncing…' : 'Sync Stripe IDs'}
+            {syncing ? t('admin.saving') : t('admin.syncStripe')}
+          </button>
+          <button
+            type="button"
+            onClick={handleBackfill}
+            disabled={backfilling}
+            className="rounded-lg border px-3 py-2 text-sm disabled:opacity-50"
+            title="Copy base title/description into title_en/description_en where missing"
+          >
+            {backfilling ? t('admin.saving') : t('admin.backfillEn')}
+          </button>
+          <button
+            type="button"
+            onClick={handleBackfillTitleLC}
+            disabled={backfillingLC}
+            className="rounded-lg border px-3 py-2 text-sm disabled:opacity-50"
+            title="Populate title_en_lc/title_nb_lc for case-insensitive search"
+          >
+            {backfillingLC ? t('admin.saving') : 'Backfill title_lc'}
           </button>
           <Link
             href="/admin/product/new"
             className="rounded-lg bg-black px-3 py-2 text-sm text-white"
           >
-            + Add
+            + {t('admin.add')}
           </Link>
         </div>
       </div>
@@ -151,6 +252,19 @@ export default function AdminProducts() {
                   ) : (
                     <div className="w-full h-full bg-slate-100" />
                   )}
+                  <div className="absolute top-2 right-2 flex gap-1">
+                    {(() => {
+                      const st = i18nMap[id]
+                      const cls = (ok: boolean) =>
+                        `px-1.5 py-0.5 rounded text-[10px] font-semibold border ${ok ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-zinc-50 text-zinc-600 border-zinc-200'}`
+                      return (
+                        <>
+                          <span className={cls(!!st?.en)}>EN</span>
+                          <span className={cls(!!st?.nb)}>NB</span>
+                        </>
+                      )
+                    })()}
+                  </div>
                 </div>
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">

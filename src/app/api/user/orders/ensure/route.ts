@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { adminDb, auth, FieldValue } from '@/lib/firebaseAdmin'
 import { stripe } from '@/lib/stripe'
+import type Stripe from 'stripe'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -29,17 +30,18 @@ export async function POST(req: Request) {
 
     // Load Stripe session with items
     const session = await stripe.checkout.sessions.retrieve(id, {
-      expand: ['line_items.data.price.product'],
+      expand: ['line_items.data.price.product', 'shipping_cost.shipping_rate'],
     })
 
     const paid =
       session.payment_status === 'paid' ||
       session.status === 'complete' ||
-      (session.payment_intent && (session.payment_intent as any).status === 'succeeded')
+      (typeof session.payment_intent === 'object' &&
+        (session.payment_intent as Stripe.PaymentIntent | null)?.status === 'succeeded')
     if (!paid) return NextResponse.json({ error: 'Session not paid' }, { status: 400 })
 
     const items = (session.line_items?.data ?? []).map((li) => {
-      const priceObj = li.price as any
+      const priceObj = li.price as Stripe.Price | null | undefined
       const productMeta = priceObj?.product
       let firestoreId: string | null =
         (priceObj?.metadata?.productId as string | undefined) ??
@@ -49,10 +51,10 @@ export async function POST(req: Request) {
       if (!firestoreId) {
         if (productMeta && typeof productMeta === 'object') {
           firestoreId =
-            ((productMeta as any)?.metadata?.firestoreId as string | undefined) ??
-            ((productMeta as any)?.metadata?.productId as string | undefined) ??
+            ((productMeta as Stripe.Product)?.metadata?.firestoreId as string | undefined) ??
+            ((productMeta as Stripe.Product)?.metadata?.productId as string | undefined) ??
             null
-          productName = productName ?? ((productMeta as any)?.name ?? null)
+          productName = productName ?? ((productMeta as Stripe.Product)?.name ?? null)
         }
       }
       return {
@@ -67,13 +69,21 @@ export async function POST(req: Request) {
     const orderDoc = {
       sessionId: session.id,
       paymentStatus: session.payment_status,
+      status: 'paid',
       amountTotal: (session.amount_total ?? 0) / 100,
       currency: session.currency ?? 'usd',
       email: session.customer_details?.email ?? null,
       userId: uid,
       items,
       createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
       source: 'ensure',
+      shipping: {
+        method: (session.shipping_cost as any)?.shipping_rate?.display_name || null,
+        amountTotal: typeof (session.shipping_cost as any)?.amount_total === 'number' ? ((session.shipping_cost as any).amount_total / 100) : null,
+        address: (session.shipping_details as any)?.address || null,
+        name: (session.shipping_details as any)?.name || null,
+      },
     }
 
     const orderRef = adminDb.collection('orders').doc(session.id)
@@ -109,4 +119,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Failed to ensure order' }, { status: 500 })
   }
 }
-

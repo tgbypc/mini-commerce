@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
+import { useI18n } from '@/context/I18nContext'
+import { CATEGORIES, CATEGORY_LABELS } from '@/lib/constants/categories'
 import Link from 'next/link'
 
 const currency = new Intl.NumberFormat('en-US', {
@@ -20,6 +22,7 @@ type ListItem = {
 }
 
 export default function HomePage() {
+  const { t, locale } = useI18n()
   const [items, setItems] = useState<ListItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -29,22 +32,10 @@ export default function HomePage() {
   const inFlight = useRef(false)
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const [activeCat, setActiveCat] = useState<string>('Tüm Ürünler')
-  const categories = [
-    'Tüm Ürünler',
-    'Elektronik',
-    'Giyim',
-    'Ev & Mutfak',
-    'Kitaplar',
-  ]
-  const catMap: Record<string, string> = {
-    Elektronik: 'electronics',
-    Giyim: 'clothing',
-    'Ev & Mutfak': 'home & kitchen',
-    Kitaplar: 'books',
-  }
-  const norm = (s?: string) => (s || '').toLowerCase().trim()
-  const catParam = useMemo(() => (activeCat === 'Tüm Ürünler' ? '' : catMap[activeCat] ?? ''), [activeCat])
+  // Multi-select categories; empty = all
+  const [selectedCats, setSelectedCats] = useState<string[]>([])
+  const categories = useMemo(() => CATEGORIES as unknown as string[], [])
+  const catParam = '' // kept for backward compat (unused)
 
   async function fetchPage(opts: { cursor?: string | null; reset?: boolean }) {
     if (inFlight.current) return
@@ -53,7 +44,8 @@ export default function HomePage() {
       if (opts.reset) setLoading(true)
       const params = new URLSearchParams()
       params.set('limit', '20')
-      if (catParam) params.set('category', catParam)
+      if (selectedCats.length > 0) params.set('categories', selectedCats.join(','))
+      params.set('locale', locale)
       const q = search.trim()
       if (q) params.set('q', q)
       if (sort) params.set('sort', sort)
@@ -89,11 +81,11 @@ export default function HomePage() {
     }
   }
 
-  // İlk yükleme ve kategori/sort değişiminde ilk sayfayı getir
+  // İlk yükleme ve kategori/sort/locale değişiminde ilk sayfayı getir
   useEffect(() => {
     fetchPage({ reset: true })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [catParam, sort])
+  }, [selectedCats.join(','), sort, locale])
 
   // Aramayı küçük bir gecikme ile tetikle (debounce)
   useEffect(() => {
@@ -126,7 +118,7 @@ export default function HomePage() {
                 </svg>
               </div>
               <input
-                placeholder="Ürünleri ara"
+                placeholder={t('home.searchPlaceholder')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="form-input flex-1 border-none bg-[#e7edf4] outline-none px-4 text-base rounded-r-xl placeholder:text-[#49739c]"
@@ -137,21 +129,26 @@ export default function HomePage() {
                 className="px-3 text-sm text-[#49739c] bg-[#e7edf4]"
                 aria-label="Aramayı temizle"
               >
-                Temizle
+                {t('home.clear')}
               </button>
             </div>
           </label>
         </div>
 
-        <div className="flex gap-3 p-3 flex-wrap">
-          {categories.map((c) => {
-            const active = c === activeCat
+        <div className="flex gap-2 p-3 flex-wrap items-center">
+          {categories.map((slug) => {
+            const active = selectedCats.includes(slug)
+            const label = (t(`cat.${slug}`) || CATEGORY_LABELS[slug as typeof CATEGORIES[number]] || slug)
             return (
               <button
-                key={c}
+                key={slug}
                 type="button"
                 aria-pressed={active}
-                onClick={() => setActiveCat(c)}
+                onClick={() => {
+                  setSelectedCats((prev) =>
+                    prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug]
+                  )
+                }}
                 className={
                   `h-8 items-center justify-center rounded-xl px-4 text-sm font-medium transition ` +
                   (active
@@ -159,15 +156,24 @@ export default function HomePage() {
                     : 'bg-[#e7edf4] text-[#0d141c] hover:bg-[#dfe7f1]')
                 }
               >
-                {c}
+                {label}
               </button>
             )
           })}
+          {selectedCats.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setSelectedCats([])}
+              className="h-8 items-center justify-center rounded-xl px-3 text-sm font-medium bg-zinc-100 hover:bg-zinc-200"
+            >
+              {t('home.clear')}
+            </button>
+          )}
         </div>
 
         {/* Öne Çıkan Ürünler */}
         <h3 className="text-[#0d141c] text-lg font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-4">
-          Öne Çıkan Ürünler
+          {t('home.featured')}
         </h3>
         {loading && (
           <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4 p-4">
@@ -186,7 +192,7 @@ export default function HomePage() {
         )}
         {!loading && !error && items.length === 0 && (
           <div className="px-4 py-2 text-sm text-zinc-600">
-            Sonuç bulunamadı.
+            {t('home.noResults')}
           </div>
         )}
         {!loading && !error && items.length > 0 && (
@@ -221,20 +227,25 @@ export default function HomePage() {
 
         {/* Tüm Ürünler */}
         <h3 className="text-[#0d141c] text-lg font-bold leading-tight tracking-[-0.015em] px-4 pb-2 pt-4">
-          Tüm Ürünler
+          {t('home.all')}
         </h3>
         <div className="flex max-w-[720px] items-end gap-4 px-4 py-3 flex-wrap">
           <label className="flex flex-col min-w-40 flex-1">
             <select
               value={sort}
-              onChange={(e) => setSort(e.target.value as any)}
+              onChange={(e) =>
+                setSort(
+                  e.target
+                    .value as 'createdAt-desc' | 'price-asc' | 'price-desc' | 'title-asc' | 'title-desc'
+                )
+              }
               className="h-14 rounded-xl border border-[#cedbe8] bg-slate-50 px-4"
             >
-              <option value="createdAt-desc">En Yeni</option>
-              <option value="price-asc">Fiyat (Artan)</option>
-              <option value="price-desc">Fiyat (Azalan)</option>
-              <option value="title-asc">Başlık (A→Z)</option>
-              <option value="title-desc">Başlık (Z→A)</option>
+              <option value="createdAt-desc">{t('home.sort.newest')}</option>
+              <option value="price-asc">{t('home.sort.priceAsc')}</option>
+              <option value="price-desc">{t('home.sort.priceDesc')}</option>
+              <option value="title-asc">{t('home.sort.titleAsc')}</option>
+              <option value="title-desc">{t('home.sort.titleDesc')}</option>
             </select>
           </label>
           {nextCursor && (
@@ -244,7 +255,7 @@ export default function HomePage() {
               className="h-14 rounded-xl border px-4 text-sm font-medium hover:bg-zinc-50"
               disabled={inFlight.current}
             >
-              {inFlight.current ? 'Yükleniyor…' : 'Daha Fazla Yükle'}
+              {inFlight.current ? 'Loading…' : t('home.loadMore')}
             </button>
           )}
         </div>

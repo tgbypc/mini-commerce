@@ -8,6 +8,8 @@ import { useCart } from '@/context/CartContext'
 import { useFavorites } from '@/context/FavoritesContext'
 import { useAuth } from '@/context/AuthContext'
 import { toast } from 'react-hot-toast'
+import { useI18n } from '@/context/I18nContext'
+import { pickI18nString } from '@/lib/i18nContent'
 
 // ——— UI model (PDP) ———
 // Firestore doc id is string. Keep optional fields defensive.
@@ -26,6 +28,7 @@ type PDPProduct = {
 }
 
 export default function ProductDetailClient({ id }: { id: string }) {
+  const { locale } = useI18n()
   const { add } = useCart()
   const { toggle, isFavorite } = useFavorites()
   const { user } = useAuth()
@@ -46,7 +49,7 @@ export default function ProductDetailClient({ id }: { id: string }) {
         const data = snap.data() as Record<string, unknown>
         const p: PDPProduct = {
           id: String(data.id ?? id),
-          title: String(data.title ?? 'Item'),
+          title: pickI18nString(data, 'title', locale) || 'Item',
           price: Number.isFinite(Number(data.price)) ? Number(data.price) : 0,
           image:
             typeof data.image === 'string' ? (data.image as string) : undefined,
@@ -54,10 +57,7 @@ export default function ProductDetailClient({ id }: { id: string }) {
             typeof data.thumbnail === 'string'
               ? (data.thumbnail as string)
               : undefined,
-          description:
-            typeof data.description === 'string'
-              ? (data.description as string)
-              : undefined,
+          description: (pickI18nString(data, 'description', locale) || undefined) as string | undefined,
           category:
             typeof data.category === 'string'
               ? (data.category as string)
@@ -263,9 +263,7 @@ export default function ProductDetailClient({ id }: { id: string }) {
           </ul>
         </div>
 
-        <div className="pt-4 border-t text-sm text-zinc-600">
-          * Actual inventory decreases after a successful checkout.
-        </div>
+        {/* Removed footnote for cleaner customer UI */}
       </div>
     </div>
   )

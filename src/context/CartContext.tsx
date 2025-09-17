@@ -1,12 +1,7 @@
 'use client'
 
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useReducer,
-} from 'react'
+import { createContext, useContext, useEffect, useMemo, useReducer, useRef } from 'react'
+import { useAuth } from '@/context/AuthContext'
 
 type CartItem = {
   productId: string
@@ -98,6 +93,8 @@ const CartContext = createContext<CartContextType | undefined>(undefined)
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(reducer, { items: [] })
+  const { user } = useAuth()
+  const lastAddRef = useRef<{ id: string; qty: number; ts: number } | null>(null)
 
   function loadFromStorage() {
     try {
@@ -145,6 +142,68 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     loadFromStorage()
   }, [])
 
+  // On login, prefer server cart if exists; otherwise push LS cart to server
+  useEffect(() => {
+    ;(async () => {
+      try {
+        if (!user) return
+        const token = await user.getIdToken().catch(() => undefined)
+        if (!token) return
+
+        // Helper: read LS cart directly
+        const readLS = (): CartItem[] => {
+          try {
+            const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('mc_cart')
+            if (!raw) return []
+            const parsed = JSON.parse(raw) as { items?: any[] }
+            if (!Array.isArray(parsed.items)) return []
+            return parsed.items.map((i: any) => ({
+              productId: String(i.productId || ''),
+              title: typeof i.title === 'string' ? i.title : '',
+              price: Number.isFinite(Number(i.price)) ? Number(i.price) : 0,
+              thumbnail: typeof i.thumbnail === 'string' ? i.thumbnail : undefined,
+              qty: Math.max(1, Number(i.qty) || 1),
+            }))
+          } catch { return [] }
+        }
+
+        // 1) Fetch server cart
+        const res = await fetch('/api/user/cart', { headers: { Authorization: `Bearer ${token}` } })
+        const data = (await res.json()) as { items?: any[] }
+        const serverItems: CartItem[] = (data.items || []).map((d: any) => ({
+          productId: String(d.productId || d.id || ''),
+          title: typeof d.title === 'string' ? d.title : '',
+          price: typeof d.price === 'number' ? d.price : 0,
+          thumbnail: typeof d.thumbnail === 'string' ? d.thumbnail : undefined,
+          qty: Math.max(1, Number(d.qty) || 1),
+        }))
+
+        const localItems = readLS()
+
+        if (serverItems.length > 0) {
+          // Prefer server as source of truth
+          dispatch({ type: 'LOAD', state: { items: serverItems } })
+          try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ items: serverItems })) } catch {}
+          return
+        }
+
+        // Server empty: push local items to server
+        for (const it of localItems) {
+          await fetch('/api/user/cart/update', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ productId: it.productId, qty: it.qty }),
+          }).catch(() => {})
+        }
+        dispatch({ type: 'LOAD', state: { items: localItems } })
+      } catch {}
+    })()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user])
+
   // Persist to LS on change
   useEffect(() => {
     try {
@@ -184,18 +243,93 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const safePrice = Number.isFinite(price) ? price : 0
     const safeQty = Math.max(1, Number(qty) || 1)
 
+    // Guard against accidental double-invocation (e.g., rapid double click)
+    const now = Date.now()
+    const last = lastAddRef.current
+    if (last && last.id === productId && last.qty === safeQty && now - last.ts < 300) {
+      return
+    }
+    lastAddRef.current = { id: productId, qty: safeQty, ts: now }
+
     dispatch({
       type: 'ADD',
       payload: { productId, title, price: safePrice, thumbnail },
       qty: safeQty,
     })
+
+    // Server sync if logged in
+    try {
+      if (user) {
+        const token = await user.getIdToken().catch(() => undefined)
+        await fetch('/api/user/cart/add', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ productId, qty: safeQty, title, price: safePrice, thumbnail }),
+        }).catch(() => {})
+      }
+    } catch {}
   }
-  const incr = (productId: string | number) =>
-    dispatch({ type: 'INCR', productId: String(productId) })
-  const decr = (productId: string | number) =>
-    dispatch({ type: 'DECR', productId: String(productId) })
-  const remove = (productId: string | number) =>
-    dispatch({ type: 'REMOVE', productId: String(productId) })
+  const incr = (productId: string | number) => {
+    const id = String(productId)
+    dispatch({ type: 'INCR', productId: id })
+    ;(async () => {
+      try {
+        if (!user) return
+        const token = await user.getIdToken().catch(() => undefined)
+        const current = state.items.find((i) => i.productId === id)?.qty ?? 0
+        const next = current + 1
+        await fetch('/api/user/cart/update', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ productId: id, qty: next }),
+        }).catch(() => {})
+      } catch {}
+    })()
+  }
+  const decr = (productId: string | number) => {
+    const id = String(productId)
+    dispatch({ type: 'DECR', productId: id })
+    ;(async () => {
+      try {
+        if (!user) return
+        const token = await user.getIdToken().catch(() => undefined)
+        const current = state.items.find((i) => i.productId === id)?.qty ?? 1
+        const next = Math.max(1, current - 1)
+        await fetch('/api/user/cart/update', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ productId: id, qty: next }),
+        }).catch(() => {})
+      } catch {}
+    })()
+  }
+  const remove = (productId: string | number) => {
+    const id = String(productId)
+    dispatch({ type: 'REMOVE', productId: id })
+    ;(async () => {
+      try {
+        if (!user) return
+        const token = await user.getIdToken().catch(() => undefined)
+        await fetch('/api/user/cart/update', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ productId: id, qty: 0 }),
+        }).catch(() => {})
+      } catch {}
+    })()
+  }
   const clear = () => {
     dispatch({ type: 'CLEAR' })
     try {
@@ -204,6 +338,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     try {
       localStorage.removeItem('mc_cart')
     } catch {}
+    ;(async () => {
+      try {
+        if (!user) return
+        const token = await user.getIdToken().catch(() => undefined)
+        await fetch('/api/user/cart/clear', {
+          method: 'POST',
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }).catch(() => {})
+      } catch {}
+    })()
   }
 
   const value: CartContextType = {

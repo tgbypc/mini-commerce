@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import {
   User,
   onAuthStateChanged,
@@ -27,6 +27,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [role, setRole] = useState<Role>(null)
   const [loading, setLoading] = useState(true)
 
+  // Admin emails (comma-separated) from env for quick bootstrapping
+  const adminEmailSet = useMemo(() => {
+    const raw = process.env.NEXT_PUBLIC_ADMIN_EMAILS || ''
+    const parts = raw.split(',').map((s) => s.trim().toLowerCase()).filter(Boolean)
+    return new Set(parts)
+  }, [])
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       try {
@@ -38,22 +45,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const ref = doc(db, 'users', firebaseUser.uid)
             const snap = await getDoc(ref)
 
+            // If email is listed as admin, enforce admin role and persist
+            const emailLc = (firebaseUser.email || '').toLowerCase()
+            const listedAdmin = emailLc && adminEmailSet.has(emailLc)
+
             if (!snap.exists()) {
               // İlk giriş: users/{uid} dokümanı oluştur
+              const desiredRole: Role = listedAdmin ? 'admin' : 'user'
               await setDoc(
                 ref,
                 {
                   email: firebaseUser.email ?? '',
-                  role: 'user', // default rol
+                  role: desiredRole,
                   createdAt: serverTimestamp(),
                 },
                 { merge: true }
               )
-              setRole('user')
-              console.log('AuthContext: role set to', 'user (seeded)')
+              setRole(desiredRole)
+              console.log('AuthContext: role set to', desiredRole, '(seeded)')
             } else {
               const data = snap.data() as { role?: Role }
-              const r = (data?.role as Role) ?? 'user'
+              let r = (data?.role as Role) ?? 'user'
+              if (listedAdmin && r !== 'admin') {
+                // Promote and persist
+                await setDoc(ref, { role: 'admin', updatedAt: serverTimestamp() }, { merge: true })
+                r = 'admin'
+              }
               setRole(r)
               console.log('AuthContext: role set to', r)
             }

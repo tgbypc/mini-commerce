@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { adminDb, auth } from '@/lib/firebaseAdmin'
+import { stripe } from '@/lib/stripe'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -13,6 +14,33 @@ function extractBearer(req: Request): string | null {
   } catch {
     return null
   }
+}
+
+type RawOrderItem = {
+  productId?: string | null
+  title?: string | null
+  description?: string | null
+  quantity?: number | null
+  unitAmount?: number | null
+  currency?: string | null
+}
+
+type RawOrder = {
+  id: string
+  sessionId?: string
+  amountTotal?: number | null
+  currency?: string | null
+  paymentStatus?: string | null
+  status?: 'paid' | 'fulfilled' | 'shipped' | 'delivered' | 'canceled'
+  shipping?: {
+    method?: string | null
+    amountTotal?: number | null
+    address?: unknown
+    name?: string | null
+  } | null
+  createdAt?: FirebaseFirestore.Timestamp | Date | null
+  userId?: string | null
+  items?: RawOrderItem[]
 }
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string | string[] }> }) {
@@ -31,46 +59,62 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     const userOrderRef = adminDb.collection('users').doc(uid).collection('orders').doc(orderId)
     const userSnap = await userOrderRef.get()
 
-    let data: any | null = null
+    let data: RawOrder | null = null
     if (userSnap.exists) {
-      data = { id: userSnap.id, ...userSnap.data() }
+      data = { id: userSnap.id, ...(userSnap.data() as Omit<RawOrder, 'id'>) }
     } else {
       // Fallback to top-level orders
       const topRef = adminDb.collection('orders').doc(orderId)
       const topSnap = await topRef.get()
       if (!topSnap.exists) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-      const topData = topSnap.data() as any
+      const topData = topSnap.data() as Omit<RawOrder, 'id'>
       if (topData?.userId !== uid) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       data = { id: topSnap.id, ...topData }
     }
 
     // Enrich line items with product thumbnails/titles if available
-    const items: Array<any> = Array.isArray(data?.items) ? data.items : []
-    const productIds = Array.from(new Set(items.map((it: any) => String(it.productId || '')))).filter(Boolean)
-    const productMap = new Map<string, { title?: string; thumbnail?: string; price?: number }>()
+    const items: RawOrderItem[] = Array.isArray(data?.items) ? (data!.items as RawOrderItem[]) : []
+    const productIds = Array.from(new Set(items.map((it) => String(it?.productId || '')))).filter(Boolean)
+    const productMap = new Map<string, { title?: string; thumbnail?: string; price?: number | null }>()
     for (const pid of productIds) {
       try {
         const pSnap = await adminDb.collection('products').doc(String(pid)).get()
         if (pSnap.exists) {
-          const p = pSnap.data() as any
-          productMap.set(String(pid), { title: p?.title, thumbnail: p?.thumbnail, price: p?.price })
+          const p = pSnap.data() as { title?: string; thumbnail?: string; price?: number | null }
+          productMap.set(String(pid), { title: p?.title, thumbnail: p?.thumbnail, price: p?.price ?? null })
         }
       } catch {}
     }
 
-    const enrichedItems = items.map((it: any) => {
-      const pid = String(it.productId || '')
+    const enrichedItems = items.map((it) => {
+      const pid = String(it?.productId || '')
       const meta = productMap.get(pid)
-      const unitAmountMajor = typeof it.unitAmount === 'number' ? it.unitAmount / 100 : undefined
+      const unitAmountMajor = typeof it?.unitAmount === 'number' ? it.unitAmount! / 100 : undefined
       return {
         productId: pid || null,
-        description: it.title || it.description || meta?.title || 'Item',
-        quantity: it.quantity ?? 0,
+        description: it?.title || it?.description || meta?.title || 'Item',
+        quantity: it?.quantity ?? 0,
         unitAmount: unitAmountMajor ?? meta?.price ?? null,
-        currency: (it.currency || data?.currency || 'usd').toUpperCase(),
+        currency: ((it?.currency || data?.currency || 'usd') as string).toUpperCase(),
         thumbnail: meta?.thumbnail || null,
       }
     })
+
+    // Optional: enrich shipping from Stripe if missing
+    let shipping = (data as any).shipping || null
+    if (!shipping && data.sessionId) {
+      try {
+        const full = await stripe.checkout.sessions.retrieve(String(data.sessionId), {
+          expand: ['shipping_cost.shipping_rate'],
+        })
+        shipping = {
+          method: (full.shipping_cost as any)?.shipping_rate?.display_name || null,
+          amountTotal: typeof (full.shipping_cost as any)?.amount_total === 'number' ? ((full.shipping_cost as any).amount_total / 100) : null,
+          address: (full.shipping_details as any)?.address || null,
+          name: (full.shipping_details as any)?.name || null,
+        }
+      } catch {}
+    }
 
     const result = {
       id: data.id,
@@ -78,6 +122,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       amountTotal: data.amountTotal ?? null,
       currency: (data.currency || 'usd').toUpperCase(),
       paymentStatus: data.paymentStatus ?? null,
+      status: (data.status as any) ?? 'paid',
+      shipping,
       createdAt: data.createdAt ?? null,
       items: enrichedItems,
     }
@@ -88,4 +134,3 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     return NextResponse.json({ error: 'Failed to load order' }, { status: 500 })
   }
 }
-
