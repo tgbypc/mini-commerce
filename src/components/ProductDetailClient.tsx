@@ -5,6 +5,8 @@ import Image from 'next/image'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { useCart } from '@/context/CartContext'
+import { useFavorites } from '@/context/FavoritesContext'
+import { useAuth } from '@/context/AuthContext'
 import { toast } from 'react-hot-toast'
 
 // ——— UI model (PDP) ———
@@ -25,6 +27,8 @@ type PDPProduct = {
 
 export default function ProductDetailClient({ id }: { id: string }) {
   const { add } = useCart()
+  const { toggle, isFavorite } = useFavorites()
+  const { user } = useAuth()
   const [product, setProduct] = useState<PDPProduct | null>(null)
   const [loading, setLoading] = useState(true)
   const [qty, setQty] = useState(1)
@@ -118,6 +122,25 @@ export default function ProductDetailClient({ id }: { id: string }) {
     }
   }
 
+  const handleFav = async () => {
+    if (!product) return
+    if (!user) {
+      toast.error('Favorilere eklemek için lütfen giriş yapın')
+      return
+    }
+    try {
+      await toggle({
+        productId: product.id,
+        title: product.title,
+        thumbnail: displayImg,
+        price: product.price,
+      })
+    } catch (e) {
+      console.error(e)
+      toast.error('Favori işlemi başarısız')
+    }
+  }
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
       {/* ——— Left: Media ——— */}
@@ -148,7 +171,20 @@ export default function ProductDetailClient({ id }: { id: string }) {
           <h1 className="text-2xl font-semibold leading-tight">
             {product.title}
           </h1>
-          <div className="text-xl font-medium">${product.price.toFixed(2)}</div>
+          <div className="flex items-center gap-3">
+            <div className="text-xl font-medium">${product.price.toFixed(2)}</div>
+            <button
+              type="button"
+              aria-pressed={isFavorite(product.id)}
+              onClick={handleFav}
+              className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm ${
+                isFavorite(product.id) ? 'bg-rose-50 text-rose-700 border-rose-200' : 'hover:bg-zinc-50'
+              }`}
+            >
+              <span>❤</span>
+              <span>{isFavorite(product.id) ? 'Favorilerde' : 'Favorilere ekle'}</span>
+            </button>
+          </div>
           <div className="flex items-center gap-3 text-sm">
             {inStock ? (
               <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 text-emerald-700 px-3 py-1 border border-emerald-200">

@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 
+
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
@@ -16,7 +17,7 @@ const ItemSchema = z.object({
 })
 const BodySchema = z.object({
   items: z.array(ItemSchema).min(1),
-  userId: z.string().optional(), // (login işini ekleyince dolduracağız)
+  uid: z.string().optional(),
 })
 
 export async function POST(req: Request) {
@@ -28,7 +29,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: msg }, { status: 400 })
     }
 
-    const { items, userId } = parsed.data
+    const { items, uid } = parsed.data
 
     // Not: Şu an products koleksiyonundan stripePriceId aramıyoruz,
     // price_data ile ilerliyoruz (senin mevcut akışına uyum).
@@ -59,8 +60,8 @@ export async function POST(req: Request) {
       payment_method_types: ['card'],
       line_items,
       allow_promotion_codes: true,
-      metadata: userId ? { userId } : undefined,
-      success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
+      ...(uid && uid.trim().length > 0 ? { client_reference_id: uid, metadata: { uid } } : {}),
+      success_url: `${origin}/success?id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/cart`,
     })
 

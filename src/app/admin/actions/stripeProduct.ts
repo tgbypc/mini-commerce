@@ -8,10 +8,10 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 })
 
 export async function upsertStripeForProduct({
-  productId, // Firestore doküman id (sende numeric/string olabilir)
+  productId, 
   title,
   description,
-  price,      // number (USD)
+  price,     
   images = [],// string[]
 }: {
   productId: string
@@ -25,7 +25,7 @@ export async function upsertStripeForProduct({
     name: title,
     description,
     images,
-    metadata: { productId }, // webhook’ta da eşleştirme için güzel
+    metadata: { productId }, 
   })
 
   // 2) Stripe Price

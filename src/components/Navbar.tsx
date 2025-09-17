@@ -1,17 +1,25 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useCart } from '@/context/CartContext'
-import { auth } from '@/lib/firebase'
-import { signOut } from 'firebase/auth'
+import { useFavorites } from '@/context/FavoritesContext'
 
 export default function Navbar() {
   const [q, setQ] = useState('')
   const [isOpen, setIsOpen] = useState(false)
-  const { user, role, loading } = useAuth()
+  const { user, role, loading, logout } = useAuth()
   const { count } = useCart()
+  const { count: favCount } = useFavorites()
+  const [profileOpen, setProfileOpen] = useState(false)
+  const initials = useMemo(() => {
+    const n = user?.displayName || user?.email || ''
+    const parts = n.split(/[@\s\.]+/).filter(Boolean)
+    const a = parts[0]?.[0]?.toUpperCase() || 'U'
+    const b = parts[1]?.[0]?.toUpperCase() || ''
+    return (a + b).slice(0, 2)
+  }, [user])
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -80,26 +88,58 @@ export default function Navbar() {
           <Link className="text-sm font-medium" href="#">
             İletişim
           </Link>
-          {/* Login link for non-logged-in users */}
-          {!user && (
-            <Link className="text-sm font-medium" href="/user/login">
-              Login
-            </Link>
-          )}
-          {/* Logout button for logged-in users */}
-          {user && (
-            <button
-              type="button"
-              onClick={() => signOut(auth)}
-              className="text-sm font-medium text-red-600 hover:underline"
-            >
-              Çıkış
-            </button>
-          )}
-          {!loading && role === 'admin' && (
-            <Link className="text-sm font-medium" href="/admin">
-              Admin
-            </Link>
+          {/* Auth UI */}
+          {!user ? (
+            <>
+              <Link className="text-sm font-medium" href="/user/login">Login</Link>
+              <Link className="text-sm font-medium" href="/user/register">Register</Link>
+            </>
+          ) : (
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setProfileOpen((v) => !v)}
+                className="inline-flex items-center justify-center size-9 rounded-full bg-[#e7edf4] text-[#0d141c] hover:opacity-90"
+                aria-haspopup="menu"
+                aria-expanded={profileOpen}
+              >
+                <span className="text-xs font-semibold">{initials}</span>
+              </button>
+              {profileOpen && (
+                <div className="absolute right-0 mt-2 w-48 rounded-xl border bg-white shadow-lg p-2 z-50">
+                  <Link
+                    href="/user/profile"
+                    onClick={() => setProfileOpen(false)}
+                    className="block rounded-lg px-3 py-2 text-sm hover:bg-zinc-50"
+                  >
+                    Profilim
+                  </Link>
+                  <Link
+                    href="/user/orders"
+                    onClick={() => setProfileOpen(false)}
+                    className="block rounded-lg px-3 py-2 text-sm hover:bg-zinc-50"
+                  >
+                    Siparişlerim
+                  </Link>
+                  {role === 'admin' && (
+                    <Link
+                      href="/admin"
+                      onClick={() => setProfileOpen(false)}
+                      className="block rounded-lg px-3 py-2 text-sm hover:bg-zinc-50"
+                    >
+                      Admin Paneli
+                    </Link>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => { setProfileOpen(false); logout() }}
+                    className="block w-full text-left rounded-lg px-3 py-2 text-sm text-red-600 hover:bg-zinc-50"
+                  >
+                    Çıkış Yap
+                  </button>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -121,24 +161,21 @@ export default function Navbar() {
           </div>
         </form>
 
-        {/* Favoriler (dummy) */}
-        <button
-          type="button"
-          className="h-10 rounded-xl bg-[#e7edf4] px-2.5 font-bold inline-flex items-center justify-center"
+        {/* Favoriler */}
+        <Link
+          href="/favorites"
+          className="relative h-10 rounded-xl bg-[#e7edf4] px-2.5 font-bold inline-flex items-center justify-center"
           title="Favoriler"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="30"
-            height="30"
-            viewBox="0 0 32 32"
-          >
-            <path
-              fill="currentColor"
-              d="M22.45 6a5.47 5.47 0 0 1 3.91 1.64a5.7 5.7 0 0 1 0 8L16 26.13L5.64 15.64a5.7 5.7 0 0 1 0-8a5.48 5.48 0 0 1 7.82 0l2.54 2.6l2.53-2.58A5.44 5.44 0 0 1 22.45 6m0-2a7.47 7.47 0 0 0-5.34 2.24L16 7.36l-1.11-1.12a7.49 7.49 0 0 0-10.68 0a7.72 7.72 0 0 0 0 10.82L16 29l11.79-11.94a7.72 7.72 0 0 0 0-10.82A7.49 7.49 0 0 0 22.45 4Z"
-            />
+          <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 32 32">
+            <path fill="currentColor" d="M22.45 6a5.47 5.47 0 0 1 3.91 1.64a5.7 5.7 0 0 1 0 8L16 26.13L5.64 15.64a5.7 5.7 0 0 1 0-8a5.48 5.48 0 0 1 7.82 0l2.54 2.6l2.53-2.58A5.44 5.44 0 0 1 22.45 6m0-2a7.47 7.47 0 0 0-5.34 2.24L16 7.36l-1.11-1.12a7.49 7.49 0 0 0-10.68 0a7.72 7.72 0 0 0 0 10.82L16 29l11.79-11.94a7.72 7.72 0 0 0 0-10.82A7.49 7.49 0 0 0 22.45 4Z" />
           </svg>
-        </button>
+          {favCount > 0 && (
+            <span className="absolute -top-2 -right-2 min-w-5 h-5 px-1 rounded-full bg-black text-white text-xs flex items-center justify-center">
+              {favCount}
+            </span>
+          )}
+        </Link>
 
         {/* Sepet */}
         <Link
@@ -227,6 +264,15 @@ export default function Navbar() {
               >
                 İletişim
               </Link>
+              {!loading && user && (
+                <Link
+                  href="/user/profile"
+                  onClick={() => setIsOpen(false)}
+                  className="py-2 text-sm font-medium"
+                >
+                  Profilim
+                </Link>
+              )}
               {!loading && role === 'admin' && (
                 <Link
                   href="/admin"
@@ -237,19 +283,28 @@ export default function Navbar() {
                 </Link>
               )}
               {!user ? (
-                <Link
-                  href="/user/login"
-                  onClick={() => setIsOpen(false)}
-                  className="py-2 text-sm font-medium"
-                >
-                  Login
-                </Link>
+                <div className="flex gap-4 py-2">
+                  <Link
+                    href="/user/login"
+                    onClick={() => setIsOpen(false)}
+                    className="text-sm font-medium"
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    href="/user/register"
+                    onClick={() => setIsOpen(false)}
+                    className="text-sm font-medium"
+                  >
+                    Register
+                  </Link>
+                </div>
               ) : (
                 <button
                   type="button"
                   onClick={() => {
                     setIsOpen(false)
-                    signOut(auth)
+                    logout()
                   }}
                   className="py-2 text-left text-sm font-medium text-red-600"
                 >

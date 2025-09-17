@@ -3,26 +3,33 @@
 import Link from 'next/link'
 import { useCart } from '@/context/CartContext'
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { toast } from 'react-hot-toast'
+import { useAuth } from '@/context/AuthContext'
 
 export default function CartPage() {
   const { state, total, incr, decr, remove } = useCart()
+  const { user } = useAuth()
+  const router = useRouter()
   const [loading, setLoading] = useState(false)
 
   const checkout = async () => {
     try {
+      if (!user) {
+        toast.error('Lütfen ödeme için giriş yapın')
+        router.push('/user/login?next=/cart')
+        return
+      }
       setLoading(true)
+      const payload: any = {
+        items: state.items.map((i) => ({ productId: i.productId, quantity: i.qty })),
+      }
+      if (user?.uid) payload.uid = user.uid
+
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          items: state.items.map((i) => ({
-            productId: i.productId,
-            title: i.title,
-            price: i.price,
-            quantity: i.qty,
-          })),
-        }),
+        body: JSON.stringify(payload),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -99,7 +106,7 @@ export default function CartPage() {
         <button
           onClick={checkout}
           disabled={loading}
-          className="rounded-xl bg-black text-white px-4 py-2"
+          className="rounded-xl bg-black text-white px-4 py-2 disabled:opacity-60"
         >
           {loading ? 'Redirecting...' : 'Checkout'}
         </button>

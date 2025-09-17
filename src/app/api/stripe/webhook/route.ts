@@ -34,6 +34,13 @@ export async function POST(req: Request) {
 
   if (event.type === 'checkout.session.completed') {
     const s = event.data.object as Stripe.Checkout.Session
+
+    // Derive uid from client_reference_id or metadata.uid (set at checkout creation)
+    const uid: string | null =
+      (s.client_reference_id as string | null) ??
+      (s.metadata?.uid as string | undefined) ??
+      null
+
     const full = await stripe.checkout.sessions.retrieve(s.id, {
       expand: ['line_items.data.price.product'],
     })
@@ -85,15 +92,14 @@ export async function POST(req: Request) {
     }
 
     const batch = adminDb.batch()
-    const orderRef = adminDb.collection('orders').doc()
+    const orderRef = adminDb.collection('orders').doc(s.id)
     const orderDoc = {
-      orderId: orderRef.id,
       sessionId: s.id,
       paymentStatus: s.payment_status,
       amountTotal: (s.amount_total ?? 0) / 100,
       currency: s.currency ?? 'usd',
       email: s.customer_details?.email ?? null,
-      userId: s.metadata?.userId ?? null,
+      userId: uid,
       items,
       createdAt: FieldValue.serverTimestamp(),
     }
@@ -113,12 +119,12 @@ export async function POST(req: Request) {
 
     batch.set(orderRef, orderDoc)
 
-    if (s.metadata?.userId) {
+    if (uid) {
       const uref = adminDb
         .collection('users')
-        .doc(String(s.metadata.userId))
+        .doc(String(uid))
         .collection('orders')
-        .doc(orderRef.id)
+        .doc(s.id)
       batch.set(uref, orderDoc)
     }
 
@@ -126,7 +132,6 @@ export async function POST(req: Request) {
 
     // Optional: clear user's cart after successful payment
     try {
-      const uid = s.metadata?.userId
       if (uid) {
         // 1) Common pattern: top-level carts collection
         await adminDb.collection('carts').doc(String(uid)).delete().catch(() => {})

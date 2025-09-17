@@ -6,6 +6,19 @@ import Image from 'next/image'
 import type { Product } from '@/types/product'
 import { getAllProducts } from '@/lib/products'
 
+function normalizeImageSrc(input: string): string {
+  try {
+    const u = new URL(input)
+    if (u.hostname === 'unsplash.com' && u.pathname.startsWith('/photos/')) {
+      const id = u.pathname.split('/')[2] ?? ''
+      return `https://source.unsplash.com/${id}/1200x900`
+    }
+    return input
+  } catch {
+    return input
+  }
+}
+
 export default function AdminProducts() {
   const [items, setItems] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
@@ -130,7 +143,7 @@ export default function AdminProducts() {
                 <div className="relative w-full aspect-video overflow-hidden rounded-lg bg-slate-50">
                   {img ? (
                     <Image
-                      src={img}
+                      src={normalizeImageSrc(String(img))}
                       alt={p.title}
                       fill
                       className="object-cover"

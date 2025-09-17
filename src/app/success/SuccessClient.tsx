@@ -4,6 +4,9 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useCart } from '@/context/CartContext' // kendi yoluna uyarlayın
 import Link from 'next/link'
+import { useAuth } from '@/context/AuthContext'
+import { db } from '@/lib/firebase'
+import { collection, getDocs, limit, query, where } from 'firebase/firestore'
 
 const fmt = (n: number, c = 'USD') =>
   new Intl.NumberFormat('tr-TR', { style: 'currency', currency: c }).format(n)
@@ -36,6 +39,8 @@ export default function SuccessClient() {
   const id = useMemo(() => sp.get('session_id') ?? '', [sp])
 
   const { clear, reloadFromStorage } = useCart()
+  const { user, loading: authLoading } = useAuth()
+  const [orderDocId, setOrderDocId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [items, setItems] = useState<SummaryItem[]>([])
   const [total, setTotal] = useState<number | null>(null)
@@ -46,10 +51,10 @@ export default function SuccessClient() {
 
   useEffect(() => {
     if (!id) {
-      // no session id → send user home and do nothing
       router.replace('/')
       return
     }
+    if (authLoading) return
     if (ran.current) return
     ran.current = true
     if (inFlight.current) return
@@ -104,6 +109,21 @@ export default function SuccessClient() {
             reloadFromStorage()
           } catch {}
         }
+
+        // Try to resolve the user's order document by sessionId
+        if (!cancelled && isPaid && user) {
+          try {
+            const ref = collection(db, 'users', user.uid, 'orders')
+            const q = query(ref, where('sessionId', '==', id), limit(1))
+            const snap = await getDocs(q)
+            if (!cancelled && !snap.empty) {
+              const docId = snap.docs[0].id
+              setOrderDocId(docId)
+            }
+          } catch {
+            // ignore — link will fall back to /user/orders
+          }
+        }
       } catch {
         // no-op; consider toast
       } finally {
@@ -118,7 +138,7 @@ export default function SuccessClient() {
       ac.abort()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id])
+  }, [id, authLoading, user])
 
   if (loading) {
     return (
@@ -213,7 +233,7 @@ export default function SuccessClient() {
         {/* Actions */}
         <div className="flex flex-col gap-3 p-6 sm:flex-row sm:justify-end">
           <Link
-            href="/user/orders"
+            href={orderDocId ? `/user/orders/${orderDocId}` : '/user/orders'}
             className="inline-flex items-center justify-center rounded-xl border px-4 py-2 text-sm font-medium hover:bg-zinc-50"
           >
             Sipariş Detaylarını Görüntüle

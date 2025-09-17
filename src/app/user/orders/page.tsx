@@ -2,84 +2,107 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { onAuthStateChanged } from 'firebase/auth'
-import { collection, getDocs, Timestamp } from 'firebase/firestore'
-import { auth, db } from '@/lib/firebase'
+import {
+  collection,
+  getDocs,
+  orderBy,
+  query,
+  Timestamp,
+} from 'firebase/firestore'
+import { db } from '@/lib/firebase'
+import { useAuth } from '@/context/AuthContext'
+import { useRouter } from 'next/navigation'
 
-type OrderItem = { productId: string; quantity: number }
+type OrderItem = {
+  description?: string
+  quantity: number
+  amountSubtotal?: number // cents
+  amountTotal?: number // cents
+  priceId?: string | null
+}
 type OrderDoc = {
   id: string
-  total?: number | null // cents
+  sessionId?: string
+  amountTotal?: number | null // major currency (webhook'ta /100 yapılmıştı)
   currency?: string | null // 'try' | 'usd'...
+  paymentStatus?: string | null
   createdAt?: Timestamp | Date | null
   items?: OrderItem[]
 }
 
-const fmt = (amountCents = 0, currency = 'TRY') =>
+function pickString(v: unknown): string | undefined {
+  return typeof v === 'string' ? v : undefined
+}
+function pickNumber(v: unknown): number | undefined {
+  return typeof v === 'number' ? v : undefined
+}
+function pickTimestamp(v: unknown): Timestamp | Date | undefined {
+  return v instanceof Timestamp || v instanceof Date ? v : undefined
+}
+function pickItems(v: unknown): OrderItem[] {
+  if (!Array.isArray(v)) return []
+  return v.map((it): OrderItem => {
+    const obj =
+      typeof it === 'object' && it !== null
+        ? (it as Record<string, unknown>)
+        : {}
+    return {
+      description: pickString(obj.description),
+      quantity: pickNumber(obj.quantity) ?? 0,
+      amountSubtotal: pickNumber(obj.amountSubtotal),
+      amountTotal: pickNumber(obj.amountTotal),
+      priceId: pickString(obj.priceId) ?? null,
+    }
+  })
+}
+
+const fmtMajor = (amountMajor = 0, currency = 'TRY') =>
   new Intl.NumberFormat('tr-TR', { style: 'currency', currency }).format(
-    (amountCents || 0) / 100
+    amountMajor || 0
   )
 
 export default function OrdersPage() {
-  const [uid, setUid] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [orders, setOrders] = useState<OrderDoc[]>([])
 
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => {
-      setUid(u?.uid ?? null)
-    })
-    return () => unsub()
-  }, [])
+  const { user, loading: authLoading } = useAuth()
+  const router = useRouter()
 
   useEffect(() => {
-    if (!uid) {
+    if (authLoading) return
+    if (!user) {
       setOrders([])
       setLoading(false)
       return
     }
-    let cancelled = false
-    ;(async () => {
-      try {
-        const snap = await getDocs(collection(db, 'users', uid, 'orders'))
-        const list: OrderDoc[] = []
-        snap.forEach((d) => {
-          const data = d.data() as Partial<OrderDoc> & Record<string, unknown>
-          list.push({
-            id: d.id,
-            total: data?.total ?? null,
-            currency: (data?.currency ?? 'try') as string,
-            createdAt:
-              data?.createdAt instanceof Timestamp ||
-              data?.createdAt instanceof Date
-                ? (data.createdAt as Timestamp | Date)
-                : null,
-            items: (data?.items ?? []) as OrderItem[],
-          })
-        })
-        // newest first
-        list.sort((a, b) => {
-          const ad =
-            a.createdAt && 'toDate' in a.createdAt
-              ? a.createdAt.toDate()
-              : (a.createdAt as Date | null)
-          const bd =
-            b.createdAt && 'toDate' in b.createdAt
-              ? b.createdAt.toDate()
-              : (b.createdAt as Date | null)
-          return (bd?.getTime?.() ?? 0) - (ad?.getTime?.() ?? 0)
-        })
-        if (!cancelled) setOrders(list)
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [uid])
 
-  if (uid === null) {
+    const fetchOrders = async () => {
+      try {
+        setLoading(true)
+        const token = await user.getIdToken()
+        const res = await fetch('/api/user/orders', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+
+        if (!res.ok) {
+          throw new Error('Failed to fetch orders')
+        }
+
+        const data = await res.json()
+        setOrders(data)
+      } catch (error) {
+        console.error(error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchOrders()
+  }, [user, authLoading])
+
+  if (!user && !authLoading) {
     return (
       <div className="mx-auto max-w-3xl p-6">
         <h1 className="text-2xl font-semibold">Siparişlerim</h1>
@@ -87,7 +110,7 @@ export default function OrdersPage() {
           Lütfen siparişlerinizi görmek için giriş yapın.
         </p>
         <Link
-          href="/login"
+          href="/user/login"
           className="mt-4 inline-flex rounded-xl bg-black px-4 py-2 text-sm font-medium text-white"
         >
           Giriş Yap
@@ -96,7 +119,7 @@ export default function OrdersPage() {
     )
   }
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="mx-auto max-w-3xl p-6">
         <div className="h-6 w-40 bg-gray-200 rounded mb-3 animate-pulse" />
@@ -146,7 +169,7 @@ export default function OrdersPage() {
               <div className="text-right">
                 <div className="text-sm text-zinc-600">Tutar</div>
                 <div className="text-base font-semibold">
-                  {fmt(o.total ?? 0, currency)}
+                  {fmtMajor(o.amountTotal ?? 0, currency)}
                 </div>
               </div>
             </div>
@@ -173,12 +196,29 @@ export default function OrdersPage() {
                     key={i}
                     className="flex items-center justify-between p-3 text-sm"
                   >
-                    <span className="text-zinc-900">{it.productId}</span>
+                    <span className="text-zinc-900">
+                      {it.description ?? it.priceId ?? 'Ürün'}
+                    </span>
                     <span className="text-zinc-600">× {it.quantity}</span>
                   </li>
                 ))}
               </ul>
             )}
+            <div className="mt-3 flex justify-end">
+              <Link
+                prefetch={false}
+                href={`/user/orders/${o.id}`}
+                onClick={(e) => {
+                  e.preventDefault()
+                  const href = `/user/orders/${o.id}`
+                  console.log('[orders] navigating to', href)
+                  router.push(href)
+                }}
+                className="inline-flex rounded-xl border px-3 py-1.5 text-sm font-medium hover:bg-zinc-50"
+              >
+                Detayı Gör
+              </Link>
+            </div>
           </div>
         )
       })}

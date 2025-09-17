@@ -3,6 +3,7 @@ import './globals.css'
 import { Inter, Roboto_Mono } from 'next/font/google'
 import { Toaster } from 'react-hot-toast'
 import { CartProvider } from '@/context/CartContext'
+import { FavoritesProvider } from '@/context/FavoritesContext'
 import Navbar from '@/components/Navbar'
 import { AuthProvider } from '@/context/AuthContext'
 
@@ -29,8 +30,10 @@ export default function RootLayout({
       >
         <AuthProvider>
           <CartProvider>
-            <Navbar />
-            <main>{children}</main>
+            <FavoritesProvider>
+              <Navbar />
+              <main>{children}</main>
+            </FavoritesProvider>
           </CartProvider>
         </AuthProvider>
         <Toaster position="bottom-center" toastOptions={{ duration: 3000 }} />
