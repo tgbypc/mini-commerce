@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { adminDb } from '@/lib/firebaseAdmin'
+import { adminDb, FieldPath } from '@/lib/firebaseAdmin'
 import { requireAdminFromRequest } from '@/lib/adminAuth'
 
 export const runtime = 'nodejs'
@@ -22,7 +22,7 @@ export async function POST(req: Request) {
       for (let i = 0; i < ids.length; i += 10) chunks.push(ids.slice(i, i + 10))
       const results: FirebaseFirestore.QueryDocumentSnapshot[] = []
       for (const grp of chunks) {
-        const qs = await adminDb.collection('products').where(adminDb.firestore.FieldPath.documentId(), 'in', grp).get()
+        const qs = await adminDb.collection('products').where(FieldPath.documentId(), 'in', grp).get()
         results.push(...qs.docs)
       }
       docs = results
@@ -44,4 +44,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: msg }, { status: 500 })
   }
 }
-

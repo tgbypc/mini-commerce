@@ -35,8 +35,8 @@ export async function POST(req: Request) {
       await ref.set({ qty, updatedAt: FieldValue.serverTimestamp() }, { merge: true })
     }
     return NextResponse.json({ ok: true })
-  } catch (e) {
+  } catch (error) {
+    console.error('[user/cart/update] failed', error)
     return NextResponse.json({ ok: false }, { status: 500 })
   }
 }
-

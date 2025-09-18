@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Timestamp } from 'firebase/firestore'
 import { fmtCurrency } from '@/lib/money'
 import { useAuth } from '@/context/AuthContext'
@@ -15,6 +15,23 @@ type LineItem = {
   thumbnail?: string | null
 }
 
+type ShippingAddress = {
+  line1?: string | null
+  line2?: string | null
+  postal_code?: string | null
+  city?: string | null
+  town?: string | null
+  state?: string | null
+  country?: string | null
+}
+
+type ShippingInfo = {
+  method?: string | null
+  amountTotal?: number | null
+  address?: ShippingAddress | null
+  name?: string | null
+} | null
+
 type OrderDetail = {
   id: string
   sessionId?: string
@@ -22,7 +39,7 @@ type OrderDetail = {
   currency?: string | null
   paymentStatus?: string | null
   status?: 'paid' | 'fulfilled' | 'shipped' | 'delivered' | 'canceled'
-  shipping?: { method?: string | null; amountTotal?: number | null; address?: any; name?: string | null } | null
+  shipping?: ShippingInfo
   createdAt?: Timestamp | Date | null
   items?: LineItem[]
 }
@@ -177,12 +194,22 @@ export default function OrderDetailPage() {
       {order.shipping?.address && (
         <div className="rounded-2xl border bg-white p-4 shadow-sm">
           <h2 className="text-lg font-semibold mb-2">Teslimat Adresi</h2>
-          <div className="text-sm text-zinc-700">
-            {order.shipping?.name && <div>{order.shipping.name}</div>}
-            <div>{order.shipping.address.line1} {order.shipping.address.line2}</div>
-            <div>{order.shipping.address.postal_code} {order.shipping.address.city || order.shipping.address.town} {order.shipping.address.state}</div>
-            <div>{order.shipping.address.country}</div>
-          </div>
+          {(() => {
+            const address = order.shipping?.address
+            if (!address) return null
+            const firstLine = [address.line1, address.line2].filter(Boolean).join(' ')
+            const secondLine = [address.postal_code, address.city || address.town, address.state]
+              .filter(Boolean)
+              .join(' ')
+            return (
+              <div className="text-sm text-zinc-700">
+                {order.shipping?.name && <div>{order.shipping.name}</div>}
+                <div>{firstLine}</div>
+                <div>{secondLine}</div>
+                <div>{address.country ?? ''}</div>
+              </div>
+            )
+          })()}
         </div>
       )}
     </div>

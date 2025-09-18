@@ -29,8 +29,8 @@ export async function POST(req: Request) {
       await batch.commit()
     }
     return NextResponse.json({ ok: true })
-  } catch (e) {
+  } catch (error) {
+    console.error('[user/cart/clear] failed', error)
     return NextResponse.json({ ok: false }, { status: 500 })
   }
 }
-

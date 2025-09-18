@@ -35,7 +35,6 @@ export default function HomePage() {
   // Multi-select categories; empty = all
   const [selectedCats, setSelectedCats] = useState<string[]>([])
   const categories = useMemo(() => CATEGORIES as unknown as string[], [])
-  const catParam = '' // kept for backward compat (unused)
 
   async function fetchPage(opts: { cursor?: string | null; reset?: boolean }) {
     if (inFlight.current) return

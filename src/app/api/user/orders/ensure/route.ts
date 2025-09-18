@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { adminDb, auth, FieldValue } from '@/lib/firebaseAdmin'
 import { stripe } from '@/lib/stripe'
 import type Stripe from 'stripe'
+import { extractShippingDetails, toShippingInfo } from '@/app/api/user/orders/shipping'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -17,6 +18,8 @@ function extractBearer(req: Request): string | null {
   }
 }
 
+type StripeSession = Stripe.Checkout.Session
+
 export async function POST(req: Request) {
   try {
     const token = extractBearer(req)
@@ -29,9 +32,12 @@ export async function POST(req: Request) {
     if (!id) return NextResponse.json({ error: 'Missing session id' }, { status: 400 })
 
     // Load Stripe session with items
-    const session = await stripe.checkout.sessions.retrieve(id, {
+    const rawSession = await stripe.checkout.sessions.retrieve(id, {
       expand: ['line_items.data.price.product', 'shipping_cost.shipping_rate'],
     })
+    const session = rawSession as StripeSession
+    const shippingCost = session.shipping_cost ?? null
+    const shippingDetails = extractShippingDetails(session)
 
     const paid =
       session.payment_status === 'paid' ||
@@ -78,12 +84,11 @@ export async function POST(req: Request) {
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
       source: 'ensure',
-      shipping: {
-        method: (session.shipping_cost as any)?.shipping_rate?.display_name || null,
-        amountTotal: typeof (session.shipping_cost as any)?.amount_total === 'number' ? ((session.shipping_cost as any).amount_total / 100) : null,
-        address: (session.shipping_details as any)?.address || null,
-        name: (session.shipping_details as any)?.name || null,
-      },
+      shipping: toShippingInfo({
+        cost: shippingCost,
+        details: shippingDetails,
+        customer: session.customer_details ?? null,
+      }),
     }
 
     const orderRef = adminDb.collection('orders').doc(session.id)

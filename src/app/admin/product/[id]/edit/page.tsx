@@ -48,6 +48,17 @@ const schema = z.object({
 })
 
 type FormValues = z.infer<typeof schema>
+type LocaleCode = 'en' | 'nb'
+
+const TITLE_FIELD_BY_LOCALE: Record<LocaleCode, 'title_en' | 'title_nb'> = {
+  en: 'title_en',
+  nb: 'title_nb',
+}
+
+const DESCRIPTION_FIELD_BY_LOCALE: Record<LocaleCode, 'description_en' | 'description_nb'> = {
+  en: 'description_en',
+  nb: 'description_nb',
+}
 
 export default function EditProductPage() {
   const { t } = useI18n()
@@ -130,7 +141,7 @@ export default function EditProductPage() {
 
     const payload = {
       id: String(initial.id),
-      title: values.title.trim(),
+      title: values.title?.trim() || '',
       title_en: values.title_en?.trim() || undefined,
       title_nb: values.title_nb?.trim() || undefined,
       description: values.description?.trim() || undefined,
@@ -210,13 +221,14 @@ export default function EditProductPage() {
           <button
             type="button"
             onClick={() => {
-              const src = activeLocale === 'en' ? 'title_en' : 'title_nb'
-              const dst = activeLocale === 'en' ? 'title_nb' : 'title_en'
-              const target = activeLocale === 'en' ? 'nb' : 'en'
-              const val = (watch(src) as string) || ''
+              const sourceLocale: LocaleCode = activeLocale
+              const targetLocale: LocaleCode = sourceLocale === 'en' ? 'nb' : 'en'
+              const srcField = TITLE_FIELD_BY_LOCALE[sourceLocale]
+              const dstField = TITLE_FIELD_BY_LOCALE[targetLocale]
+              const val = watch(srcField) || ''
               if (!val.trim()) return
-              setValue(dst as any, val, { shouldDirty: true, shouldValidate: true })
-              setActiveLocale(target)
+              setValue(dstField, val, { shouldDirty: true, shouldValidate: true })
+              setActiveLocale(targetLocale)
             }}
             className="ml-2 text-xs rounded border px-2"
           >
@@ -359,13 +371,14 @@ export default function EditProductPage() {
           <button
             type="button"
             onClick={() => {
-              const src = activeLocale === 'en' ? 'description_en' : 'description_nb'
-              const dst = activeLocale === 'en' ? 'description_nb' : 'description_en'
-              const target = activeLocale === 'en' ? 'nb' : 'en'
-              const val = (watch(src) as string) || ''
+              const sourceLocale: LocaleCode = activeLocale
+              const targetLocale: LocaleCode = sourceLocale === 'en' ? 'nb' : 'en'
+              const srcField = DESCRIPTION_FIELD_BY_LOCALE[sourceLocale]
+              const dstField = DESCRIPTION_FIELD_BY_LOCALE[targetLocale]
+              const val = watch(srcField) || ''
               if (!val.trim()) return
-              setValue(dst as any, val, { shouldDirty: true, shouldValidate: true })
-              setActiveLocale(target)
+              setValue(dstField, val, { shouldDirty: true, shouldValidate: true })
+              setActiveLocale(targetLocale)
             }}
             className="ml-2 text-xs rounded border px-2"
           >

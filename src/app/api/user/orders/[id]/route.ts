@@ -1,6 +1,12 @@
 import { NextResponse } from 'next/server'
 import { adminDb, auth } from '@/lib/firebaseAdmin'
 import { stripe } from '@/lib/stripe'
+import type Stripe from 'stripe'
+import {
+  extractShippingDetails,
+  toShippingInfo,
+  type ShippingInfo,
+} from '@/app/api/user/orders/shipping'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -25,6 +31,8 @@ type RawOrderItem = {
   currency?: string | null
 }
 
+type StripeSession = Stripe.Checkout.Session
+
 type RawOrder = {
   id: string
   sessionId?: string
@@ -32,12 +40,7 @@ type RawOrder = {
   currency?: string | null
   paymentStatus?: string | null
   status?: 'paid' | 'fulfilled' | 'shipped' | 'delivered' | 'canceled'
-  shipping?: {
-    method?: string | null
-    amountTotal?: number | null
-    address?: unknown
-    name?: string | null
-  } | null
+  shipping?: ShippingInfo | null
   createdAt?: FirebaseFirestore.Timestamp | Date | null
   userId?: string | null
   items?: RawOrderItem[]
@@ -101,18 +104,18 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     })
 
     // Optional: enrich shipping from Stripe if missing
-    let shipping = (data as any).shipping || null
+    let shipping: ShippingInfo | null = data.shipping ?? null
     if (!shipping && data.sessionId) {
       try {
-        const full = await stripe.checkout.sessions.retrieve(String(data.sessionId), {
+        const rawSession = await stripe.checkout.sessions.retrieve(String(data.sessionId), {
           expand: ['shipping_cost.shipping_rate'],
         })
-        shipping = {
-          method: (full.shipping_cost as any)?.shipping_rate?.display_name || null,
-          amountTotal: typeof (full.shipping_cost as any)?.amount_total === 'number' ? ((full.shipping_cost as any).amount_total / 100) : null,
-          address: (full.shipping_details as any)?.address || null,
-          name: (full.shipping_details as any)?.name || null,
-        }
+        const full = rawSession as StripeSession
+        shipping = toShippingInfo({
+          cost: full.shipping_cost ?? null,
+          details: extractShippingDetails(full),
+          customer: full.customer_details ?? null,
+        })
       } catch {}
     }
 
@@ -122,7 +125,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       amountTotal: data.amountTotal ?? null,
       currency: (data.currency || 'usd').toUpperCase(),
       paymentStatus: data.paymentStatus ?? null,
-      status: (data.status as any) ?? 'paid',
+      status: data.status ?? 'paid',
       shipping,
       createdAt: data.createdAt ?? null,
       items: enrichedItems,

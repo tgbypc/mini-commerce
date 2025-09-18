@@ -10,12 +10,15 @@ type Messages = typeof en
 const MESSAGES: Record<Locale, Messages> = { en, nb }
 const STORAGE_KEY = 'locale'
 
-function get(obj: any, path: string): string | undefined {
+function get(obj: unknown, path: string): string | undefined {
   const parts = path.split('.')
-  let cur: any = obj
+  let cur: unknown = obj
   for (const p of parts) {
-    if (cur && typeof cur === 'object' && p in cur) cur = cur[p]
-    else return undefined
+    if (cur && typeof cur === 'object' && p in (cur as Record<string, unknown>)) {
+      cur = (cur as Record<string, unknown>)[p]
+    } else {
+      return undefined
+    }
   }
   return typeof cur === 'string' ? cur : undefined
 }
@@ -65,4 +68,3 @@ export function useI18n() {
   if (!ctx) throw new Error('useI18n must be used within I18nProvider')
   return ctx
 }
-

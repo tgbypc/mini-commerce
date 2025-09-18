@@ -75,7 +75,7 @@ export default function ProductDetailClient({ id }: { id: string }) {
       }
     )
     return () => unsub()
-  }, [id])
+  }, [id, locale])
 
   // ——— Loading skeleton ———
   if (loading) {

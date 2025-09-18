@@ -25,8 +25,8 @@ export async function GET(req: Request) {
     const snap = await adminDb.collection('users').doc(uid).collection('cartItems').get()
     const items = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Record<string, unknown>) }))
     return NextResponse.json({ items })
-  } catch (e) {
+  } catch (error) {
+    console.error('[user/cart/get] failed', error)
     return NextResponse.json({ items: [] })
   }
 }
-

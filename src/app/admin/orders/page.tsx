@@ -27,7 +27,11 @@ type Order = {
   items?: OrderItem[]
 }
 
-const STATUSES: Order['status'][] = ['paid', 'fulfilled', 'shipped', 'delivered', 'canceled']
+const STATUSES: NonNullable<Order['status']>[] = ['paid', 'fulfilled', 'shipped', 'delivered', 'canceled']
+
+function isStatus(value: string): value is NonNullable<Order['status']> {
+  return STATUSES.includes(value as NonNullable<Order['status']>)
+}
 
 export default function AdminOrdersPage() {
   const { user } = useAuth()
@@ -86,7 +90,10 @@ export default function AdminOrdersPage() {
         <div className="flex items-center gap-2">
           <select
             value={statusFilter || ''}
-            onChange={(e) => setStatusFilter((e.target.value || '') as any)}
+            onChange={(e) => {
+              const { value } = e.target
+              setStatusFilter(value === '' ? '' : isStatus(value) ? value : '')
+            }}
             className="rounded-lg border px-3 py-2 text-sm bg-white"
           >
             <option value="">All</option>
@@ -129,4 +136,3 @@ export default function AdminOrdersPage() {
     </div>
   )
 }
-

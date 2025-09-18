@@ -2,14 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import {
-  collection,
-  getDocs,
-  orderBy,
-  query,
-  Timestamp,
-} from 'firebase/firestore'
-import { db } from '@/lib/firebase'
+import { Timestamp } from 'firebase/firestore'
 import { useAuth } from '@/context/AuthContext'
 import { useI18n } from '@/context/I18nContext'
 import EmptyState from '@/components/ui/EmptyState'
@@ -31,32 +24,6 @@ type OrderDoc = {
   status?: string | null
   createdAt?: Timestamp | Date | null
   items?: OrderItem[]
-}
-
-function pickString(v: unknown): string | undefined {
-  return typeof v === 'string' ? v : undefined
-}
-function pickNumber(v: unknown): number | undefined {
-  return typeof v === 'number' ? v : undefined
-}
-function pickTimestamp(v: unknown): Timestamp | Date | undefined {
-  return v instanceof Timestamp || v instanceof Date ? v : undefined
-}
-function pickItems(v: unknown): OrderItem[] {
-  if (!Array.isArray(v)) return []
-  return v.map((it): OrderItem => {
-    const obj =
-      typeof it === 'object' && it !== null
-        ? (it as Record<string, unknown>)
-        : {}
-    return {
-      description: pickString(obj.description),
-      quantity: pickNumber(obj.quantity) ?? 0,
-      amountSubtotal: pickNumber(obj.amountSubtotal),
-      amountTotal: pickNumber(obj.amountTotal),
-      priceId: pickString(obj.priceId) ?? null,
-    }
-  })
 }
 
 const fmtMajor = (amountMajor = 0, currency = 'TRY') =>

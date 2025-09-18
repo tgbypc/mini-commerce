@@ -96,6 +96,14 @@ export default function AdminNewProductPage() {
   const [selectedFileName, setSelectedFileName] = useState<string>('')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [activeLocale, setActiveLocale] = useState<'en' | 'nb'>('en')
+  const titleFieldByLocale: Record<typeof activeLocale, 'title_en' | 'title_nb'> = {
+    en: 'title_en',
+    nb: 'title_nb',
+  }
+  const descriptionFieldByLocale: Record<typeof activeLocale, 'description_en' | 'description_nb'> = {
+    en: 'description_en',
+    nb: 'description_nb',
+  }
 
   const {
     register,
@@ -225,13 +233,14 @@ export default function AdminNewProductPage() {
             <button
               type="button"
               onClick={() => {
-                const src = activeLocale === 'en' ? 'title_en' : 'title_nb'
-                const dst = activeLocale === 'en' ? 'title_nb' : 'title_en'
-                const target = activeLocale === 'en' ? 'nb' : 'en'
-                const val = (watch(src) as string) || ''
+                const sourceLocale = activeLocale
+                const targetLocale = sourceLocale === 'en' ? 'nb' : 'en'
+                const srcField = titleFieldByLocale[sourceLocale]
+                const dstField = titleFieldByLocale[targetLocale]
+                const val = watch(srcField) || ''
                 if (!val.trim()) return
-                setValue(dst as any, val, { shouldDirty: true, shouldValidate: true })
-                setActiveLocale(target)
+                setValue(dstField, val, { shouldDirty: true, shouldValidate: true })
+                setActiveLocale(targetLocale)
               }}
               className="ml-2 text-xs rounded border px-2"
             >
@@ -435,17 +444,18 @@ export default function AdminNewProductPage() {
                 {loc.toUpperCase()}
               </button>
             ))}
-            <button
-              type="button"
-              onClick={() => {
-                const src = activeLocale === 'en' ? 'description_en' : 'description_nb'
-                const dst = activeLocale === 'en' ? 'description_nb' : 'description_en'
-                const target = activeLocale === 'en' ? 'nb' : 'en'
-                const val = (watch(src) as string) || ''
-                if (!val.trim()) return
-                setValue(dst as any, val, { shouldDirty: true, shouldValidate: true })
-                setActiveLocale(target)
-              }}
+          <button
+            type="button"
+            onClick={() => {
+              const sourceLocale = activeLocale
+              const targetLocale = sourceLocale === 'en' ? 'nb' : 'en'
+              const srcField = descriptionFieldByLocale[sourceLocale]
+              const dstField = descriptionFieldByLocale[targetLocale]
+              const val = watch(srcField) || ''
+              if (!val.trim()) return
+              setValue(dstField, val, { shouldDirty: true, shouldValidate: true })
+              setActiveLocale(targetLocale)
+            }}
               className="ml-2 text-xs rounded border px-2"
             >
               {t('admin.copyTo').replace('{loc}', activeLocale === 'en' ? 'NB' : 'EN')}

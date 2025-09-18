@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { useAuth } from '@/context/AuthContext'
 import { useI18n } from '@/context/I18nContext'
 import { Timestamp, doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
-import { fmtCurrency } from '@/lib/money'
 import { db } from '@/lib/firebase'
 
 type OrderItem = {
@@ -24,10 +23,68 @@ type OrderDoc = {
   items?: OrderItem[]
 }
 
-const fmtMajor = (amountMajor = 0, currency = 'TRY') =>
-  new Intl.NumberFormat('tr-TR', { style: 'currency', currency }).format(
-    amountMajor || 0
-  )
+type UserAddress = {
+  id: string
+  name?: string
+  phone?: string
+  line1?: string
+  line2?: string
+  city?: string
+  state?: string
+  zip?: string
+  country?: string
+  isDefault?: boolean
+}
+
+type AddressForm = {
+  id: string
+  name: string
+  phone: string
+  line1: string
+  line2: string
+  city: string
+  state: string
+  zip: string
+  country: string
+  isDefault: boolean
+}
+
+function parseAddressList(value: unknown): UserAddress[] {
+  if (!Array.isArray(value)) return []
+  return value
+    .map((entry) => {
+      const obj = entry && typeof entry === 'object' ? (entry as Record<string, unknown>) : {}
+      const id = String(obj.id ?? '')
+      if (!id) return null
+      const address: UserAddress = { id }
+      if (typeof obj.name === 'string') address.name = obj.name
+      if (typeof obj.phone === 'string') address.phone = obj.phone
+      if (typeof obj.line1 === 'string') address.line1 = obj.line1
+      if (typeof obj.line2 === 'string') address.line2 = obj.line2
+      if (typeof obj.city === 'string') address.city = obj.city
+      if (typeof obj.state === 'string') address.state = obj.state
+      if (typeof obj.zip === 'string') address.zip = obj.zip
+      if (typeof obj.country === 'string') address.country = obj.country
+      if ('isDefault' in obj) address.isDefault = Boolean(obj.isDefault)
+      return address
+    })
+    .filter((addr): addr is UserAddress => addr !== null)
+}
+
+function createEmptyAddressForm(): AddressForm {
+  return {
+    id: '',
+    name: '',
+    phone: '',
+    line1: '',
+    line2: '',
+    city: '',
+    state: '',
+    zip: '',
+    country: 'NO',
+    isDefault: false,
+  }
+}
 
 export default function ProfilePage() {
   const { t } = useI18n()
@@ -41,8 +98,8 @@ export default function ProfilePage() {
     address: '',
   })
   const [addrSaving, setAddrSaving] = useState(false)
-  const [addresses, setAddresses] = useState<any[]>([])
-  const [addrForm, setAddrForm] = useState({ id: '', name: '', phone: '', line1: '', line2: '', city: '', state: '', zip: '', country: 'NO', isDefault: false })
+  const [addresses, setAddresses] = useState<UserAddress[]>([])
+  const [addrForm, setAddrForm] = useState<AddressForm>(createEmptyAddressForm())
 
   useEffect(() => {
     const run = async () => {
@@ -77,8 +134,9 @@ export default function ProfilePage() {
         if (authLoading || !user) return
         const token = await user.getIdToken().catch(() => undefined)
         const res = await fetch('/api/user/addresses', { headers: token ? { Authorization: `Bearer ${token}` } : {} })
-        const data = await res.json()
-        setAddresses(Array.isArray(data.items) ? data.items : [])
+        const data = (await res.json()) as unknown
+        const items = data && typeof data === 'object' ? (data as { items?: unknown }).items : []
+        setAddresses(parseAddressList(items))
       } catch {}
     })()
   }, [user, authLoading])
@@ -94,11 +152,21 @@ export default function ProfilePage() {
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify(addrForm),
       })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data?.error || 'Failed')
-      const list = await fetch('/api/user/addresses', { headers: token ? { Authorization: `Bearer ${token}` } : {} }).then(r => r.json())
-      setAddresses(Array.isArray(list.items) ? list.items : [])
-      setAddrForm({ id: '', name: '', phone: '', line1: '', line2: '', city: '', state: '', zip: '', country: 'NO', isDefault: false })
+      const data = (await res.json()) as unknown
+      if (!res.ok) {
+        const message =
+          data &&
+          typeof data === 'object' &&
+          typeof (data as { error?: unknown }).error === 'string'
+            ? String((data as { error?: unknown }).error)
+            : 'Failed'
+        throw new Error(message)
+      }
+      const listResponse = await fetch('/api/user/addresses', { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+      const listData = (await listResponse.json()) as unknown
+      const items = listData && typeof listData === 'object' ? (listData as { items?: unknown }).items : []
+      setAddresses(parseAddressList(items))
+      setAddrForm(createEmptyAddressForm())
     } finally {
       setAddrSaving(false)
     }
@@ -108,8 +176,10 @@ export default function ProfilePage() {
     if (!user) return
     const token = await user.getIdToken().catch(() => undefined)
     await fetch(`/api/user/addresses/${encodeURIComponent(id)}`, { method: 'DELETE', headers: token ? { Authorization: `Bearer ${token}` } : {} })
-    const list = await fetch('/api/user/addresses', { headers: token ? { Authorization: `Bearer ${token}` } : {} }).then(r => r.json())
-    setAddresses(Array.isArray(list.items) ? list.items : [])
+    const listResponse = await fetch('/api/user/addresses', { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+    const listData = (await listResponse.json()) as unknown
+    const items = listData && typeof listData === 'object' ? (listData as { items?: unknown }).items : []
+    setAddresses(parseAddressList(items))
   }
 
   // Load editable profile from Firestore (users/{uid})
@@ -191,6 +261,7 @@ export default function ProfilePage() {
     email: user?.email ?? '',
     uid: user?.uid ?? '',
   }
+  const totalOrders = orders.length
 
   return (
     <div className="mx-auto max-w-3xl p-6 space-y-6">
@@ -216,6 +287,7 @@ export default function ProfilePage() {
             <div className="font-medium">{user?.displayName || 'Kullanıcı'}</div>
             <div className="text-zinc-600">{profile.email}</div>
             <div className="text-zinc-600">ID: {profile.uid}</div>
+            <div className="text-zinc-600">Toplam Sipariş: {totalOrders}</div>
             {user?.emailVerified ? (
               <span className="mt-1 inline-flex rounded bg-emerald-50 px-2 py-0.5 text-[11px] text-emerald-700 border border-emerald-200">Email doğrulandı</span>
             ) : (

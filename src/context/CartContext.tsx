@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useMemo, useReducer, useRef } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useAuth } from '@/context/AuthContext'
 
 type CartItem = {
@@ -91,56 +91,59 @@ type CartContextType = {
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
 
+function normalizeCartItem(value: unknown): CartItem {
+  const obj =
+    value && typeof value === 'object'
+      ? (value as Record<string, unknown>)
+      : {}
+  const productId = String(obj.productId ?? obj.id ?? '')
+  const title =
+    typeof obj.title === 'string'
+      ? obj.title
+      : String(obj.title ?? '')
+  const priceValue =
+    typeof obj.price === 'number' ? obj.price : Number(obj.price ?? 0)
+  const price = Number.isFinite(priceValue) ? Number(priceValue) : 0
+  const thumbnail =
+    typeof obj.thumbnail === 'string' ? obj.thumbnail : undefined
+  const qtyValue =
+    typeof obj.qty === 'number' ? obj.qty : Number(obj.qty ?? 1)
+  const qty = Math.max(1, Number.isFinite(qtyValue) ? Math.floor(qtyValue) : 1)
+
+  return { productId, title, price, thumbnail, qty }
+}
+
+function parseCartItemsInput(value: unknown): CartItem[] {
+  if (!Array.isArray(value)) return []
+  return value
+    .map(normalizeCartItem)
+    .filter((item) => item.productId)
+}
+
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(reducer, { items: [] })
   const { user } = useAuth()
   const lastAddRef = useRef<{ id: string; qty: number; ts: number } | null>(null)
 
-  function loadFromStorage() {
+  const loadFromStorage = useCallback(() => {
     try {
       // Prefer current key; fall back to legacy key if present
       const raw =
         localStorage.getItem(STORAGE_KEY) ?? localStorage.getItem('mc_cart')
       if (!raw) return
 
-      const parsed: unknown = JSON.parse(raw)
-      if (
-        parsed &&
-        typeof parsed === 'object' &&
-        Array.isArray((parsed as { items?: unknown }).items)
-      ) {
-        const arr = (parsed as { items: unknown[] }).items
-        const normalizedItems: CartItem[] = arr.map((i): CartItem => {
-          const obj = (i ?? {}) as Record<string, unknown>
-          const productId = String(obj.productId ?? '')
-          const title =
-            typeof obj.title === 'string' ? obj.title : String(obj.title ?? '')
-          const priceValue =
-            typeof obj.price === 'number'
-              ? obj.price
-              : Number(obj.price as unknown)
-          const price = Number.isFinite(priceValue) ? priceValue : 0
-          const thumbnail =
-            typeof obj.thumbnail === 'string' ? obj.thumbnail : undefined
-          const qtyValue =
-            typeof obj.qty === 'number' ? obj.qty : Number(obj.qty as unknown)
-          const qty = Math.max(
-            1,
-            Number.isFinite(qtyValue) ? Math.floor(qtyValue) : 1
-          )
-
-          return { productId, title, price, thumbnail, qty }
-        })
-
-        dispatch({ type: 'LOAD', state: { items: normalizedItems } })
-      }
+      const parsed = JSON.parse(raw) as unknown
+      if (!parsed || typeof parsed !== 'object') return
+      const items = (parsed as { items?: unknown }).items
+      const normalizedItems = parseCartItemsInput(items)
+      dispatch({ type: 'LOAD', state: { items: normalizedItems } })
     } catch {}
-  }
+  }, [dispatch])
 
   // Load from LS once
   useEffect(() => {
     loadFromStorage()
-  }, [])
+  }, [loadFromStorage])
 
   // On login, prefer server cart if exists; otherwise push LS cart to server
   useEffect(() => {
@@ -155,28 +158,21 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           try {
             const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('mc_cart')
             if (!raw) return []
-            const parsed = JSON.parse(raw) as { items?: any[] }
-            if (!Array.isArray(parsed.items)) return []
-            return parsed.items.map((i: any) => ({
-              productId: String(i.productId || ''),
-              title: typeof i.title === 'string' ? i.title : '',
-              price: Number.isFinite(Number(i.price)) ? Number(i.price) : 0,
-              thumbnail: typeof i.thumbnail === 'string' ? i.thumbnail : undefined,
-              qty: Math.max(1, Number(i.qty) || 1),
-            }))
+            const parsed = JSON.parse(raw) as unknown
+            if (!parsed || typeof parsed !== 'object') return []
+            const items = (parsed as { items?: unknown }).items
+            return parseCartItemsInput(items)
           } catch { return [] }
         }
 
         // 1) Fetch server cart
         const res = await fetch('/api/user/cart', { headers: { Authorization: `Bearer ${token}` } })
-        const data = (await res.json()) as { items?: any[] }
-        const serverItems: CartItem[] = (data.items || []).map((d: any) => ({
-          productId: String(d.productId || d.id || ''),
-          title: typeof d.title === 'string' ? d.title : '',
-          price: typeof d.price === 'number' ? d.price : 0,
-          thumbnail: typeof d.thumbnail === 'string' ? d.thumbnail : undefined,
-          qty: Math.max(1, Number(d.qty) || 1),
-        }))
+        const data = (await res.json()) as unknown
+        const serverItems: CartItem[] = (() => {
+          if (!data || typeof data !== 'object') return []
+          const items = (data as { items?: unknown }).items
+          return parseCartItemsInput(items)
+        })()
 
         const localItems = readLS()
 
@@ -201,7 +197,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         dispatch({ type: 'LOAD', state: { items: localItems } })
       } catch {}
     })()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
   // Persist to LS on change
@@ -220,7 +215,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
     window.addEventListener('storage', onStorage)
     return () => window.removeEventListener('storage', onStorage)
-  }, [])
+  }, [loadFromStorage])
 
   const count = useMemo(
     () => state.items.reduce((sum, it) => sum + it.qty, 0),

@@ -63,7 +63,7 @@ export default function FavoritesPage() {
     }
     run()
     return () => { cancelled = true }
-  }, [user, authLoading, items])
+  }, [user, authLoading, items, locale])
 
   if (!user && !authLoading) {
     return (

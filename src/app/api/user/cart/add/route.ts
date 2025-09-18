@@ -45,8 +45,8 @@ export async function POST(req: Request) {
     })
 
     return NextResponse.json({ ok: true })
-  } catch (e) {
+  } catch (error) {
+    console.error('[user/cart/add] failed', error)
     return NextResponse.json({ ok: false }, { status: 500 })
   }
 }
-

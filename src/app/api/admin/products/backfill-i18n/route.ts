@@ -5,6 +5,8 @@ import { requireAdminFromRequest } from '@/lib/adminAuth'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
+type FirestoreUpdate = FirebaseFirestore.UpdateData<FirebaseFirestore.DocumentData>
+
 export async function POST(req: Request) {
   try {
     const gate = await requireAdminFromRequest(req)
@@ -28,7 +30,7 @@ export async function POST(req: Request) {
       const titleEn = typeof data.title_en === 'string' ? (data.title_en as string).trim() : ''
       const descEn = typeof data.description_en === 'string' ? (data.description_en as string).trim() : ''
 
-      const patch: Record<string, unknown> = {}
+      const patch: FirestoreUpdate = {}
 
       if (mode === 'copy-base-to-en' || mode === 'both') {
         if (!titleEn && baseTitle) patch['title_en'] = baseTitle

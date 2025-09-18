@@ -5,6 +5,8 @@ import { requireAdminFromRequest } from '@/lib/adminAuth'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
+type FirestoreUpdate = FirebaseFirestore.UpdateData<FirebaseFirestore.DocumentData>
+
 export async function POST(req: Request) {
   const gate = await requireAdminFromRequest(req)
   if ('error' in gate) return NextResponse.json({ error: gate.error }, { status: gate.status })
@@ -23,7 +25,7 @@ export async function POST(req: Request) {
       const currentEn = typeof data.title_en_lc === 'string' ? (data.title_en_lc as string) : ''
       const currentNb = typeof data.title_nb_lc === 'string' ? (data.title_nb_lc as string) : ''
 
-      const patch: Record<string, unknown> = {}
+      const patch: FirestoreUpdate = {}
       if (!currentEn && te) patch.title_en_lc = te.toLowerCase()
       if (!currentNb && tn) patch.title_nb_lc = tn.toLowerCase()
       if (Object.keys(patch).length === 0) { skipped++; continue }
@@ -40,4 +42,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: msg }, { status: 500 })
   }
 }
-

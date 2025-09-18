@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { adminDb, FieldValue } from '@/lib/firebaseAdmin'
 import { queueEmail } from '@/lib/emailFirebase'
+import {
+  extractShippingDetails,
+  toShippingInfo,
+  type ShippingInfo,
+} from '@/app/api/user/orders/shipping'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -10,6 +15,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2024-06-20' as Stripe.LatestApiVersion,
 })
 
+type StripeSession = Stripe.Checkout.Session
 export async function POST(req: Request) {
   const sig = req.headers.get('stripe-signature')
   const secret = process.env.STRIPE_WEBHOOK_SECRET
@@ -42,9 +48,10 @@ export async function POST(req: Request) {
       (s.metadata?.uid as string | undefined) ??
       null
 
-    const full = await stripe.checkout.sessions.retrieve(s.id, {
+    const rawSession = await stripe.checkout.sessions.retrieve(s.id, {
       expand: ['line_items.data.price.product', 'shipping_cost.shipping_rate'],
     })
+    const full = rawSession as StripeSession
 
     const items: Array<{
       productId: string | null
@@ -94,6 +101,12 @@ export async function POST(req: Request) {
 
     const batch = adminDb.batch()
     const orderRef = adminDb.collection('orders').doc(s.id)
+    const shipping: ShippingInfo = toShippingInfo({
+      cost: full.shipping_cost ?? null,
+      details: extractShippingDetails(full),
+      customer: full.customer_details ?? null,
+    })
+
     const orderDoc = {
       sessionId: s.id,
       paymentStatus: s.payment_status,
@@ -103,12 +116,7 @@ export async function POST(req: Request) {
       email: s.customer_details?.email ?? null,
       userId: uid,
       items,
-      shipping: {
-        method: (full.shipping_cost as any)?.shipping_rate?.display_name || null,
-        amountTotal: typeof (full.shipping_cost as any)?.amount_total === 'number' ? ((full.shipping_cost as any).amount_total / 100) : null,
-        address: (full.shipping_details as any)?.address || null,
-        name: (full.shipping_details as any)?.name || null,
-      },
+      shipping,
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     }

@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server'
-import { adminDb } from '@/lib/firebaseAdmin'
+import { adminDb, FieldPath } from '@/lib/firebaseAdmin'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 type SortKey = 'createdAt' | 'price' | 'title'
+type DynamicTitleField = 'title_en_lc' | 'title_nb_lc'
+type SortField = SortKey | DynamicTitleField
 type SortDir = 'asc' | 'desc'
 
 function parseIntInRange(v: string | null, d = 20, min = 1, max = 50) {
@@ -13,7 +15,7 @@ function parseIntInRange(v: string | null, d = 20, min = 1, max = 50) {
   return Math.max(min, Math.min(max, n))
 }
 
-type EncodedCursor = { k: SortKey; d: SortDir; v: unknown; id: string }
+type EncodedCursor = { k: SortField; d: SortDir; v: unknown; id: string }
 
 function decodeCursor(v: string | null): EncodedCursor | null {
   if (!v) return null
@@ -22,7 +24,7 @@ function decodeCursor(v: string | null): EncodedCursor | null {
     const obj = parsed as Partial<EncodedCursor> | null
     if (
       obj &&
-      (obj.k === 'createdAt' || obj.k === 'price' || obj.k === 'title') &&
+      (obj.k === 'createdAt' || obj.k === 'price' || obj.k === 'title' || obj.k === 'title_en_lc' || obj.k === 'title_nb_lc') &&
       (obj.d === 'asc' || obj.d === 'desc') &&
       typeof obj.id === 'string' &&
       'v' in obj
@@ -53,7 +55,7 @@ export async function GET(req: Request) {
     const cursor = decodeCursor(url.searchParams.get('cursor'))
 
     // Map sort string to field + dir
-    let sortField: SortKey = 'createdAt'
+    let sortField: SortField = 'createdAt'
     let sortDir: SortDir = 'desc'
     if (sortParam === 'price-asc') { sortField = 'price'; sortDir = 'asc' }
     else if (sortParam === 'price-desc') { sortField = 'price'; sortDir = 'desc' }
@@ -76,11 +78,11 @@ export async function GET(req: Request) {
 
     if (hasSearch) {
       // Case-insensitive prefix search on localized lowercase field
-      const field = locale === 'nb' ? 'title_nb_lc' : 'title_en_lc'
+      const field: DynamicTitleField = locale === 'nb' ? 'title_nb_lc' : 'title_en_lc'
       const ql = q.toLowerCase()
       const upper = ql + '\uf8ff'
       query = query.where(field, '>=', ql).where(field, '<=', upper)
-      sortField = field as any
+      sortField = field
       sortDir = 'asc'
     }
 
@@ -108,7 +110,7 @@ export async function GET(req: Request) {
         snap = await q2.get()
       } catch {
         // 2) Final fallback by document id
-        const q3 = adminDb.collection('products').orderBy(adminDb.firestore.FieldPath.documentId(), 'asc').limit(limit)
+        const q3 = adminDb.collection('products').orderBy(FieldPath.documentId(), 'asc').limit(limit)
         snap = await q3.get()
       }
       fallbackUsed = true
@@ -172,16 +174,37 @@ export async function GET(req: Request) {
         items = items.filter((it) => norm(it.title).includes(ql))
       }
       // Sort client-side
+      const getComparableNumber = (value: unknown) => {
+        if (typeof value === 'number') return value
+        if (value && typeof value === 'object' && typeof (value as { toMillis?: () => number }).toMillis === 'function') {
+          try {
+            return (value as { toMillis: () => number }).toMillis()
+          } catch {
+            return 0
+          }
+        }
+        return Number(value) || 0
+      }
+
+      const getComparableString = (value: unknown) => {
+        if (typeof value === 'string') return value
+        if (value && typeof value === 'object' && typeof (value as { toString?: () => string }).toString === 'function') {
+          const result = (value as { toString: () => string }).toString()
+          return result === '[object Object]' ? '' : result
+        }
+        return String(value ?? '')
+      }
+
       items.sort((a, b) => {
-        const av = (a as any)[sortField]
-        const bv = (b as any)[sortField]
+        const av = (a as Record<string, unknown>)[sortField]
+        const bv = (b as Record<string, unknown>)[sortField]
         if (sortField === 'price') {
-          const an = Number(av) || 0
-          const bn = Number(bv) || 0
+          const an = getComparableNumber(av)
+          const bn = getComparableNumber(bv)
           return sortDir === 'asc' ? an - bn : bn - an
         }
-        const as = String(av || '')
-        const bs = String(bv || '')
+        const as = getComparableString(av).toLowerCase()
+        const bs = getComparableString(bv).toLowerCase()
         return sortDir === 'asc' ? as.localeCompare(bs) : bs.localeCompare(as)
       })
     }

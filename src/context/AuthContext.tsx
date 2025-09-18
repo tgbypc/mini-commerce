@@ -88,7 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     })
 
     return () => unsubscribe()
-  }, [])
+  }, [adminEmailSet])
 
   async function emailLogin(email: string, password: string) {
     await signInWithEmailAndPassword(auth, email, password)
