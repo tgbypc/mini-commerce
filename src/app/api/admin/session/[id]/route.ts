@@ -1,18 +1,18 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, type NextRequest } from 'next/server'
 import { stripe } from '@/lib/stripe'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
+type RouteContext = {
+  params?: Promise<Record<string, string | string[] | undefined>>
+}
 
-
-export async function GET(
-  _req: Request,
-  { params }: { params: { id: string | string[] } }
-) {
+export async function GET(_req: NextRequest, context: RouteContext) {
   try {
-    const { id } = params
-    const sessionId = Array.isArray(id) ? id[0] : id
+    const resolved = (await context.params) ?? {}
+    const rawId = resolved.id
+    const sessionId = Array.isArray(rawId) ? rawId[0] : rawId
     if (!sessionId) {
       return NextResponse.json({ error: 'Missing session id' }, { status: 400 })
     }
