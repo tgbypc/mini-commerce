@@ -6,10 +6,10 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const rawId = params?.id
+    const { id: rawId } = await params
     const sessionId = Array.isArray(rawId) ? rawId[0] : rawId
     if (!sessionId) {
       return NextResponse.json({ error: 'Missing session id' }, { status: 400 })
