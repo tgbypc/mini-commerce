@@ -121,6 +121,76 @@ export async function POST(req: Request) {
   }
 }
 
+export async function GET(req: Request) {
+  try {
+    const gate = await requireAdminFromRequest(req)
+    if ('error' in gate) {
+      return NextResponse.json({ error: gate.error }, { status: gate.status })
+    }
+
+    const url = new URL(req.url)
+    const id = url.searchParams.get('id')?.trim()
+    if (!id) {
+      return NextResponse.json({ error: 'Missing product id' }, { status: 400 })
+    }
+
+    const snap = await adminDb.collection('products').doc(id).get()
+    if (!snap.exists) {
+      return NextResponse.json({ error: 'Product not found' }, { status: 404 })
+    }
+
+    const data = snap.data() as Record<string, unknown>
+
+    const toOptionalString = (value: unknown): string | undefined => {
+      if (typeof value !== 'string') return undefined
+      const trimmed = value.trim()
+      return trimmed.length > 0 ? trimmed : undefined
+    }
+
+    const toNumber = (value: unknown): number | undefined => {
+      if (typeof value === 'number' && Number.isFinite(value)) return value
+      const parsed = Number(value)
+      return Number.isFinite(parsed) ? parsed : undefined
+    }
+
+    const imagesRaw = Array.isArray(data.images)
+      ? (data.images as unknown[])
+      : []
+    const images = imagesRaw.filter((img): img is string => typeof img === 'string' && img.trim().length > 0)
+
+    const product = {
+      id,
+      title: toOptionalString(data.title) ?? '',
+      title_en: toOptionalString(data.title_en),
+      title_nb: toOptionalString(data.title_nb),
+      title_en_lc: toOptionalString(data.title_en_lc),
+      title_nb_lc: toOptionalString(data.title_nb_lc),
+      description: toOptionalString(data.description) ?? '',
+      description_en: toOptionalString(data.description_en),
+      description_nb: toOptionalString(data.description_nb),
+      price: toNumber(data.price) ?? 0,
+      stock: toNumber(data.stock),
+      category: toOptionalString(data.category) ?? '',
+      brand: toOptionalString(data.brand),
+      tags: Array.isArray(data.tags)
+        ? (data.tags as unknown[]).filter((tag): tag is string => typeof tag === 'string' && tag.trim().length > 0)
+        : [],
+      thumbnail: toOptionalString(data.thumbnail),
+      images,
+      stripeProductId: toOptionalString(data.stripeProductId),
+      stripePriceId: toOptionalString(data.stripePriceId),
+      availabilityStatus: toOptionalString(data.availabilityStatus) ?? undefined,
+      meta: typeof data.meta === 'object' && data.meta !== null ? data.meta : undefined,
+    } as const
+
+    return NextResponse.json({ product })
+  } catch (err) {
+    console.error('[api/product GET] error:', err)
+    const msg = err instanceof Error ? err.message : 'Unexpected error'
+    return NextResponse.json({ error: msg }, { status: 500 })
+  }
+}
+
 export async function PUT(req: Request) {
   try {
     const gate = await requireAdminFromRequest(req)

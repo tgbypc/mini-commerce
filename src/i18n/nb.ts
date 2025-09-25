@@ -86,6 +86,15 @@ const nb = {
     syncStripe: 'Synk Stripe-ID-er',
     backfillEn: 'Fyll EN fra base',
   },
+  product: {
+    specHeading: 'Produktdetaljer',
+    labels: {
+      category: 'Kategori',
+      brand: 'Merke',
+      price: 'Pris',
+      stock: 'Lager',
+    },
+  },
 }
 
 export default nb

@@ -35,15 +35,7 @@ export default function AdminHome() {
           <div className="text-sm text-zinc-600">View customer orders</div>
         </Link>
 
-        <Link
-          href="/admin/users"
-          className="rounded-xl border p-4 hover:bg-zinc-50"
-        >
-          <div className="font-medium">Manage Users</div>
-          <div className="text-sm text-zinc-600">View registered users</div>
-        </Link>
-
-        {/* İleride Orders / Users / Reports kutuları eklenebilir */}
+        {/* İleride Users / Reports gibi kutular eklenebilir */}
       </div>
     </div>
   )

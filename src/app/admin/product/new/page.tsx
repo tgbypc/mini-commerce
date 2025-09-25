@@ -355,10 +355,17 @@ export default function AdminNewProductPage() {
                 setSelectedFileName(file.name)
                 setUploading(true)
                 try {
+                  const token = await user?.getIdToken().catch(() => undefined)
+                  if (!token) {
+                    throw new Error('Admin kimliği doğrulanamadı')
+                  }
                   const fd = new FormData()
                   fd.append('file', file)
                   const res = await fetch('/api/admin/upload', {
                     method: 'POST',
+                    headers: {
+                      Authorization: `Bearer ${token}`,
+                    },
                     body: fd,
                   })
                   if (!res.ok) {

@@ -86,7 +86,16 @@ export default function AdminProducts() {
     if (syncing) return
     setSyncing(true)
     try {
-      const res = await fetch('/api/admin/stripe/sync', { method: 'POST' })
+      const token = await user?.getIdToken().catch(() => undefined)
+      if (!token) {
+        throw new Error('Admin kimlik doğrulaması başarısız')
+      }
+      const res = await fetch('/api/admin/stripe/sync', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
       const data: unknown = await res.json()
 
       // Show a brief summary to the admin

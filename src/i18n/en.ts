@@ -86,6 +86,15 @@ const en = {
     syncStripe: 'Sync Stripe IDs',
     backfillEn: 'Backfill EN from base',
   },
+  product: {
+    specHeading: 'Product details',
+    labels: {
+      category: 'Category',
+      brand: 'Brand',
+      price: 'Price',
+      stock: 'Stock',
+    },
+  },
 }
 
 export default en

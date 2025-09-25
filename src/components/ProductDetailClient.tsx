@@ -24,7 +24,7 @@ type PDPProduct = {
 }
 
 export default function ProductDetailClient({ id }: { id: string }) {
-  const { locale } = useI18n()
+  const { locale, t } = useI18n()
   const { add } = useCart()
   const { toggle, isFavorite } = useFavorites()
   const { user } = useAuth()
@@ -99,6 +99,14 @@ export default function ProductDetailClient({ id }: { id: string }) {
   const inStock = (product.stock ?? 0) > 0
   const maxQty = Math.min(product.stock ?? 10, 10)
   const displayImg = product.image ?? product.thumbnail
+
+  const detailsLabels = {
+    heading: t('product.specHeading'),
+    category: t('product.labels.category'),
+    brand: t('product.labels.brand'),
+    price: t('product.labels.price'),
+    stock: t('product.labels.stock'),
+  }
 
   const handleAdd = async () => {
     try {
@@ -202,14 +210,6 @@ export default function ProductDetailClient({ id }: { id: string }) {
                 stock
               </span>
             )}
-            {product.category && (
-              <span className="text-zinc-500">
-                Category: {product.category}
-              </span>
-            )}
-            {product.brand && (
-              <span className="text-zinc-500">Brand: {product.brand}</span>
-            )}
           </div>
         </div>
 
@@ -254,13 +254,25 @@ export default function ProductDetailClient({ id }: { id: string }) {
 
         {/* Specs section (collapsible-ready; simple for now) */}
         <div className="pt-6 border-t space-y-2 text-sm">
-          <div className="font-medium">Product details</div>
-          <ul className="list-disc ml-5 text-zinc-700">
-            {product.category && <li>Category: {product.category}</li>}
-            {product.brand && <li>Brand: {product.brand}</li>}
-            <li>Price: ${product.price.toFixed(2)}</li>
+          <div className="font-medium">{detailsLabels.heading}</div>
+          <ul className="grid gap-1 sm:grid-cols-2 text-zinc-700">
+            {product.category && (
+              <li>
+                {detailsLabels.category}: {product.category}
+              </li>
+            )}
+            {product.brand && (
+              <li>
+                {detailsLabels.brand}: {product.brand}
+              </li>
+            )}
+            <li>
+              {detailsLabels.price}: ${product.price.toFixed(2)}
+            </li>
             {typeof product.stock === 'number' && (
-              <li>Stock: {product.stock}</li>
+              <li>
+                {detailsLabels.stock}: {product.stock}
+              </li>
             )}
           </ul>
         </div>

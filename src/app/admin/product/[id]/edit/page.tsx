@@ -360,10 +360,18 @@ export default function EditProductPage() {
             onChange={async (e) => {
               const file = e.target.files && e.target.files[0]
               if (!file) return
+              const token = await user?.getIdToken().catch(() => undefined)
+              if (!token) {
+                console.error('Upload blocked: admin token alınamadı')
+                return
+              }
               const fd = new FormData()
               fd.append('file', file)
               const res = await fetch('/api/admin/upload', {
                 method: 'POST',
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
                 body: fd,
               })
               if (!res.ok) {
