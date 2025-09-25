@@ -21,11 +21,12 @@ export default function CartPage() {
         return
       }
       setLoading(true)
-      type CheckoutBody = { items: { productId: string; quantity: number }[]; uid?: string }
+      type CheckoutBody = { items: { productId: string; quantity: number }[]; uid?: string; email?: string }
       const payload: CheckoutBody = {
         items: state.items.map((i) => ({ productId: i.productId, quantity: i.qty })),
       }
       if (user?.uid) payload.uid = user.uid
+      if (user?.email) payload.email = user.email
 
       const res = await fetch('/api/checkout', {
         method: 'POST',

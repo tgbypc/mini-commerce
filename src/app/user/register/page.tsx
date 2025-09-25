@@ -22,7 +22,14 @@ export default function RegisterPage() {
     }
     setLoading(true)
     try {
-      const cred = await createUserWithEmailAndPassword(auth, email, password)
+      const normalizedEmail = email.trim()
+      const normalizedPassword = password
+      if (!normalizedEmail || !normalizedPassword) {
+        toast.error('Email ve şifre gerekli')
+        return
+      }
+
+      const cred = await createUserWithEmailAndPassword(auth, normalizedEmail, normalizedPassword)
       if (name.trim()) {
         try {
           await updateProfile(cred.user, { displayName: name.trim() })
@@ -102,4 +109,3 @@ export default function RegisterPage() {
     </div>
   )
 }
-

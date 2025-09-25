@@ -57,6 +57,21 @@ function pickPrice(data: UnknownRecord): number {
   return normalizePrice(data['price'], 0)
 }
 
+const toOptionalString = (value: unknown): string | undefined => {
+  if (typeof value !== 'string') return undefined
+  const trimmed = value.trim()
+  return trimmed.length > 0 ? trimmed : undefined
+}
+
+const toStringSafe = (value: unknown, fallback = ''): string => toOptionalString(value) ?? fallback
+
+const normalizeAvailability = (value: unknown): AvailabilityStatus => {
+  const raw = toOptionalString(value)?.toLowerCase()
+  if (!raw) return AvailabilityStatus.IN_STOCK
+  if (raw === 'out-of-stock' || raw === 'out of stock') return AvailabilityStatus.OUT_OF_STOCK
+  return AvailabilityStatus.IN_STOCK
+}
+
 export async function getAllProducts(): Promise<Product[]> {
   const snap = await getDocs(collection(db, 'products'))
 
@@ -71,33 +86,46 @@ export async function getAllProducts(): Promise<Product[]> {
         ? idFromData
         : NaN
 
+    const title = toStringSafe(data['title'])
+    const titleEn = toOptionalString(data['title_en'])
+    const titleNb = toOptionalString(data['title_nb'])
+    const description = toStringSafe(data['description'])
+    const descriptionEn = toOptionalString(data['description_en'])
+    const descriptionNb = toOptionalString(data['description_nb'])
+    const availabilityRaw = data['availabilityStatus'] ?? data['availability']
+
     const p: Product = {
-      id: Number.isFinite(safeId) ? (safeId as number) : (data['id'] as number),
-      title: (data['title'] as string) ?? '',
-      description: (data['description'] as string) ?? '',
-      category: (data['category'] as string) ?? '',
+      id: Number.isFinite(safeId) ? Number(safeId) : toNum(data['id']),
+      title,
+      title_en: titleEn,
+      title_nb: titleNb,
+      title_en_lc: toOptionalString(data['title_en_lc']),
+      title_nb_lc: toOptionalString(data['title_nb_lc']),
+      description,
+      description_en: descriptionEn,
+      description_nb: descriptionNb,
+      category: toStringSafe(data['category']),
       discountPercentage: toNum(data['discountPercentage']),
       rating: toNum(data['rating']),
-      stock: toNum(data['stock'], 999), 
-      tags: Array.isArray(data['tags']) ? (data['tags'] as string[]) : [],
-      brand: (data['brand'] as string) ?? '',
-      sku: (data['sku'] as string) ?? '',
+      stock: toNum(data['stock'], 999),
+      tags: Array.isArray(data['tags']) ? (data['tags'] as unknown[]).map((tag) => String(tag)) : [],
+      brand: toStringSafe(data['brand']),
+      sku: toStringSafe(data['sku']),
       weight: toNum(data['weight']),
       dimensions:
         (data['dimensions'] as Product['dimensions']) ??
         (data['Dimentions'] as Product['dimensions']) ?? { width: 0, height: 0, depth: 0 },
-      warrantyInformation: (data['warrantyInformation'] as string) ?? '',
-      shippingInformation: (data['shippingInformation'] as string) ?? '',
-      availabilityStatus:
-        ((data['availability'] as Product['availabilityStatus']) ??
-          (data['availabilityStatus'] as Product['availabilityStatus']) ??
-          AvailabilityStatus.IN_STOCK),
+      warrantyInformation: toStringSafe(data['warrantyInformation']),
+      shippingInformation: toStringSafe(data['shippingInformation']),
+      availabilityStatus: normalizeAvailability(availabilityRaw),
       reviews: Array.isArray(data['reviews']) ? (data['reviews'] as Product['reviews']) : [],
       meta:
         (data['meta'] as Product['meta']) ?? { createdAt: '', updatedAt: '', barcode: '', qrCode: '' },
-      images: Array.isArray(data['images']) ? (data['images'] as string[]) : [],
-      thumbnail: (data['thumbnail'] as string) ?? '',
+      images: Array.isArray(data['images']) ? (data['images'] as unknown[]).map((img) => String(img)) : [],
+      thumbnail: toStringSafe(data['thumbnail']),
       price: pickPrice(data),
+      stripeProductId: toOptionalString(data['stripeProductId']),
+      stripePriceId: toOptionalString(data['stripePriceId']),
     }
 
     return p
@@ -119,33 +147,46 @@ export async function getProductById(id: string): Promise<Product | null> {
       ? idFromData
       : NaN
 
+  const title = toStringSafe(data['title'])
+  const titleEn = toOptionalString(data['title_en'])
+  const titleNb = toOptionalString(data['title_nb'])
+  const description = toStringSafe(data['description'])
+  const descriptionEn = toOptionalString(data['description_en'])
+  const descriptionNb = toOptionalString(data['description_nb'])
+  const availabilityRaw = data['availabilityStatus'] ?? data['availability']
+
   const p: Product = {
-    id: Number.isFinite(safeId) ? (safeId as number) : (data['id'] as number),
-    title: (data['title'] as string) ?? '',
-    description: (data['description'] as string) ?? '',
-    category: (data['category'] as string) ?? '',
+    id: Number.isFinite(safeId) ? Number(safeId) : toNum(data['id']),
+    title,
+    title_en: titleEn,
+    title_nb: titleNb,
+    title_en_lc: toOptionalString(data['title_en_lc']),
+    title_nb_lc: toOptionalString(data['title_nb_lc']),
+    description,
+    description_en: descriptionEn,
+    description_nb: descriptionNb,
+    category: toStringSafe(data['category']),
     discountPercentage: toNum(data['discountPercentage']),
     rating: toNum(data['rating']),
     stock: toNum(data['stock']),
-    tags: Array.isArray(data['tags']) ? (data['tags'] as string[]) : [],
-    brand: (data['brand'] as string) ?? '',
-    sku: (data['sku'] as string) ?? '',
+    tags: Array.isArray(data['tags']) ? (data['tags'] as unknown[]).map((tag) => String(tag)) : [],
+    brand: toStringSafe(data['brand']),
+    sku: toStringSafe(data['sku']),
     weight: toNum(data['weight']),
     dimensions:
       (data['dimensions'] as Product['dimensions']) ??
       (data['Dimentions'] as Product['dimensions']) ?? { width: 0, height: 0, depth: 0 },
-    warrantyInformation: (data['warrantyInformation'] as string) ?? '',
-    shippingInformation: (data['shippingInformation'] as string) ?? '',
-    availabilityStatus:
-      ((data['availability'] as Product['availabilityStatus']) ??
-        (data['availabilityStatus'] as Product['availabilityStatus']) ??
-        AvailabilityStatus.IN_STOCK),
+    warrantyInformation: toStringSafe(data['warrantyInformation']),
+    shippingInformation: toStringSafe(data['shippingInformation']),
+    availabilityStatus: normalizeAvailability(availabilityRaw),
     reviews: Array.isArray(data['reviews']) ? (data['reviews'] as Product['reviews']) : [],
     meta:
       (data['meta'] as Product['meta']) ?? { createdAt: '', updatedAt: '', barcode: '', qrCode: '' },
-    images: Array.isArray(data['images']) ? (data['images'] as string[]) : [],
-    thumbnail: (data['thumbnail'] as string) ?? '',
+    images: Array.isArray(data['images']) ? (data['images'] as unknown[]).map((img) => String(img)) : [],
+    thumbnail: toStringSafe(data['thumbnail']),
     price: pickPrice(data),
+    stripeProductId: toOptionalString(data['stripeProductId']),
+    stripePriceId: toOptionalString(data['stripePriceId']),
   }
 
   return p

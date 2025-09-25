@@ -55,7 +55,10 @@ const TITLE_FIELD_BY_LOCALE: Record<LocaleCode, 'title_en' | 'title_nb'> = {
   nb: 'title_nb',
 }
 
-const DESCRIPTION_FIELD_BY_LOCALE: Record<LocaleCode, 'description_en' | 'description_nb'> = {
+const DESCRIPTION_FIELD_BY_LOCALE: Record<
+  LocaleCode,
+  'description_en' | 'description_nb'
+> = {
   en: 'description_en',
   nb: 'description_nb',
 }
@@ -81,7 +84,6 @@ export default function EditProductPage() {
     resolver: zodResolver(schema) as Resolver<FormValues>,
   })
 
-  // Ürünü yükle ve formu doldur
   useEffect(() => {
     let alive = true
     ;(async () => {
@@ -93,9 +95,11 @@ export default function EditProductPage() {
           return
         }
         setInitial(p)
-        // default form değerleri
+
         reset({
           title: p.title,
+          title_en: p.title_en ?? p.title,
+          title_nb: p.title_nb ?? '',
           price: Number(p.price) || 0,
           stock: typeof p.stock === 'number' ? p.stock : 0,
           category: (p.category as Category) ?? CATEGORIES[0],
@@ -110,6 +114,8 @@ export default function EditProductPage() {
             ? ((p as unknown as { images?: string[] }).images || []).join(', ')
             : '',
           description: p.description ?? '',
+          description_en: p.description_en ?? p.description ?? '',
+          description_nb: p.description_nb ?? '',
           tags: Array.isArray((p as unknown as { tags?: string[] }).tags)
             ? ((p as unknown as { tags?: string[] }).tags || []).join(', ')
             : '',
@@ -171,14 +177,14 @@ export default function EditProductPage() {
       throw new Error(data?.error || 'Update failed')
     }
 
-    // İsteğe bağlı: backend priceChanged döndürebilir
-    // const { priceChanged } = data as { priceChanged?: boolean }
-
     router.push('/admin/product')
     router.refresh()
   }
 
-  const title = useMemo(() => (initial ? `Edit: ${initial.title}` : 'Edit product'), [initial])
+  const title = useMemo(
+    () => (initial ? `Edit: ${initial.title}` : 'Edit product'),
+    [initial]
+  )
 
   if (loading) {
     return (
@@ -214,7 +220,14 @@ export default function EditProductPage() {
 
         <div className="inline-flex gap-2 rounded-lg bg-zinc-100 p-1">
           {(['en', 'nb'] as const).map((loc) => (
-            <button key={loc} type="button" onClick={() => setActiveLocale(loc)} className={`px-3 py-1 text-sm rounded ${activeLocale === loc ? 'bg-white border' : ''}`}>
+            <button
+              key={loc}
+              type="button"
+              onClick={() => setActiveLocale(loc)}
+              className={`px-3 py-1 text-sm rounded ${
+                activeLocale === loc ? 'bg-white border' : ''
+              }`}
+            >
               {loc.toUpperCase()}
             </button>
           ))}
@@ -222,31 +235,53 @@ export default function EditProductPage() {
             type="button"
             onClick={() => {
               const sourceLocale: LocaleCode = activeLocale
-              const targetLocale: LocaleCode = sourceLocale === 'en' ? 'nb' : 'en'
+              const targetLocale: LocaleCode =
+                sourceLocale === 'en' ? 'nb' : 'en'
               const srcField = TITLE_FIELD_BY_LOCALE[sourceLocale]
               const dstField = TITLE_FIELD_BY_LOCALE[targetLocale]
               const val = watch(srcField) || ''
               if (!val.trim()) return
-              setValue(dstField, val, { shouldDirty: true, shouldValidate: true })
+              setValue(dstField, val, {
+                shouldDirty: true,
+                shouldValidate: true,
+              })
               setActiveLocale(targetLocale)
             }}
             className="ml-2 text-xs rounded border px-2"
           >
-            {t('admin.copyTo').replace('{loc}', activeLocale === 'en' ? 'NB' : 'EN')}
+            {t('admin.copyTo').replace(
+              '{loc}',
+              activeLocale === 'en' ? 'NB' : 'EN'
+            )}
           </button>
         </div>
 
         <div>
-          <label className="block text-sm text-zinc-600 mb-1">{t('admin.localeTitle').replace('{loc}', activeLocale.toUpperCase())}</label>
-          <input {...register('title_en')} className={`w-full rounded-lg border px-3 py-2 ${activeLocale !== 'en' ? 'hidden' : ''}`} />
-          <input {...register('title_nb')} className={`w-full rounded-lg border px-3 py-2 ${activeLocale !== 'nb' ? 'hidden' : ''}`} />
+          <label className="block text-sm text-zinc-600 mb-1">
+            {t('admin.localeTitle').replace(
+              '{loc}',
+              activeLocale.toUpperCase()
+            )}
+          </label>
+          <input
+            {...register('title_en')}
+            className={`w-full rounded-lg border px-3 py-2 ${
+              activeLocale !== 'en' ? 'hidden' : ''
+            }`}
+          />
+          <input
+            {...register('title_nb')}
+            className={`w-full rounded-lg border px-3 py-2 ${
+              activeLocale !== 'nb' ? 'hidden' : ''
+            }`}
+          />
         </div>
-
-        
 
         <div className="grid grid-cols-2 gap-4">
           <label className="block">
-            <span className="block text-sm text-zinc-600 mb-1">{t('admin.price')}</span>
+            <span className="block text-sm text-zinc-600 mb-1">
+              {t('admin.price')}
+            </span>
             <input
               type="number"
               step="0.01"
@@ -259,7 +294,9 @@ export default function EditProductPage() {
           </label>
 
           <label className="block">
-            <span className="block text-sm text-zinc-600 mb-1">{t('admin.stock')}</span>
+            <span className="block text-sm text-zinc-600 mb-1">
+              {t('admin.stock')}
+            </span>
             <input
               type="number"
               className="w-full rounded-lg border px-3 py-2"
@@ -272,7 +309,9 @@ export default function EditProductPage() {
         </div>
 
         <label className="block">
-          <span className="block text-sm text-zinc-600 mb-1">{t('admin.category')}</span>
+          <span className="block text-sm text-zinc-600 mb-1">
+            {t('admin.category')}
+          </span>
           <select
             className="w-full rounded-lg border px-3 py-2"
             {...register('category')}
@@ -289,7 +328,9 @@ export default function EditProductPage() {
         </label>
 
         <label className="block">
-          <span className="block text-sm text-zinc-600 mb-1">{t('admin.brand')}</span>
+          <span className="block text-sm text-zinc-600 mb-1">
+            {t('admin.brand')}
+          </span>
           <input
             className="w-full rounded-lg border px-3 py-2"
             {...register('brand')}
@@ -364,7 +405,14 @@ export default function EditProductPage() {
 
         <div className="inline-flex gap-2 rounded-lg bg-zinc-100 p-1">
           {(['en', 'nb'] as const).map((loc) => (
-            <button key={loc} type="button" onClick={() => setActiveLocale(loc)} className={`px-3 py-1 text-sm rounded ${activeLocale === loc ? 'bg-white border' : ''}`}>
+            <button
+              key={loc}
+              type="button"
+              onClick={() => setActiveLocale(loc)}
+              className={`px-3 py-1 text-sm rounded ${
+                activeLocale === loc ? 'bg-white border' : ''
+              }`}
+            >
               {loc.toUpperCase()}
             </button>
           ))}
@@ -372,27 +420,49 @@ export default function EditProductPage() {
             type="button"
             onClick={() => {
               const sourceLocale: LocaleCode = activeLocale
-              const targetLocale: LocaleCode = sourceLocale === 'en' ? 'nb' : 'en'
+              const targetLocale: LocaleCode =
+                sourceLocale === 'en' ? 'nb' : 'en'
               const srcField = DESCRIPTION_FIELD_BY_LOCALE[sourceLocale]
               const dstField = DESCRIPTION_FIELD_BY_LOCALE[targetLocale]
               const val = watch(srcField) || ''
               if (!val.trim()) return
-              setValue(dstField, val, { shouldDirty: true, shouldValidate: true })
+              setValue(dstField, val, {
+                shouldDirty: true,
+                shouldValidate: true,
+              })
               setActiveLocale(targetLocale)
             }}
             className="ml-2 text-xs rounded border px-2"
           >
-            {t('admin.copyTo').replace('{loc}', activeLocale === 'en' ? 'NB' : 'EN')}
+            {t('admin.copyTo').replace(
+              '{loc}',
+              activeLocale === 'en' ? 'NB' : 'EN'
+            )}
           </button>
         </div>
 
         <div>
-          <label className="block text-sm text-zinc-600 mb-1">{t('admin.localeDescription').replace('{loc}', activeLocale.toUpperCase())}</label>
-          <textarea {...register('description_en')} rows={4} className={`w-full rounded-lg border px-3 py-2 ${activeLocale !== 'en' ? 'hidden' : ''}`} />
-          <textarea {...register('description_nb')} rows={4} className={`w-full rounded-lg border px-3 py-2 ${activeLocale !== 'nb' ? 'hidden' : ''}`} />
+          <label className="block text-sm text-zinc-600 mb-1">
+            {t('admin.localeDescription').replace(
+              '{loc}',
+              activeLocale.toUpperCase()
+            )}
+          </label>
+          <textarea
+            {...register('description_en')}
+            rows={4}
+            className={`w-full rounded-lg border px-3 py-2 ${
+              activeLocale !== 'en' ? 'hidden' : ''
+            }`}
+          />
+          <textarea
+            {...register('description_nb')}
+            rows={4}
+            className={`w-full rounded-lg border px-3 py-2 ${
+              activeLocale !== 'nb' ? 'hidden' : ''
+            }`}
+          />
         </div>
-
-        
 
         <label className="block">
           <span className="block text-sm text-zinc-600 mb-1">

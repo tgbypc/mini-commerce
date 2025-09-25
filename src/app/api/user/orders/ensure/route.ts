@@ -72,18 +72,22 @@ export async function POST(req: Request) {
       }
     })
 
+    const customerEmail = session.customer_details?.email ?? null
+    const emailLc = customerEmail ? customerEmail.toLowerCase() : null
+
     const orderDoc = {
       sessionId: session.id,
       paymentStatus: session.payment_status,
       status: 'paid',
       amountTotal: (session.amount_total ?? 0) / 100,
       currency: session.currency ?? 'usd',
-      email: session.customer_details?.email ?? null,
+      email: customerEmail,
+      emailLc,
       userId: uid,
       items,
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
-      source: 'ensure',
+      source: 'ensure' as const,
       shipping: toShippingInfo({
         cost: shippingCost,
         details: shippingDetails,

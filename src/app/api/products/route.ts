@@ -86,13 +86,20 @@ export async function GET(req: Request) {
       sortDir = 'asc'
     }
 
-    // Order by primary sort field only (avoid composite index explosion)
+    // Order by primary sort field only; cursor doc alınarak deterministik devam sağlanır
     query = query.orderBy(sortField, sortDir)
 
     if (cursor) {
       // Only accept cursor that matches the current sort; start after the last sort value
       if (cursor.k === sortField && cursor.d === sortDir) {
-        query = query.startAfter(cursor.v)
+        try {
+          const cursorSnap = await adminDb.collection('products').doc(cursor.id).get()
+          if (cursorSnap.exists) {
+            query = query.startAfter(cursorSnap)
+          }
+        } catch {
+          // cursor doc okunamadıysa normal akış devam etsin
+        }
       }
     }
 
@@ -106,11 +113,17 @@ export async function GET(req: Request) {
       // Fallback path for index errors: drop filters/ordering gradually
       // 1) Try without category/search but keep sort
       try {
-        const q2: FirebaseFirestore.Query = adminDb.collection('products').orderBy(sortField, sortDir).limit(limit)
+        const q2: FirebaseFirestore.Query = adminDb
+          .collection('products')
+          .orderBy(sortField, sortDir)
+          .limit(limit)
         snap = await q2.get()
       } catch {
         // 2) Final fallback by document id
-        const q3 = adminDb.collection('products').orderBy(FieldPath.documentId(), 'asc').limit(limit)
+        const q3 = adminDb
+          .collection('products')
+          .orderBy(FieldPath.documentId(), 'asc')
+          .limit(limit)
         snap = await q3.get()
       }
       fallbackUsed = true
@@ -201,11 +214,18 @@ export async function GET(req: Request) {
         if (sortField === 'price') {
           const an = getComparableNumber(av)
           const bn = getComparableNumber(bv)
-          return sortDir === 'asc' ? an - bn : bn - an
+          if (an !== bn) {
+            return sortDir === 'asc' ? an - bn : bn - an
+          }
+        } else {
+          const as = getComparableString(av).toLowerCase()
+          const bs = getComparableString(bv).toLowerCase()
+          const cmp = sortDir === 'asc' ? as.localeCompare(bs) : bs.localeCompare(as)
+          if (cmp !== 0) return cmp
         }
-        const as = getComparableString(av).toLowerCase()
-        const bs = getComparableString(bv).toLowerCase()
-        return sortDir === 'asc' ? as.localeCompare(bs) : bs.localeCompare(as)
+        const aid = String((a as { id: unknown }).id ?? '')
+        const bid = String((b as { id: unknown }).id ?? '')
+        return aid.localeCompare(bid)
       })
     }
 

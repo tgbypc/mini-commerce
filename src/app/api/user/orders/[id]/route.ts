@@ -43,6 +43,7 @@ type RawOrder = {
   shipping?: ShippingInfo | null
   createdAt?: FirebaseFirestore.Timestamp | Date | null
   userId?: string | null
+  emailLc?: string | null
   items?: RawOrderItem[]
 }
 
@@ -57,6 +58,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 
     const decoded = await auth.verifyIdToken(token)
     const uid = decoded.uid
+    const emailValue = typeof decoded.email === 'string' ? decoded.email : null
+    const emailLc = emailValue ? emailValue.toLowerCase() : null
 
     // First try user subcollection
     const userOrderRef = adminDb.collection('users').doc(uid).collection('orders').doc(orderId)
@@ -70,8 +73,17 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       const topRef = adminDb.collection('orders').doc(orderId)
       const topSnap = await topRef.get()
       if (!topSnap.exists) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-      const topData = topSnap.data() as Omit<RawOrder, 'id'>
-      if (topData?.userId !== uid) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      const topData = topSnap.data() as (Omit<RawOrder, 'id'> & { emailLc?: string | null; email?: string | null })
+      const orderEmailLc = typeof topData?.emailLc === 'string'
+        ? topData.emailLc
+        : typeof topData?.email === 'string'
+          ? topData.email.toLowerCase()
+          : null
+      const userMatches =
+        topData?.userId === uid ||
+        (!!emailLc && orderEmailLc === emailLc) ||
+        (!!emailValue && topData?.email === emailValue)
+      if (!userMatches) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       data = { id: topSnap.id, ...topData }
     }
 

@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { z } from 'zod'
-import { doc, getDoc } from 'firebase/firestore'
-import { db } from '@/lib/firebase'
+import { adminDb } from '@/lib/firebaseAdmin'
 
 
 export const runtime = 'nodejs'
@@ -18,6 +17,7 @@ const ItemSchema = z.object({
 const BodySchema = z.object({
   items: z.array(ItemSchema).min(1),
   uid: z.string().optional(),
+  email: z.string().email().optional(),
   shippingMethod: z.enum(['standard', 'express']).optional(),
 })
 
@@ -30,7 +30,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: msg }, { status: 400 })
     }
 
-    const { items, uid, shippingMethod } = parsed.data
+    const { items, uid, email, shippingMethod } = parsed.data
 
     // Not: Şu an products koleksiyonundan stripePriceId aramıyoruz,
     // price_data ile ilerliyoruz (senin mevcut akışına uyum).
@@ -42,9 +42,8 @@ export async function POST(req: Request) {
       const qty = Math.max(1, Math.floor(it.quantity || 1))
 
       // Fetch product from Firestore and validate stripePriceId
-      const productRef = doc(db, 'products', it.productId)
-      const productSnap = await getDoc(productRef)
-      if (!productSnap.exists()) {
+      const productSnap = await adminDb.collection('products').doc(String(it.productId)).get()
+      if (!productSnap.exists) {
         throw new Error(`Product not found: ${it.productId}`)
       }
       const productData = productSnap.data() as { stripePriceId?: unknown }
@@ -56,6 +55,10 @@ export async function POST(req: Request) {
       line_items.push({ price: priceId, quantity: qty })
     }
 
+    const metadata: Record<string, string> = {}
+    if (uid) metadata.uid = uid
+    if (shippingMethod) metadata.shippingMethod = shippingMethod
+
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       payment_method_types: ['card'],
@@ -66,8 +69,9 @@ export async function POST(req: Request) {
         { shipping_rate_data: { display_name: 'Standard', fixed_amount: { amount: 500, currency: 'usd' }, type: 'fixed_amount' } },
         { shipping_rate_data: { display_name: 'Express', fixed_amount: { amount: 1200, currency: 'usd' }, type: 'fixed_amount' } },
       ],
-      ...(uid && uid.trim().length > 0 ? { client_reference_id: uid, metadata: { uid } } : {}),
-      ...(shippingMethod ? { metadata: { ...(uid ? { uid } : {}), shippingMethod } } : {}),
+      ...(uid && uid.trim().length > 0 ? { client_reference_id: uid } : {}),
+      ...(email ? { customer_email: email, customer_creation: 'always' as const } : {}),
+      ...(Object.keys(metadata).length ? { metadata } : {}),
       success_url: `${origin}/success?id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/cart`,
     })

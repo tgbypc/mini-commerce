@@ -5,13 +5,8 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 import { stripe } from '@/lib/stripe'
-import { db } from '@/lib/firebase'
-import {
-  collection,
-  getDocs,
-  updateDoc,
-  doc,
-} from 'firebase/firestore'
+import { adminDb } from '@/lib/firebaseAdmin'
+import { requireAdminFromRequest } from '@/lib/adminAuth'
 
 // Minimal product shape we rely on
 type ProductDoc = {
@@ -38,6 +33,11 @@ const parsePriceCents = (price: unknown): number | null => {
 
 export async function POST(req: Request) {
   try {
+    const gate = await requireAdminFromRequest(req)
+    if ('error' in gate) {
+      return NextResponse.json({ error: gate.error }, { status: gate.status })
+    }
+
     let onlyId: string | null = null
     try {
       const body = await req.json()
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
       // no body or not JSON; treat as bulk
     }
 
-    const snap = await getDocs(collection(db, 'products'))
+    const snap = await adminDb.collection('products').get()
 
     const processed: string[] = []
     const skipped: string[] = []
@@ -123,7 +123,8 @@ export async function POST(req: Request) {
         }
 
         // Write both top-level and nested stripe fields
-        await updateDoc(doc(db, 'products', id), {
+        const ref = adminDb.collection('products').doc(id)
+        await ref.update({
           stripeProductId,
           stripePriceId,
           stripe: { productId: stripeProductId, priceId: stripePriceId },

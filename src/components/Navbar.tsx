@@ -5,7 +5,6 @@ import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import { useCart } from '@/context/CartContext'
-import { useFavorites } from '@/context/FavoritesContext'
 import { useI18n } from '@/context/I18nContext'
 
 export default function Navbar() {
@@ -15,7 +14,6 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
   const { user, role, loading, logout } = useAuth()
   const { count } = useCart()
-  const { count: favCount } = useFavorites()
   const [profileOpen, setProfileOpen] = useState(false)
   const initials = useMemo(() => {
     const n = user?.displayName || user?.email || ''
@@ -112,21 +110,7 @@ export default function Navbar() {
               </button>
               {profileOpen && (
                 <div className="absolute right-0 mt-2 w-48 rounded-xl border bg-white shadow-lg p-2 z-50">
-                  <Link
-                    href="/user/profile"
-                    onClick={() => setProfileOpen(false)}
-                    className="block rounded-lg px-3 py-2 text-sm hover:bg-zinc-50"
-                  >
-                    {t('nav.profile')}
-                  </Link>
-                  <Link
-                    href="/user/orders"
-                    onClick={() => setProfileOpen(false)}
-                    className="block rounded-lg px-3 py-2 text-sm hover:bg-zinc-50"
-                  >
-                    {t('nav.orders')}
-                  </Link>
-                  {role === 'admin' && (
+                  {role === 'admin' ? (
                     <Link
                       href="/admin"
                       onClick={() => setProfileOpen(false)}
@@ -134,6 +118,23 @@ export default function Navbar() {
                     >
                       {t('nav.admin')}
                     </Link>
+                  ) : (
+                    <>
+                      <Link
+                        href="/user/profile"
+                        onClick={() => setProfileOpen(false)}
+                        className="block rounded-lg px-3 py-2 text-sm hover:bg-zinc-50"
+                      >
+                        {t('nav.profile')}
+                      </Link>
+                      <Link
+                        href="/user/orders"
+                        onClick={() => setProfileOpen(false)}
+                        className="block rounded-lg px-3 py-2 text-sm hover:bg-zinc-50"
+                      >
+                        {t('nav.orders')}
+                      </Link>
+                    </>
                   )}
                   <button
                     type="button"
@@ -154,9 +155,21 @@ export default function Navbar() {
         {/* Arama */}
         <form onSubmit={onSubmit} className="flex min-w-40 h-10 max-w-64">
           <div className="flex w-full items-stretch rounded-xl h-full overflow-hidden">
-            <div className="text-[#49739c] flex items-center justify-center pl-4 bg-[#e7edf4]">
-              {/* Search icon */}
-            </div>
+            <button
+              type="submit"
+              className="flex items-center justify-center bg-[#e7edf4] px-4 text-[#49739c] transition hover:bg-[#dfe7f1] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#cedbe8]"
+              aria-label={t('home.searchPlaceholder')}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 256 256"
+                fill="currentColor"
+              >
+                <path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z" />
+              </svg>
+            </button>
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
@@ -175,11 +188,6 @@ export default function Navbar() {
           <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 32 32">
             <path fill="currentColor" d="M22.45 6a5.47 5.47 0 0 1 3.91 1.64a5.7 5.7 0 0 1 0 8L16 26.13L5.64 15.64a5.7 5.7 0 0 1 0-8a5.48 5.48 0 0 1 7.82 0l2.54 2.6l2.53-2.58A5.44 5.44 0 0 1 22.45 6m0-2a7.47 7.47 0 0 0-5.34 2.24L16 7.36l-1.11-1.12a7.49 7.49 0 0 0-10.68 0a7.72 7.72 0 0 0 0 10.82L16 29l11.79-11.94a7.72 7.72 0 0 0 0-10.82A7.49 7.49 0 0 0 22.45 4Z" />
           </svg>
-          {favCount > 0 && (
-            <span className="absolute -top-2 -right-2 min-w-5 h-5 px-1 rounded-full bg-black text-white text-xs flex items-center justify-center">
-              {favCount}
-            </span>
-          )}
         </Link>
 
         {/* Sepet */}
@@ -237,8 +245,11 @@ export default function Navbar() {
           <div className="px-4 py-3 space-y-3">
             <form onSubmit={onSubmit} className="w-full">
               <div className="flex w-full items-stretch rounded-xl h-10 overflow-hidden">
-                <div className="text-[#49739c] flex items-center justify-center pl-4 bg-[#e7edf4]">
-                  {/* search icon */}
+                <button
+                  type="submit"
+                  className="text-[#49739c] flex items-center justify-center px-4 bg-[#e7edf4] transition hover:bg-[#dfe7f1] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#cedbe8]"
+                  aria-label={t('home.searchPlaceholder')}
+                >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="20"
@@ -248,7 +259,7 @@ export default function Navbar() {
                   >
                     <path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z" />
                   </svg>
-                </div>
+                </button>
                 <input
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
@@ -287,7 +298,7 @@ export default function Navbar() {
               >
                 {t('nav.contact')}
               </Link>
-              {!loading && user && (
+              {!loading && user && role !== 'admin' && (
                 <Link
                   href="/user/profile"
                   onClick={() => setIsOpen(false)}
@@ -354,7 +365,7 @@ export default function Navbar() {
                   />
                 </svg>
               </Link>
-              <Link
+             <Link
                 href="/cart"
                 onClick={() => setIsOpen(false)}
                 className="py-2 text-sm font-medium inline-flex items-center gap-2"

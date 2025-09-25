@@ -10,19 +10,25 @@ import { useRouter } from 'next/navigation'
 
 type OrderItem = {
   description?: string
+  title?: string | null
   quantity: number
-  amountSubtotal?: number // cents
-  amountTotal?: number // cents
+  amountSubtotal?: number
+  amountTotal?: number
   priceId?: string | null
 }
 type OrderDoc = {
   id: string
   sessionId?: string
-  amountTotal?: number | null // major currency (webhook'ta /100 yapılmıştı)
-  currency?: string | null // 'try' | 'usd'...
+  amountTotal?: number | null
+  currency?: string | null
   paymentStatus?: string | null
   status?: string | null
-  createdAt?: Timestamp | Date | null
+  createdAt?:
+    | Timestamp
+    | Date
+    | { seconds?: number; nanoseconds?: number }
+    | { _seconds?: number; _nanoseconds?: number }
+    | null
   items?: OrderItem[]
 }
 
@@ -78,7 +84,12 @@ export default function OrdersPage() {
       <div className="mx-auto max-w-3xl p-6">
         <h1 className="text-2xl font-semibold">{t('orders.title')}</h1>
         <p className="mt-2 text-zinc-600">{t('orders.loginPrompt')}</p>
-        <Link href="/user/login" className="mt-4 inline-flex rounded-xl bg-black px-4 py-2 text-sm font-medium text-white">{t('nav.login')}</Link>
+        <Link
+          href="/user/login"
+          className="mt-4 inline-flex rounded-xl bg-black px-4 py-2 text-sm font-medium text-white"
+        >
+          {t('nav.login')}
+        </Link>
       </div>
     )
   }
@@ -99,7 +110,14 @@ export default function OrdersPage() {
         <h1 className="text-2xl font-semibold">{t('orders.title')}</h1>
         <EmptyState
           message={t('orders.empty')}
-          action={<Link href="/" className="inline-flex rounded-xl border px-4 py-2 text-sm font-medium hover:bg-zinc-50">{t('fav.continue')}</Link>}
+          action={
+            <Link
+              href="/"
+              className="inline-flex rounded-xl border px-4 py-2 text-sm font-medium hover:bg-zinc-50"
+            >
+              {t('fav.continue')}
+            </Link>
+          }
         />
       </div>
     )
@@ -110,14 +128,50 @@ export default function OrdersPage() {
       <h1 className="text-2xl font-semibold">Siparişlerim</h1>
 
       {orders.map((o) => {
+        const createdAt = o.createdAt
         const date =
-          o.createdAt instanceof Timestamp
-            ? o.createdAt.toDate()
-            : o.createdAt instanceof Date
-            ? o.createdAt
-            : null
+          typeof createdAt === 'string'
+            ? new Date(createdAt)
+            : createdAt instanceof Timestamp
+            ? createdAt.toDate()
+            : createdAt instanceof Date
+            ? createdAt
+            : (() => {
+                if (createdAt && typeof createdAt === 'object') {
+                  const seconds =
+                    typeof (createdAt as { seconds?: number }).seconds ===
+                    'number'
+                      ? (createdAt as { seconds?: number }).seconds
+                      : typeof (createdAt as { _seconds?: number })._seconds ===
+                        'number'
+                      ? (createdAt as { _seconds?: number })._seconds
+                      : undefined
+                  const nanos =
+                    typeof (createdAt as { nanoseconds?: number })
+                      .nanoseconds === 'number'
+                      ? (createdAt as { nanoseconds?: number }).nanoseconds
+                      : typeof (createdAt as { _nanoseconds?: number })
+                          ._nanoseconds === 'number'
+                      ? (createdAt as { _nanoseconds?: number })._nanoseconds
+                      : 0
+                  if (typeof seconds === 'number') {
+                    const ms = seconds * 1000 + Math.floor((nanos ?? 0) / 1e6)
+                    return new Date(ms)
+                  }
+                }
+                return null
+              })()
         const when = date ? date.toLocaleString('tr-TR') : ''
-        const count = o.items?.reduce((n, it) => n + (it.quantity ?? 0), 0) ?? 0
+        const count =
+          o.items?.reduce((n, it) => {
+            const qty = Number(it.quantity ?? 0)
+            return n + (Number.isFinite(qty) ? qty : 0)
+          }, 0) ?? 0
+        const totalMajor = (() => {
+          if (typeof o.amountTotal === 'number') return o.amountTotal
+          const parsed = Number(o.amountTotal ?? 0)
+          return Number.isFinite(parsed) ? parsed : 0
+        })()
         const currency = (o.currency ?? 'TRY').toUpperCase()
 
         return (
@@ -130,7 +184,7 @@ export default function OrdersPage() {
               <div className="text-right">
                 <div className="text-sm text-zinc-600">Tutar</div>
                 <div className="text-base font-semibold">
-                  {fmtMajor(o.amountTotal ?? 0, currency)}
+                  {fmtMajor(totalMajor, currency)}
                 </div>
               </div>
             </div>
@@ -146,7 +200,9 @@ export default function OrdersPage() {
               </div>
               <div className="rounded-xl bg-zinc-50 p-3">
                 <div className="text-xs text-zinc-600">Durum</div>
-                <div className="text-sm">{(o.status || 'paid').toUpperCase()}</div>
+                <div className="text-sm">
+                  {(o.status || 'paid').toUpperCase()}
+                </div>
               </div>
             </div>
 
@@ -158,9 +214,11 @@ export default function OrdersPage() {
                     className="flex items-center justify-between p-3 text-sm"
                   >
                     <span className="text-zinc-900">
-                      {it.description ?? it.priceId ?? 'Ürün'}
+                      {it.description || it.title || it.priceId || 'Ürün'}
                     </span>
-                    <span className="text-zinc-600">× {it.quantity}</span>
+                    <span className="text-zinc-600">
+                      × {Number(it.quantity ?? 0) || 0}
+                    </span>
                   </li>
                 ))}
               </ul>

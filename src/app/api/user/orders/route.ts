@@ -27,6 +27,9 @@ export async function GET(req: Request) {
 
     const decodedToken = await auth.verifyIdToken(token)
     const uid = decodedToken.uid
+    const emailLc = typeof decodedToken.email === 'string'
+      ? decodedToken.email.toLowerCase()
+      : null
 
     // Prefer user subcollection
     const subSnap = await adminDb
@@ -36,19 +39,89 @@ export async function GET(req: Request) {
       .orderBy('createdAt', 'desc')
       .get()
 
-    const subOrders = subSnap.docs.map((d) => ({ id: d.id, ...d.data() })) as Array<Record<string, unknown> & { id: string }>
+    const subOrdersRaw = subSnap.docs.map((d) => ({ id: d.id, ...d.data() })) as Array<Record<string, unknown> & { id: string }>
 
     // Also attempt top-level orders filtered by userId (webhook also writes here)
-    const topSnap = await adminDb
+    const topOrdersQuery = adminDb
       .collection('orders')
       .where('userId', '==', uid)
-      .get()
+
+    const emailQuery = emailLc
+      ? adminDb.collection('orders').where('emailLc', '==', emailLc)
+      : null
+    const emailExactQuery = decodedToken.email
+      ? adminDb.collection('orders').where('email', '==', decodedToken.email)
+      : null
+
+    const [topSnap, emailSnap, emailExactSnap] = await Promise.all([
+      topOrdersQuery.get(),
+      emailQuery ? emailQuery.get() : Promise.resolve(null),
+      emailExactQuery ? emailExactQuery.get() : Promise.resolve(null),
+    ])
 
     const topOrders = topSnap.docs.map((d) => ({ id: d.id, ...d.data() })) as Array<Record<string, unknown> & { id: string }>
+    const topOrderIds = new Set(topOrders.map((o) => o.id))
+    const subOrders = subOrdersRaw.filter((o) => {
+      const source = (o as { source?: string }).source
+      if (source === 'ensure' && topOrderIds.has(o.id)) return false
+      return true
+    })
+    const emailOrders = emailSnap
+      ? (emailSnap.docs.map((d) => ({ id: d.id, ...d.data() })) as Array<Record<string, unknown> & { id: string }>)
+      : []
+    const emailExactOrders = emailExactSnap
+      ? (emailExactSnap.docs.map((d) => ({ id: d.id, ...d.data() })) as Array<Record<string, unknown> & { id: string }>)
+      : []
 
     // Merge by id and sort desc by createdAt
-    const map = new Map<string, Record<string, unknown>>()
-    for (const o of [...subOrders, ...topOrders]) map.set(o.id, o)
+    type OrderDoc = Record<string, unknown> & { id: string }
+
+    function keyFor(order: OrderDoc): string {
+      const raw = (order as { sessionId?: unknown }).sessionId
+      if (typeof raw === 'string') {
+        const trimmed = raw.trim()
+        if (trimmed) return trimmed
+      }
+      return order.id
+    }
+
+    function getSource(order: OrderDoc): string {
+      const source = (order as { source?: unknown }).source
+      return typeof source === 'string' ? source : ''
+    }
+
+    function pickPreferred(current: OrderDoc, candidate: OrderDoc, key: string): OrderDoc {
+      const currentSource = getSource(current)
+      const candidateSource = getSource(candidate)
+
+      if (currentSource === 'ensure' && candidateSource && candidateSource !== 'ensure') {
+        return candidate
+      }
+      if (candidateSource === 'ensure' && currentSource && currentSource !== 'ensure') {
+        return current
+      }
+      if (candidate.id === key && current.id !== key && candidateSource !== 'ensure') {
+        return candidate
+      }
+      if (current.id === key && candidate.id !== key && currentSource !== 'ensure') {
+        return current
+      }
+
+      const currentUpdated = toMillis((current as { updatedAt?: unknown }).updatedAt)
+      const candidateUpdated = toMillis((candidate as { updatedAt?: unknown }).updatedAt)
+      return candidateUpdated > currentUpdated ? candidate : current
+    }
+
+    const map = new Map<string, OrderDoc>()
+    for (const o of [...subOrders, ...topOrders, ...emailOrders, ...emailExactOrders]) {
+      const key = keyFor(o)
+      const existing = map.get(key)
+      if (!existing) {
+        map.set(key, o)
+        continue
+      }
+      map.set(key, pickPreferred(existing, o, key))
+    }
     function toMillis(v: unknown): number {
       const withToMillis = v as { toMillis?: () => number } | null
       if (withToMillis && typeof withToMillis.toMillis === 'function') {

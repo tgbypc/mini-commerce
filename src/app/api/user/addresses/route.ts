@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { adminDb, auth, FieldValue } from '@/lib/firebaseAdmin'
+import { z } from 'zod'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -10,6 +11,38 @@ function tokenFrom(req: Request) {
   if (h) return h.trim()
   return null
 }
+
+const addressSchema = z.object({
+  id: z.string().min(1).max(64).optional(),
+  name: z.string().trim().min(1).max(80),
+  phone: z
+    .string()
+    .trim()
+    .regex(/^[+\d\s-]{6,20}$/u, 'Invalid phone number')
+    .optional()
+    .or(z.literal('').transform(() => undefined)),
+  line1: z.string().trim().min(1).max(120),
+  line2: z
+    .string()
+    .trim()
+    .max(120)
+    .optional()
+    .or(z.literal('').transform(() => undefined)),
+  city: z.string().trim().min(1).max(80),
+  state: z
+    .string()
+    .trim()
+    .max(80)
+    .optional()
+    .or(z.literal('').transform(() => undefined)),
+  zip: z.string().trim().min(2).max(20),
+  country: z
+    .string()
+    .trim()
+    .transform((val) => val.toUpperCase())
+    .refine((val) => val.length === 2, 'Country must be ISO alpha-2'),
+  isDefault: z.boolean().optional().default(false),
+})
 
 export async function GET(req: Request) {
   try {
@@ -31,33 +64,28 @@ export async function POST(req: Request) {
     if (!t) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const d = await auth.verifyIdToken(t)
     const uid = d.uid
-    const body = (await req.json()) as Partial<{
-      id: string
-      name: string
-      phone?: string
-      line1: string
-      line2?: string
-      city: string
-      state?: string
-      zip: string
-      country: string
-      isDefault?: boolean
-    }>
-    const id = (body.id || '').trim()
-    const doc = {
-      name: (body.name || '').trim(),
-      phone: (body.phone || '').trim() || null,
-      line1: (body.line1 || '').trim(),
-      line2: (body.line2 || '').trim() || null,
-      city: (body.city || '').trim(),
-      state: (body.state || '').trim() || null,
-      zip: (body.zip || '').trim(),
-      country: (body.country || '').trim().toUpperCase(),
-      isDefault: !!body.isDefault,
-      updatedAt: FieldValue.serverTimestamp(),
+    const json = await req.json().catch(() => null)
+    const parsed = addressSchema.safeParse(json)
+    if (!parsed.success) {
+      const issue = parsed.error.issues[0]
+      return NextResponse.json(
+        { error: issue?.message || 'Invalid address payload' },
+        { status: 400 },
+      )
     }
-    if (!doc.name || !doc.line1 || !doc.city || !doc.zip || !doc.country) {
-      return NextResponse.json({ error: 'Missing required' }, { status: 400 })
+
+    const { id, name, phone, line1, line2, city, state, zip, country, isDefault } = parsed.data
+    const doc = {
+      name,
+      phone: phone ?? null,
+      line1,
+      line2: line2 ?? null,
+      city,
+      state: state ?? null,
+      zip,
+      country,
+      isDefault,
+      updatedAt: FieldValue.serverTimestamp(),
     }
     const col = adminDb.collection('users').doc(uid).collection('addresses')
     const ref = id ? col.doc(id) : col.doc()
@@ -83,4 +111,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: msg }, { status: 500 })
   }
 }
-

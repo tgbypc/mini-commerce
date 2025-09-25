@@ -1,4 +1,4 @@
-// ör: src/app/admin/actions/stripeProduct.ts (server action)
+
 import Stripe from 'stripe'
 import { db } from '@/lib/firebase'
 import { doc, updateDoc } from 'firebase/firestore'
@@ -20,7 +20,7 @@ export async function upsertStripeForProduct({
   price: number
   images?: string[]
 }) {
-  // 1) Stripe Product
+ 
   const product = await stripe.products.create({
     name: title,
     description,
@@ -28,15 +28,15 @@ export async function upsertStripeForProduct({
     metadata: { productId }, 
   })
 
-  // 2) Stripe Price
+  
   const stripePrice = await stripe.prices.create({
     currency: 'usd',
     unit_amount: Math.round(price * 100),
     product: product.id,
-    metadata: { productId }, // add this line
+    metadata: { productId }, 
   })
 
-  // 3) Firestore’a yaz
+  
   await updateDoc(doc(db, 'products', productId), {
     stripeProductId: product.id,
     stripePriceId: stripePrice.id,

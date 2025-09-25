@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { adminDb, auth, FieldValue } from '@/lib/firebaseAdmin'
+import { z } from 'zod'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -15,18 +16,31 @@ function extractBearer(req: Request): string | null {
   }
 }
 
+const payloadSchema = z.object({
+  productId: z
+    .preprocess((v) => (typeof v === 'string' ? v.trim() : v), z.string().min(1).max(128)),
+  qty: z
+    .preprocess((v) => Number(v ?? 0), z.number().int().min(0).max(50))
+    .default(0),
+})
+
 export async function POST(req: Request) {
   try {
     const token = extractBearer(req)
     if (!token) return NextResponse.json({ ok: false }, { status: 401 })
     const decoded = await auth.verifyIdToken(token)
     const uid = decoded.uid
-    const body = await req.json()
-    const productId = String(body?.productId || '')
-    let qty = Math.floor(Number(body?.qty))
-    if (!Number.isFinite(qty)) qty = 1
-    qty = Math.max(0, qty)
-    if (!productId) return NextResponse.json({ ok: false, error: 'Missing productId' }, { status: 400 })
+    const json = await req.json().catch(() => null)
+    const parsed = payloadSchema.safeParse(json)
+    if (!parsed.success) {
+      const issue = parsed.error.issues[0]
+      return NextResponse.json(
+        { ok: false, error: issue?.message || 'Invalid payload' },
+        { status: 400 },
+      )
+    }
+
+    const { productId, qty } = parsed.data
 
     const ref = adminDb.collection('users').doc(uid).collection('cartItems').doc(productId)
     if (qty === 0) {

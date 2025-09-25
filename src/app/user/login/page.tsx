@@ -1,9 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { signInWithEmailAndPassword } from 'firebase/auth'
-import { auth } from '@/lib/firebase'
+import { FirebaseError } from 'firebase/app'
+import { doc, getDoc } from 'firebase/firestore'
+import { auth, db } from '@/lib/firebase'
 import { toast } from 'react-hot-toast'
 
 export default function LoginPage() {
@@ -11,17 +13,71 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     try {
-      await signInWithEmailAndPassword(auth, email, password)
+      const normalizedEmail = email.trim()
+      const normalizedPassword = password
+      if (!normalizedEmail || !normalizedPassword) {
+        toast.error('Email ve şifre gerekli')
+        return
+      }
+
+      const credential = await signInWithEmailAndPassword(auth, normalizedEmail, normalizedPassword)
+
+      let role: 'admin' | 'user' = 'user'
+      try {
+        const user = credential.user
+        if (user) {
+          const snap = await getDoc(doc(db, 'users', user.uid))
+          const data = snap.exists() ? (snap.data() as { role?: string }) : null
+          if (data?.role === 'admin') {
+            role = 'admin'
+          } else if (user.email) {
+            const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || '')
+              .split(',')
+              .map((s) => s.trim().toLowerCase())
+              .filter(Boolean)
+            if (adminEmails.includes(user.email.toLowerCase())) {
+              role = 'admin'
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to resolve user role after login', err)
+      }
+
+      const nextParam = searchParams.get('next')
+      const destination = nextParam && nextParam.startsWith('/')
+        ? nextParam
+        : role === 'admin'
+          ? '/admin'
+          : '/user/profile'
+
       toast.success('Logged in successfully')
-      router.push('/user/profile')
+      router.push(destination)
     } catch (error) {
-      toast.error('Failed to log in')
-      console.error(error)
+      const message =
+        error instanceof FirebaseError
+          ? (() => {
+              switch (error.code) {
+                case 'auth/invalid-credential':
+                case 'auth/wrong-password':
+                  return 'Email ya da şifre hatalı'
+                case 'auth/user-disabled':
+                  return 'Hesabınız devre dışı bırakılmış'
+                case 'auth/user-not-found':
+                  return 'Bu email ile kayıtlı kullanıcı bulunamadı'
+                default:
+                  return error.message || 'Failed to log in'
+              }
+            })()
+          : 'Failed to log in'
+      toast.error(message)
+      console.error('Login failed', error)
     } finally {
       setLoading(false)
     }

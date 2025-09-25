@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import { db } from '@/lib/firebase'
 import { collection, getDocs, limit, query, where } from 'firebase/firestore'
+import type { DocumentData, QueryDocumentSnapshot } from 'firebase/firestore'
 import { useCart } from '@/context/CartContext'
 
 type SummaryItem = { name: string; qty: number }
@@ -80,12 +81,23 @@ export default function SuccessPage() {
 
         // Ensure order is written (fallback if webhook didn't run)
         if (!cancelled && user) {
+          const pickDocId = (docs: QueryDocumentSnapshot<DocumentData>[]) => {
+            if (!docs.length) return null
+            const sessionMatch = docs.find((d) => d.id === sessionId)
+            if (sessionMatch) return sessionMatch.id
+            const fieldMatch = docs.find((d) => {
+              const sid = d.data()?.sessionId
+              return typeof sid === 'string' && sid.trim() === sessionId
+            })
+            return (fieldMatch ?? docs[0])?.id ?? null
+          }
           try {
             const ref = collection(db, 'users', user.uid, 'orders')
             const q = query(ref, where('sessionId', '==', sessionId), limit(1))
             const snap = await getDocs(q)
             if (!cancelled && !snap.empty) {
-              setOrderDocId(snap.docs[0].id)
+              const id = pickDocId(snap.docs)
+              if (id) setOrderDocId(id)
             } else {
               const token = await user.getIdToken()
               const ensureRes = await fetch('/api/user/orders/ensure', {
@@ -96,7 +108,15 @@ export default function SuccessPage() {
               if (ensureRes.ok) {
                 // Try query again
                 const snap2 = await getDocs(q)
-                if (!cancelled && !snap2.empty) setOrderDocId(snap2.docs[0].id)
+                if (!cancelled && !snap2.empty) {
+                  const id = pickDocId(snap2.docs)
+                  if (id) setOrderDocId(id)
+                  else setOrderDocId(sessionId)
+                } else if (!cancelled) {
+                  setOrderDocId(sessionId)
+                }
+              } else if (!cancelled) {
+                setOrderDocId((prev) => prev ?? sessionId)
               }
             }
           } catch {}

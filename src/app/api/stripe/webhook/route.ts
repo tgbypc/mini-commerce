@@ -107,18 +107,23 @@ export async function POST(req: Request) {
       customer: full.customer_details ?? null,
     })
 
+    const customerEmail = s.customer_details?.email ?? null
+    const emailLc = customerEmail ? customerEmail.toLowerCase() : null
+
     const orderDoc = {
       sessionId: s.id,
       paymentStatus: s.payment_status,
       status: 'paid',
       amountTotal: (s.amount_total ?? 0) / 100,
       currency: s.currency ?? 'usd',
-      email: s.customer_details?.email ?? null,
+      email: customerEmail,
+      emailLc,
       userId: uid,
       items,
       shipping,
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
+      source: 'webhook' as const,
     }
 
     // stok düş (transaction ile; availabilityStatus güncelle)

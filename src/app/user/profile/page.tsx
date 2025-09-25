@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext'
 import { useI18n } from '@/context/I18nContext'
 import { Timestamp, doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
+import { toast } from 'react-hot-toast'
 
 type OrderItem = {
   description?: string
@@ -144,13 +145,37 @@ export default function ProfilePage() {
   async function saveAddress(e: React.FormEvent) {
     e.preventDefault()
     if (!user) return
+    const payload = {
+      id: addrForm.id.trim(),
+      name: addrForm.name.trim(),
+      phone: addrForm.phone.trim(),
+      line1: addrForm.line1.trim(),
+      line2: addrForm.line2.trim(),
+      city: addrForm.city.trim(),
+      state: addrForm.state.trim(),
+      zip: addrForm.zip.trim(),
+      country: (addrForm.country || 'NO').trim().toUpperCase(),
+      isDefault: addrForm.isDefault,
+    }
+
+    if (!payload.name || !payload.line1 || !payload.city || !payload.zip) {
+      toast.error('Lütfen tüm zorunlu alanları doldurun')
+      return
+    }
+
     setAddrSaving(true)
     try {
       const token = await user.getIdToken().catch(() => undefined)
       const res = await fetch('/api/user/addresses', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify(addrForm),
+        body: JSON.stringify({
+          ...payload,
+          id: payload.id || undefined,
+          phone: payload.phone || undefined,
+          line2: payload.line2 || undefined,
+          state: payload.state || undefined,
+        }),
       })
       const data = (await res.json()) as unknown
       if (!res.ok) {
@@ -166,7 +191,14 @@ export default function ProfilePage() {
       const listData = (await listResponse.json()) as unknown
       const items = listData && typeof listData === 'object' ? (listData as { items?: unknown }).items : []
       setAddresses(parseAddressList(items))
+      toast.success(payload.id ? 'Adres güncellendi' : 'Adres eklendi')
       setAddrForm(createEmptyAddressForm())
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : 'Adres kaydedilemedi'
+      toast.error(message)
     } finally {
       setAddrSaving(false)
     }

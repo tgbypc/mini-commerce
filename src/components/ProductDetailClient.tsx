@@ -11,20 +11,16 @@ import { toast } from 'react-hot-toast'
 import { useI18n } from '@/context/I18nContext'
 import { pickI18nString } from '@/lib/i18nContent'
 
-// ——— UI model (PDP) ———
-// Firestore doc id is string. Keep optional fields defensive.
-// We listen with onSnapshot so stock / title updates reflect live on PDP.
-
 type PDPProduct = {
   id: string
   title: string
   price: number
-  image?: string // main image (Vercel Blob or remote)
-  thumbnail?: string // backward-compat (older docs)
+  image?: string
+  thumbnail?: string
   description?: string
   category?: string
   brand?: string
-  stock?: number // optional in PRD but supported if present
+  stock?: number
 }
 
 export default function ProductDetailClient({ id }: { id: string }) {
@@ -57,7 +53,8 @@ export default function ProductDetailClient({ id }: { id: string }) {
             typeof data.thumbnail === 'string'
               ? (data.thumbnail as string)
               : undefined,
-          description: (pickI18nString(data, 'description', locale) || undefined) as string | undefined,
+          description: (pickI18nString(data, 'description', locale) ||
+            undefined) as string | undefined,
           category:
             typeof data.category === 'string'
               ? (data.category as string)
@@ -77,7 +74,6 @@ export default function ProductDetailClient({ id }: { id: string }) {
     return () => unsub()
   }, [id, locale])
 
-  // ——— Loading skeleton ———
   if (loading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
@@ -101,7 +97,7 @@ export default function ProductDetailClient({ id }: { id: string }) {
   }
 
   const inStock = (product.stock ?? 0) > 0
-  const maxQty = Math.min(product.stock ?? 10, 10) // UI limit: 10 per purchase
+  const maxQty = Math.min(product.stock ?? 10, 10)
   const displayImg = product.image ?? product.thumbnail
 
   const handleAdd = async () => {
@@ -172,17 +168,23 @@ export default function ProductDetailClient({ id }: { id: string }) {
             {product.title}
           </h1>
           <div className="flex items-center gap-3">
-            <div className="text-xl font-medium">${product.price.toFixed(2)}</div>
+            <div className="text-xl font-medium">
+              ${product.price.toFixed(2)}
+            </div>
             <button
               type="button"
               aria-pressed={isFavorite(product.id)}
               onClick={handleFav}
               className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm ${
-                isFavorite(product.id) ? 'bg-rose-50 text-rose-700 border-rose-200' : 'hover:bg-zinc-50'
+                isFavorite(product.id)
+                  ? 'bg-rose-50 text-rose-700 border-rose-200'
+                  : 'hover:bg-zinc-50'
               }`}
             >
               <span>❤</span>
-              <span>{isFavorite(product.id) ? 'Favorilerde' : 'Favorilere ekle'}</span>
+              <span>
+                {isFavorite(product.id) ? 'Favorilerde' : 'Favorilere ekle'}
+              </span>
             </button>
           </div>
           <div className="flex items-center gap-3 text-sm">

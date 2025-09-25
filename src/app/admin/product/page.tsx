@@ -29,6 +29,7 @@ export default function AdminProducts() {
   const [error, setError] = useState<string | null>(null)
   const [syncing, setSyncing] = useState(false)
   const [backfilling, setBackfilling] = useState(false)
+  const [backfillingNb, setBackfillingNb] = useState(false)
   const [backfillingLC, setBackfillingLC] = useState(false)
   const [i18nMap, setI18nMap] = useState<Record<string, { en: boolean; nb: boolean }>>({})
 
@@ -144,6 +145,31 @@ export default function AdminProducts() {
     }
   }
 
+  const handleBackfillNb = async () => {
+    if (backfillingNb) return
+    setBackfillingNb(true)
+    try {
+      const token = await user?.getIdToken().catch(() => undefined)
+      const res = await fetch('/api/admin/products/backfill-i18n?mode=copy-en-to-nb', {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
+      const data = await res.json()
+      const summary = res.ok
+        ? `NB backfill — updated: ${data?.updated ?? '-'} / processed: ${data?.processed ?? '-'}`
+        : `Backfill failed: ${data?.error ?? res.status}`
+      alert(summary)
+      try {
+        const list = await getAllProducts()
+        setItems(list)
+      } catch {}
+    } catch {
+      alert('Backfill NB request failed')
+    } finally {
+      setBackfillingNb(false)
+    }
+  }
+
   const handleBackfillTitleLC = async () => {
     if (backfillingLC) return
     setBackfillingLC(true)
@@ -190,6 +216,15 @@ export default function AdminProducts() {
             title="Copy base title/description into title_en/description_en where missing"
           >
             {backfilling ? t('admin.saving') : t('admin.backfillEn')}
+          </button>
+          <button
+            type="button"
+            onClick={handleBackfillNb}
+            disabled={backfillingNb}
+            className="rounded-lg border px-3 py-2 text-sm disabled:opacity-50"
+            title="Fill Norwegian fields from English where missing"
+          >
+            {backfillingNb ? t('admin.saving') : 'Copy EN → NB'}
           </button>
           <button
             type="button"
