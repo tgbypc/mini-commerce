@@ -5,13 +5,12 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 type RouteContext = {
-  params?: Promise<Record<string, string | string[] | undefined>>
+  params: { id?: string }
 }
 
-export async function GET(_req: NextRequest, context: RouteContext) {
+export async function GET(_req: NextRequest, { params }: RouteContext) {
   try {
-    const resolved = (await context.params) ?? {}
-    const rawId = resolved.id
+    const rawId = params?.id
     const sessionId = Array.isArray(rawId) ? rawId[0] : rawId
     if (!sessionId) {
       return NextResponse.json({ error: 'Missing session id' }, { status: 400 })
