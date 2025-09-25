@@ -4,11 +4,10 @@ import { stripe } from '@/lib/stripe'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-type RouteContext = {
-  params: { id?: string }
-}
-
-export async function GET(_req: NextRequest, { params }: RouteContext) {
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
     const rawId = params?.id
     const sessionId = Array.isArray(rawId) ? rawId[0] : rawId
