@@ -32,8 +32,8 @@ type OrderDoc = {
   items?: OrderItem[]
 }
 
-const fmtMajor = (amountMajor = 0, currency = 'TRY') =>
-  new Intl.NumberFormat('tr-TR', { style: 'currency', currency }).format(
+const fmtMajor = (amountMajor = 0, currency = 'USD') =>
+  new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(
     amountMajor || 0
   )
 
@@ -125,7 +125,7 @@ export default function OrdersPage() {
 
   return (
     <div className="mx-auto max-w-3xl p-6 space-y-4">
-      <h1 className="text-2xl font-semibold">Siparişlerim</h1>
+      <h1 className="text-2xl font-semibold">My Orders</h1>
 
       {orders.map((o) => {
         const createdAt = o.createdAt
@@ -161,7 +161,7 @@ export default function OrdersPage() {
                 }
                 return null
               })()
-        const when = date ? date.toLocaleString('tr-TR') : ''
+        const when = date ? date.toLocaleString(undefined) : ''
         const count =
           o.items?.reduce((n, it) => {
             const qty = Number(it.quantity ?? 0)
@@ -172,17 +172,17 @@ export default function OrdersPage() {
           const parsed = Number(o.amountTotal ?? 0)
           return Number.isFinite(parsed) ? parsed : 0
         })()
-        const currency = (o.currency ?? 'TRY').toUpperCase()
+        const currency = (o.currency ?? 'USD').toUpperCase()
 
         return (
           <div key={o.id} className="rounded-2xl border bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-sm text-zinc-600">Sipariş No</div>
+                <div className="text-sm text-zinc-600">Order No.</div>
                 <div className="text-base font-semibold">#{o.id}</div>
               </div>
               <div className="text-right">
-                <div className="text-sm text-zinc-600">Tutar</div>
+                <div className="text-sm text-zinc-600">Amount</div>
                 <div className="text-base font-semibold">
                   {fmtMajor(totalMajor, currency)}
                 </div>
@@ -191,15 +191,15 @@ export default function OrdersPage() {
 
             <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
               <div className="rounded-xl bg-zinc-50 p-3">
-                <div className="text-xs text-zinc-600">Tarih</div>
+                <div className="text-xs text-zinc-600">Date</div>
                 <div className="text-sm">{when}</div>
               </div>
               <div className="rounded-xl bg-zinc-50 p-3">
-                <div className="text-xs text-zinc-600">Kalem Sayısı</div>
+                <div className="text-xs text-zinc-600">Item Count</div>
                 <div className="text-sm">{count}</div>
               </div>
               <div className="rounded-xl bg-zinc-50 p-3">
-                <div className="text-xs text-zinc-600">Durum</div>
+                <div className="text-xs text-zinc-600">Status</div>
                 <div className="text-sm">
                   {(o.status || 'paid').toUpperCase()}
                 </div>
@@ -214,7 +214,7 @@ export default function OrdersPage() {
                     className="flex items-center justify-between p-3 text-sm"
                   >
                     <span className="text-zinc-900">
-                      {it.description || it.title || it.priceId || 'Ürün'}
+                      {it.description || it.title || it.priceId || 'Product'}
                     </span>
                     <span className="text-zinc-600">
                       × {Number(it.quantity ?? 0) || 0}
@@ -235,7 +235,7 @@ export default function OrdersPage() {
                 }}
                 className="inline-flex rounded-xl border px-3 py-1.5 text-sm font-medium hover:bg-zinc-50"
               >
-                Detayı Gör
+                View Details
               </Link>
             </div>
           </div>
@@ -247,7 +247,7 @@ export default function OrdersPage() {
           href="/"
           className="inline-flex rounded-xl bg-black px-4 py-2 text-sm font-medium text-white"
         >
-          Alışverişe Devam Et
+          Continue Shopping
         </Link>
       </div>
     </div>

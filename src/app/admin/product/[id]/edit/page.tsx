@@ -19,17 +19,17 @@ const schema = z.object({
   title: z.string().optional().or(z.literal('')),
   title_en: z.string().optional().or(z.literal('')),
   title_nb: z.string().optional().or(z.literal('')),
-  price: z.coerce.number().nonnegative('Fiyat negatif olamaz'),
+  price: z.coerce.number().nonnegative('Price cannot be negative'),
   stock: z.coerce
     .number()
     .int()
-    .min(0, 'Stok 0 veya daha büyük olmalı')
+    .min(0, 'Stock must be zero or greater')
     .optional(),
   category: z.enum(CATEGORIES),
   brand: z.string().max(50).optional().or(z.literal('')),
   thumbnail: z
     .string()
-    .url('Geçerli bir URL olmalı')
+    .url('Must be a valid URL')
     .optional()
     .or(z.literal('')),
   images: z
@@ -362,7 +362,7 @@ export default function EditProductPage() {
               if (!file) return
               const token = await user?.getIdToken().catch(() => undefined)
               if (!token) {
-                console.error('Upload blocked: admin token alınamadı')
+                console.error('Upload blocked: failed to obtain admin token')
                 return
               }
               const fd = new FormData()

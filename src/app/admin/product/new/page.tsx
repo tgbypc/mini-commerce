@@ -357,7 +357,7 @@ export default function AdminNewProductPage() {
                 try {
                   const token = await user?.getIdToken().catch(() => undefined)
                   if (!token) {
-                    throw new Error('Admin kimliği doğrulanamadı')
+                    throw new Error('Failed to verify admin identity')
                   }
                   const fd = new FormData()
                   fd.append('file', file)

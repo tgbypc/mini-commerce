@@ -16,7 +16,7 @@ export default function CartPage() {
   const checkout = async () => {
     try {
       if (!user) {
-        toast.error('Lütfen ödeme için giriş yapın')
+        toast.error('Please sign in to complete checkout')
         router.push('/user/login?next=/cart')
         return
       }

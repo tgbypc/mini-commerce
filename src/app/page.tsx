@@ -51,7 +51,7 @@ export default function HomePage() {
       if (opts.cursor) params.set('cursor', opts.cursor)
 
       const res = await fetch(`/api/products?${params.toString()}`, { cache: 'no-store' })
-      if (!res.ok) throw new Error(`Ürünler yüklenemedi: ${res.status}`)
+      if (!res.ok) throw new Error(`Failed to load products: ${res.status}`)
       const data = (await res.json()) as { items: ListItem[]; nextCursor?: string | null }
       let added = 0
       setItems((prev) => {
@@ -71,7 +71,7 @@ export default function HomePage() {
       setNextCursor(added > 0 ? (data.nextCursor ?? null) : null)
       setError(null)
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Ürünler yüklenemedi'
+      const msg = e instanceof Error ? e.message : 'Failed to load products'
       setError(msg)
       if (opts.reset) setItems([])
     } finally {
@@ -126,7 +126,7 @@ export default function HomePage() {
                 type="button"
                 onClick={() => setSearch('')}
                 className="px-3 text-sm text-[#49739c] bg-[#e7edf4]"
-                aria-label="Aramayı temizle"
+                aria-label="Clear search"
               >
                 {t('home.clear')}
               </button>

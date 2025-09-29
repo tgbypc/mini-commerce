@@ -56,7 +56,7 @@ export default function Navbar() {
         <button
           type="button"
           className="md:hidden inline-flex items-center justify-center rounded-md p-2 text-[#0d141c] hover:bg-[#e7edf4] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#cedbe8]"
-          aria-label={isOpen ? 'Menüyü kapat' : 'Menüyü aç'}
+          aria-label={isOpen ? 'Close menu' : 'Open menu'}
           aria-expanded={isOpen}
           onClick={() => setIsOpen((v) => !v)}
         >

@@ -88,7 +88,7 @@ export default function AdminProducts() {
     try {
       const token = await user?.getIdToken().catch(() => undefined)
       if (!token) {
-        throw new Error('Admin kimlik doğrulaması başarısız')
+        throw new Error('Admin authentication failed')
       }
       const res = await fetch('/api/admin/stripe/sync', {
         method: 'POST',

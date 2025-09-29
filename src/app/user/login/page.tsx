@@ -22,7 +22,7 @@ export default function LoginPage() {
       const normalizedEmail = email.trim()
       const normalizedPassword = password
       if (!normalizedEmail || !normalizedPassword) {
-        toast.error('Email ve şifre gerekli')
+        toast.error('Email and password are required')
         return
       }
 
@@ -66,11 +66,11 @@ export default function LoginPage() {
               switch (error.code) {
                 case 'auth/invalid-credential':
                 case 'auth/wrong-password':
-                  return 'Email ya da şifre hatalı'
+                  return 'Email or password is incorrect'
                 case 'auth/user-disabled':
-                  return 'Hesabınız devre dışı bırakılmış'
+                  return 'Your account has been disabled'
                 case 'auth/user-not-found':
-                  return 'Bu email ile kayıtlı kullanıcı bulunamadı'
+                  return 'No user found with this email'
                 default:
                   return error.message || 'Failed to log in'
               }

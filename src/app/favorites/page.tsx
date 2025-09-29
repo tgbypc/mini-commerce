@@ -99,7 +99,7 @@ export default function FavoritesPage() {
     )
   }
 
-  const currency = new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' })
+  const currency = new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD' })
 
   return (
     <div className="mx-auto max-w-3xl p-6">
@@ -108,9 +108,9 @@ export default function FavoritesPage() {
         {enriched.map((p) => (
           <Link key={p.productId} href={`/products/${p.productId}`} className="rounded-xl border bg-white p-3 shadow-sm hover:shadow-md transition">
             <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden bg-slate-100">
-              <Image src={(p.thumbnail ?? '').trim() || '/placeholder.png'} alt={p.title || 'Ürün'} fill className="object-cover" />
+              <Image src={(p.thumbnail ?? '').trim() || '/placeholder.png'} alt={p.title || 'Product'} fill className="object-cover" />
             </div>
-            <div className="mt-2 text-sm font-medium">{p.title || 'Ürün'}</div>
+            <div className="mt-2 text-sm font-medium">{p.title || 'Product'}</div>
             <div className="text-sm text-zinc-700">{currency.format(Number(p.price) || 0)}</div>
           </Link>
         ))}

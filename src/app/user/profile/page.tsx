@@ -159,7 +159,7 @@ export default function ProfilePage() {
     }
 
     if (!payload.name || !payload.line1 || !payload.city || !payload.zip) {
-      toast.error('Lütfen tüm zorunlu alanları doldurun')
+      toast.error('Please complete all required fields')
       return
     }
 
@@ -191,13 +191,13 @@ export default function ProfilePage() {
       const listData = (await listResponse.json()) as unknown
       const items = listData && typeof listData === 'object' ? (listData as { items?: unknown }).items : []
       setAddresses(parseAddressList(items))
-      toast.success(payload.id ? 'Adres güncellendi' : 'Adres eklendi')
+      toast.success(payload.id ? 'Address updated' : 'Address added')
       setAddrForm(createEmptyAddressForm())
     } catch (err) {
       const message =
         err instanceof Error
           ? err.message
-          : 'Adres kaydedilemedi'
+          : 'Address could not be saved'
       toast.error(message)
     } finally {
       setAddrSaving(false)
@@ -308,22 +308,22 @@ export default function ProfilePage() {
         </button>
       </div>
 
-      {/* Hesap bilgileri */}
+      {/* Account info */}
       <div className="rounded-2xl border bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-semibold">Hesap Bilgileri</h2>
+        <h2 className="text-lg font-semibold">Account Information</h2>
         <div className="mt-3 flex items-center gap-4">
           <div className="size-12 rounded-full bg-zinc-100 flex items-center justify-center text-sm font-semibold">
             {(user?.displayName || user?.email || 'U').slice(0, 2).toUpperCase()}
           </div>
           <div className="text-sm">
-            <div className="font-medium">{user?.displayName || 'Kullanıcı'}</div>
+            <div className="font-medium">{user?.displayName || 'User'}</div>
             <div className="text-zinc-600">{profile.email}</div>
             <div className="text-zinc-600">ID: {profile.uid}</div>
-            <div className="text-zinc-600">Toplam Sipariş: {totalOrders}</div>
+            <div className="text-zinc-600">Total Orders: {totalOrders}</div>
             {user?.emailVerified ? (
-              <span className="mt-1 inline-flex rounded bg-emerald-50 px-2 py-0.5 text-[11px] text-emerald-700 border border-emerald-200">Email doğrulandı</span>
+              <span className="mt-1 inline-flex rounded bg-emerald-50 px-2 py-0.5 text-[11px] text-emerald-700 border border-emerald-200">Email verified</span>
             ) : (
-              <span className="mt-1 inline-flex rounded bg-zinc-50 px-2 py-0.5 text-[11px] text-zinc-700 border">Email doğrulanmadı</span>
+              <span className="mt-1 inline-flex rounded bg-zinc-50 px-2 py-0.5 text-[11px] text-zinc-700 border">Email not verified</span>
             )}
           </div>
         </div>
@@ -332,7 +332,7 @@ export default function ProfilePage() {
         <form onSubmit={saveProfile} className="mt-4 space-y-3">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <label className="block text-sm text-zinc-700">Ad Soyad</label>
+              <label className="block text-sm text-zinc-700">Full Name</label>
               <input
                 type="text"
                 value={profileForm.displayName}
@@ -340,11 +340,11 @@ export default function ProfilePage() {
                   setProfileForm((p) => ({ ...p, displayName: e.target.value }))
                 }
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                placeholder="Ad Soyad"
+                placeholder="Full Name"
               />
             </div>
             <div>
-              <label className="block text-sm text-zinc-700">Telefon</label>
+              <label className="block text-sm text-zinc-700">Phone</label>
               <input
                 type="tel"
                 value={profileForm.phone}
@@ -352,12 +352,12 @@ export default function ProfilePage() {
                   setProfileForm((p) => ({ ...p, phone: e.target.value }))
                 }
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                placeholder="05xx xxx xx xx"
+                placeholder="Phone number"
               />
             </div>
           </div>
           <div>
-            <label className="block text-sm text-zinc-700">Adres</label>
+            <label className="block text-sm text-zinc-700">Address</label>
             <textarea
               value={profileForm.address}
               onChange={(e) =>
@@ -365,7 +365,7 @@ export default function ProfilePage() {
               }
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
               rows={3}
-              placeholder="Adres Bilgisi"
+              placeholder="Address details"
             />
           </div>
           <div className="flex justify-end">
@@ -380,58 +380,58 @@ export default function ProfilePage() {
         </form>
       </div>
 
-      {/* Favoriler (kısa) */}
+      {/* Favorites (teaser) */}
       <div className="rounded-2xl border bg-white p-5 shadow-sm">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Favoriler</h2>
-          <Link href="/favorites" className="text-sm font-medium underline">Tümünü Gör</Link>
+          <h2 className="text-lg font-semibold">Favorites</h2>
+          <Link href="/favorites" className="text-sm font-medium underline">View All</Link>
         </div>
-        <p className="mt-2 text-sm text-zinc-600">Favori ürünlerinizi yönetin ve hızlı erişin.</p>
+        <p className="mt-2 text-sm text-zinc-600">Manage your favorite products for quick access.</p>
       </div>
 
-      {/* Adresler */}
+      {/* Addresses */}
       <div className="rounded-2xl border bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-semibold">Adresler</h2>
+        <h2 className="text-lg font-semibold">Addresses</h2>
         {addresses.length === 0 ? (
-          <p className="text-sm text-zinc-600">Kayıtlı adresiniz yok.</p>
+          <p className="text-sm text-zinc-600">You have no saved addresses.</p>
         ) : (
           <ul className="mt-2 divide-y">
             {addresses.map((a) => (
               <li key={a.id} className="py-2 flex items-start justify-between gap-3">
                 <div className="text-sm">
-                  <div className="font-medium">{a.name} {a.isDefault ? <span className="ml-2 rounded bg-zinc-100 px-1.5 text-[11px]">Varsayılan</span> : null}</div>
+                  <div className="font-medium">{a.name} {a.isDefault ? <span className="ml-2 rounded bg-zinc-100 px-1.5 text-[11px]">Default</span> : null}</div>
                   <div className="text-zinc-600">{a.line1} {a.line2}</div>
                   <div className="text-zinc-600">{a.zip} {a.city} {a.state}</div>
                   <div className="text-zinc-600">{a.country}</div>
                   {a.phone && <div className="text-zinc-600">{a.phone}</div>}
                 </div>
                 <div className="flex items-center gap-2">
-                  <button className="rounded border px-2 py-1 text-xs" onClick={() => setAddrForm({ id: a.id, name: a.name || '', phone: a.phone || '', line1: a.line1 || '', line2: a.line2 || '', city: a.city || '', state: a.state || '', zip: a.zip || '', country: a.country || 'NO', isDefault: !!a.isDefault })}>Düzenle</button>
-                  <button className="rounded border px-2 py-1 text-xs" onClick={() => deleteAddress(a.id)}>Sil</button>
+                  <button className="rounded border px-2 py-1 text-xs" onClick={() => setAddrForm({ id: a.id, name: a.name || '', phone: a.phone || '', line1: a.line1 || '', line2: a.line2 || '', city: a.city || '', state: a.state || '', zip: a.zip || '', country: a.country || 'NO', isDefault: !!a.isDefault })}>Edit</button>
+                  <button className="rounded border px-2 py-1 text-xs" onClick={() => deleteAddress(a.id)}>Delete</button>
                 </div>
               </li>
             ))}
           </ul>
         )}
         <form onSubmit={saveAddress} className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <input className="rounded border px-3 py-2 text-sm" placeholder="Ad Soyad" value={addrForm.name} onChange={(e) => setAddrForm((p) => ({ ...p, name: e.target.value }))} />
-          <input className="rounded border px-3 py-2 text-sm" placeholder="Telefon" value={addrForm.phone} onChange={(e) => setAddrForm((p) => ({ ...p, phone: e.target.value }))} />
-          <input className="rounded border px-3 py-2 text-sm sm:col-span-2" placeholder="Adres Satırı 1" value={addrForm.line1} onChange={(e) => setAddrForm((p) => ({ ...p, line1: e.target.value }))} />
-          <input className="rounded border px-3 py-2 text-sm sm:col-span-2" placeholder="Adres Satırı 2 (opsiyonel)" value={addrForm.line2} onChange={(e) => setAddrForm((p) => ({ ...p, line2: e.target.value }))} />
-          <input className="rounded border px-3 py-2 text-sm" placeholder="Şehir" value={addrForm.city} onChange={(e) => setAddrForm((p) => ({ ...p, city: e.target.value }))} />
-          <input className="rounded border px-3 py-2 text-sm" placeholder="Eyalet/İl (opsiyonel)" value={addrForm.state} onChange={(e) => setAddrForm((p) => ({ ...p, state: e.target.value }))} />
-          <input className="rounded border px-3 py-2 text-sm" placeholder="Posta Kodu" value={addrForm.zip} onChange={(e) => setAddrForm((p) => ({ ...p, zip: e.target.value }))} />
+          <input className="rounded border px-3 py-2 text-sm" placeholder="Full Name" value={addrForm.name} onChange={(e) => setAddrForm((p) => ({ ...p, name: e.target.value }))} />
+          <input className="rounded border px-3 py-2 text-sm" placeholder="Phone" value={addrForm.phone} onChange={(e) => setAddrForm((p) => ({ ...p, phone: e.target.value }))} />
+          <input className="rounded border px-3 py-2 text-sm sm:col-span-2" placeholder="Address Line 1" value={addrForm.line1} onChange={(e) => setAddrForm((p) => ({ ...p, line1: e.target.value }))} />
+          <input className="rounded border px-3 py-2 text-sm sm:col-span-2" placeholder="Address Line 2 (optional)" value={addrForm.line2} onChange={(e) => setAddrForm((p) => ({ ...p, line2: e.target.value }))} />
+          <input className="rounded border px-3 py-2 text-sm" placeholder="City" value={addrForm.city} onChange={(e) => setAddrForm((p) => ({ ...p, city: e.target.value }))} />
+          <input className="rounded border px-3 py-2 text-sm" placeholder="State/Region (optional)" value={addrForm.state} onChange={(e) => setAddrForm((p) => ({ ...p, state: e.target.value }))} />
+          <input className="rounded border px-3 py-2 text-sm" placeholder="Postal Code" value={addrForm.zip} onChange={(e) => setAddrForm((p) => ({ ...p, zip: e.target.value }))} />
           <select className="rounded border px-3 py-2 text-sm" value={addrForm.country} onChange={(e) => setAddrForm((p) => ({ ...p, country: e.target.value }))}>
             <option value="NO">Norway</option>
             <option value="US">United States</option>
-            <option value="TR">Türkiye</option>
+            <option value="TR">Turkey</option>
           </select>
           <label className="flex items-center gap-2 text-sm sm:col-span-2">
-            <input type="checkbox" checked={addrForm.isDefault} onChange={(e) => setAddrForm((p) => ({ ...p, isDefault: e.target.checked }))} /> Varsayılan adres
+            <input type="checkbox" checked={addrForm.isDefault} onChange={(e) => setAddrForm((p) => ({ ...p, isDefault: e.target.checked }))} /> Default address
           </label>
           <div className="sm:col-span-2 flex justify-end gap-2">
-            <button type="submit" disabled={addrSaving} className="rounded bg-black text-white px-3 py-2 text-sm">{addrSaving ? 'Kaydediliyor…' : (addrForm.id ? 'Güncelle' : 'Ekle')}</button>
-            <button type="button" onClick={() => setAddrForm({ id: '', name: '', phone: '', line1: '', line2: '', city: '', state: '', zip: '', country: 'NO', isDefault: false })} className="rounded border px-3 py-2 text-sm">Temizle</button>
+            <button type="submit" disabled={addrSaving} className="rounded bg-black text-white px-3 py-2 text-sm">{addrSaving ? 'Saving…' : (addrForm.id ? 'Update' : 'Add')}</button>
+            <button type="button" onClick={() => setAddrForm({ id: '', name: '', phone: '', line1: '', line2: '', city: '', state: '', zip: '', country: 'NO', isDefault: false })} className="rounded border px-3 py-2 text-sm">Clear</button>
           </div>
         </form>
       </div>

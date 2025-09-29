@@ -129,7 +129,7 @@ export default function ProductDetailClient({ id }: { id: string }) {
   const handleFav = async () => {
     if (!product) return
     if (!user) {
-      toast.error('Favorilere eklemek için lütfen giriş yapın')
+      toast.error('Please sign in to manage favorites')
       return
     }
     try {
@@ -141,7 +141,7 @@ export default function ProductDetailClient({ id }: { id: string }) {
       })
     } catch (e) {
       console.error(e)
-      toast.error('Favori işlemi başarısız')
+      toast.error('Failed to update favorites')
     }
   }
 
@@ -191,7 +191,7 @@ export default function ProductDetailClient({ id }: { id: string }) {
             >
               <span>❤</span>
               <span>
-                {isFavorite(product.id) ? 'Favorilerde' : 'Favorilere ekle'}
+                {isFavorite(product.id) ? 'In favorites' : 'Add to favorites'}
               </span>
             </button>
           </div>

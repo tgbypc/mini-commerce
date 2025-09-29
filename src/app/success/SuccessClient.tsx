@@ -9,7 +9,7 @@ import { db } from '@/lib/firebase'
 import { collection, getDocs, limit, query, where } from 'firebase/firestore'
 
 const fmt = (n: number, c = 'USD') =>
-  new Intl.NumberFormat('tr-TR', { style: 'currency', currency: c }).format(n)
+  new Intl.NumberFormat(undefined, { style: 'currency', currency: c }).format(n)
 
 type SummaryItem = { name: string; qty: number }
 
@@ -155,13 +155,13 @@ export default function SuccessClient() {
   const eta = (() => {
     const d = new Date()
     d.setDate(d.getDate() + 3)
-    return d.toLocaleDateString('tr-TR', {
+    return d.toLocaleDateString(undefined, {
       day: '2-digit',
       month: 'long',
       year: 'numeric',
     })
   })()
-  const payMethod = 'Kredi Kartı'
+  const payMethod = 'Credit Card'
 
   return (
     <div className="mx-auto max-w-3xl p-6">
@@ -170,10 +170,10 @@ export default function SuccessClient() {
         <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-green-100 text-green-700">
           ✓
         </div>
-        <h1 className="text-2xl font-semibold">Siparişiniz Onaylandı!</h1>
+        <h1 className="text-2xl font-semibold">Order Confirmed!</h1>
         <p className="mt-1 text-sm text-zinc-600">
-          Siparişiniz başarıyla alındı. Siparişinizle ilgili detayları aşağıda
-          bulabilirsiniz.
+          Your order was received successfully. You can review the details
+          below.
         </p>
       </div>
 
@@ -182,30 +182,22 @@ export default function SuccessClient() {
         {/* Details table */}
         <div className="grid grid-cols-1 gap-0 divide-y sm:grid-cols-3 sm:divide-y-0">
           <div className="p-4 sm:col-span-1 bg-zinc-50 rounded-t-2xl sm:rounded-tr-none sm:rounded-l-2xl">
-            <div className="text-sm font-medium text-zinc-700">
-              Sipariş Numarası
-            </div>
+            <div className="text-sm font-medium text-zinc-700">Order Number</div>
             <div className="mt-1 text-sm text-zinc-900">#{orderId}</div>
           </div>
           <div className="p-4 sm:col-span-1 bg-zinc-50">
-            <div className="text-sm font-medium text-zinc-700">
-              Tahmini Teslimat Tarihi
-            </div>
+            <div className="text-sm font-medium text-zinc-700">Estimated Delivery Date</div>
             <div className="mt-1 text-sm text-zinc-900">{eta}</div>
           </div>
           <div className="p-4 sm:col-span-1 bg-zinc-50 rounded-b-2xl sm:rounded-bl-none sm:rounded-r-2xl">
-            <div className="text-sm font-medium text-zinc-700">
-              Ödeme Yöntemi
-            </div>
+            <div className="text-sm font-medium text-zinc-700">Payment Method</div>
             <div className="mt-1 text-sm text-zinc-900">{payMethod}</div>
           </div>
         </div>
 
         {/* Items */}
         <div className="p-6">
-          <h2 className="text-sm font-medium text-zinc-700 mb-3">
-            Sipariş Kalemleri
-          </h2>
+          <h2 className="text-sm font-medium text-zinc-700 mb-3">Order Items</h2>
           {items.length ? (
             <ul className="divide-y rounded-xl border bg-zinc-50">
               {items.map((it, i) => (
@@ -216,13 +208,13 @@ export default function SuccessClient() {
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-zinc-500">Kalem bulunamadı.</p>
+            <p className="text-sm text-zinc-500">No items found.</p>
           )}
 
           {/* Total */}
           {total != null && (
             <div className="mt-4 flex items-center justify-between">
-              <span className="text-sm text-zinc-600">Toplam Tutar</span>
+              <span className="text-sm text-zinc-600">Total Amount</span>
               <span className="text-base font-semibold">
                 {fmt(total / 100, currency ?? 'USD')}
               </span>
@@ -236,13 +228,13 @@ export default function SuccessClient() {
             href={orderDocId ? `/user/orders/${orderDocId}` : '/user/orders'}
             className="inline-flex items-center justify-center rounded-xl border px-4 py-2 text-sm font-medium hover:bg-zinc-50"
           >
-            Sipariş Detaylarını Görüntüle
+            View Order Details
           </Link>
           <Link
             href="/"
             className="inline-flex items-center justify-center rounded-xl bg-black px-4 py-2 text-sm font-medium text-white hover:opacity-90"
           >
-            Alışverişe Devam Et
+            Continue Shopping
           </Link>
         </div>
       </div>

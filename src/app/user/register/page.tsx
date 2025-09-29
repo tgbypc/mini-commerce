@@ -25,7 +25,7 @@ export default function RegisterPage() {
       const normalizedEmail = email.trim()
       const normalizedPassword = password
       if (!normalizedEmail || !normalizedPassword) {
-        toast.error('Email ve şifre gerekli')
+        toast.error('Email and password are required')
         return
       }
 
@@ -56,7 +56,7 @@ export default function RegisterPage() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            placeholder="Ad Soyad"
+            placeholder="Full Name"
           />
         </div>
         <div>

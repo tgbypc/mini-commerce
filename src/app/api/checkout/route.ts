@@ -63,6 +63,7 @@ export async function POST(req: Request) {
       mode: 'payment',
       payment_method_types: ['card'],
       line_items,
+      locale: 'en',
       allow_promotion_codes: true,
       shipping_address_collection: { allowed_countries: ['NO', 'US', 'TR'] },
       shipping_options: [
