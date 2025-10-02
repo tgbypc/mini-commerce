@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Timestamp } from 'firebase/firestore'
-import { useRouter, useParams } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import { fmtCurrency } from '@/lib/money'
 import { useAuth } from '@/context/AuthContext'
 
@@ -35,7 +35,8 @@ function resolveDate(value: OrderDetail['createdAt']) {
 
 type LineItem = {
   productId: string | null
-  description?: string
+  description?: string | null
+  title?: string | null
   quantity: number
   unitAmount: number | null
   currency: string
@@ -72,7 +73,6 @@ type OrderDetail = {
 }
 
 export default function OrderDetailPage() {
-  const router = useRouter()
   const params = useParams()
   const orderId = params.id as string
 
