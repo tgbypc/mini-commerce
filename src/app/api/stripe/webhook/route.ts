@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { adminDb, FieldValue } from '@/lib/firebaseAdmin'
-import { queueEmail } from '@/lib/emailFirebase'
+import { sendEmail } from '@/lib/email'
 import {
   extractShippingDetails,
   toShippingInfo,
@@ -180,7 +180,7 @@ export async function POST(req: Request) {
       // cart cleanup is best-effort; ignore errors
     }
 
-    // Best-effort: send order confirmation email to customer via Firebase Extension (mail collection)
+    // Best-effort: send order confirmation email to customer via Resend
     try {
       const toEmail = s.customer_details?.email ?? null
       if (toEmail) {
@@ -211,15 +211,19 @@ export async function POST(req: Request) {
             <p style="margin:12px 0 0">Total: <strong>${(orderDoc.amountTotal as number).toFixed(2)} ${currency}</strong></p>
           </div>`
 
-        await queueEmail({
+        const sendResult = await sendEmail({
           to: toEmail,
           subject: `Order Confirmation #${s.id}`,
           html,
           text: `Your order has been confirmed. Order No.: ${s.id}. Total: ${(orderDoc.amountTotal as number).toFixed(2)} ${currency}`,
         })
+
+        if (!sendResult.ok) {
+          console.error('Resend email failed', sendResult.error)
+        }
       }
-    } catch {
-      // ignore email errors
+    } catch (err) {
+      console.error('Order confirmation email error', err)
     }
   }
 

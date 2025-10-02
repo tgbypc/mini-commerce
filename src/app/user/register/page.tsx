@@ -36,6 +36,26 @@ export default function RegisterPage() {
         } catch {}
       }
       toast.success('Account created')
+      try {
+        const token = await cred.user.getIdToken()
+        const res = await fetch('/api/auth/email-verification/request', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        })
+        if (!res.ok) {
+          const data = (await res.json().catch(() => ({}))) as { error?: string }
+          const message = data.error || 'Verification email could not be sent. Please try again later.'
+          toast.error(message)
+        } else {
+          toast.success('Verification email sent. Please check your inbox.')
+        }
+      } catch (verificationError) {
+        console.error('Verification email failed', verificationError)
+        toast.error('Could not send verification email. Please resend from your profile later.')
+      }
       router.push('/user/profile')
     } catch (error) {
       console.error(error)

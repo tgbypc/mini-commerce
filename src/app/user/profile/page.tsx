@@ -101,6 +101,16 @@ export default function ProfilePage() {
   const [addrSaving, setAddrSaving] = useState(false)
   const [addresses, setAddresses] = useState<UserAddress[]>([])
   const [addrForm, setAddrForm] = useState<AddressForm>(createEmptyAddressForm())
+  const [verifySending, setVerifySending] = useState(false)
+  const [verifyCooldown, setVerifyCooldown] = useState(0)
+
+  useEffect(() => {
+    if (!verifyCooldown) return
+    const timer = setInterval(() => {
+      setVerifyCooldown((prev) => (prev > 0 ? prev - 1 : 0))
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [verifyCooldown])
 
   useEffect(() => {
     const run = async () => {
@@ -295,6 +305,43 @@ export default function ProfilePage() {
   }
   const totalOrders = orders.length
 
+  async function handleResendVerification() {
+    if (!user) return
+    if (user.emailVerified) {
+      toast.success('Email already verified.')
+      return
+    }
+    if (verifyCooldown > 0 || verifySending) return
+    setVerifySending(true)
+    try {
+      const token = await user.getIdToken().catch(() => null)
+      if (!token) throw new Error('auth-token-missing')
+      const res = await fetch('/api/auth/email-verification/request', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      const data = (await res.json().catch(() => ({}))) as { error?: string }
+      if (!res.ok) {
+        const message = data.error || 'Could not send verification email. Please try again later.'
+        throw new Error(message)
+      }
+      toast.success('Verification email sent. Please check your inbox.')
+      setVerifyCooldown(60)
+    } catch (err) {
+      console.error('Verification email resend failed', err)
+      if (err instanceof Error && err.message && err.message !== 'auth-token-missing') {
+        toast.error(err.message)
+      } else {
+        toast.error('Could not send verification email. Please try again later.')
+      }
+    } finally {
+      setVerifySending(false)
+    }
+  }
+
   return (
     <div className="mx-auto max-w-3xl p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -323,7 +370,17 @@ export default function ProfilePage() {
             {user?.emailVerified ? (
               <span className="mt-1 inline-flex rounded bg-emerald-50 px-2 py-0.5 text-[11px] text-emerald-700 border border-emerald-200">Email verified</span>
             ) : (
-              <span className="mt-1 inline-flex rounded bg-zinc-50 px-2 py-0.5 text-[11px] text-zinc-700 border">Email not verified</span>
+              <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px]">
+                <span className="inline-flex rounded bg-zinc-50 px-2 py-0.5 text-zinc-700 border">Email not verified</span>
+                <button
+                  type="button"
+                  onClick={handleResendVerification}
+                  disabled={verifySending || verifyCooldown > 0}
+                  className="inline-flex items-center rounded border border-zinc-300 px-2 py-0.5 font-medium text-zinc-700 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {verifySending ? 'Sending…' : verifyCooldown > 0 ? `Resend (${verifyCooldown}s)` : 'Resend verification'}
+                </button>
+              </div>
             )}
           </div>
         </div>
