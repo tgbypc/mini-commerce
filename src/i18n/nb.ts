@@ -15,6 +15,12 @@ const nb = {
   },
   home: {
     searchPlaceholder: 'Søk etter produkter',
+    searchHint: 'Oppdag produkter via navn, merke eller kategori. Bruk filtrene eller prøv et populært søk.',
+    searchCta: 'Søk',
+    quickFilters: 'Hurtigfiltre:',
+    browseByCategory: 'Bla gjennom kategorier',
+    sortLabel: 'Sorter produkter',
+    activeFilters: 'Aktive filtre:',
     clear: 'Tøm',
     featured: 'Utvalgte produkter',
     all: 'Alle produkter',

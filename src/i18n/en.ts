@@ -15,6 +15,12 @@ const en = {
   },
   home: {
     searchPlaceholder: 'Search products',
+    searchHint: 'Discover products by name, brand or category. Use filters or try a popular search below.',
+    searchCta: 'Search',
+    quickFilters: 'Quick filters:',
+    browseByCategory: 'Browse by category',
+    sortLabel: 'Sort products',
+    activeFilters: 'Active filters:',
     clear: 'Clear',
     featured: 'Featured Products',
     all: 'All Products',

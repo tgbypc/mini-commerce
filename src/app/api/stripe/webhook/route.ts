@@ -180,7 +180,7 @@ export async function POST(req: Request) {
       // cart cleanup is best-effort; ignore errors
     }
 
-    // Best-effort: send order confirmation email to customer via Resend
+    // Best-effort: send order confirmation email (Ethereal preview via Nodemailer)
     try {
       const toEmail = s.customer_details?.email ?? null
       if (toEmail) {
@@ -219,7 +219,9 @@ export async function POST(req: Request) {
         })
 
         if (!sendResult.ok) {
-          console.error('Resend email failed', sendResult.error)
+          console.error('Order confirmation email send failed', sendResult.error)
+        } else if (sendResult.previewUrl) {
+          console.log('Order confirmation email preview URL', sendResult.previewUrl)
         }
       }
     } catch (err) {
