@@ -5,8 +5,10 @@ import { Toaster } from 'react-hot-toast'
 import { CartProvider } from '@/context/CartContext'
 import { FavoritesProvider } from '@/context/FavoritesContext'
 import Navbar from '@/components/Navbar'
+import Footer from '@/components/Footer'
 import { I18nProvider } from '@/context/I18nContext'
 import { AuthProvider } from '@/context/AuthContext'
+import { ThemeProvider } from '@/context/ThemeContext'
 
 const GeistSans = Inter({ subsets: ['latin'], variable: '--font-geist-sans' })
 const GeistMono = Roboto_Mono({
@@ -29,16 +31,19 @@ export default function RootLayout({
       <body
         className={`${GeistSans.variable} ${GeistMono.variable} antialiased`}
       >
-        <AuthProvider>
-          <I18nProvider>
-            <CartProvider>
-              <FavoritesProvider>
-                <Navbar />
-                <main>{children}</main>
-              </FavoritesProvider>
-            </CartProvider>
-          </I18nProvider>
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <I18nProvider>
+              <CartProvider>
+                <FavoritesProvider>
+                  <Navbar />
+                  <main>{children}</main>
+                  <Footer />
+                </FavoritesProvider>
+              </CartProvider>
+            </I18nProvider>
+          </AuthProvider>
+        </ThemeProvider>
         <Toaster position="bottom-center" toastOptions={{ duration: 3000 }} />
       </body>
     </html>

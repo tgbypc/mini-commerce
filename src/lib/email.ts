@@ -22,8 +22,9 @@ export async function sendEmail({ to, subject, html, text }: SendArgs): Promise<
     })
 
     const info = await transporter.sendMail({ from: 'MiniCommerce <demo@ethereal.email>', to, subject, html, text })
+    const preview = nodemailer.getTestMessageUrl(info)
 
-    return { ok: true, previewUrl: nodemailer.getTestMessageUrl(info) ?? undefined }
+    return { ok: true, previewUrl: typeof preview === 'string' ? preview : undefined }
   } catch (error) {
     return {
       ok: false,
@@ -31,4 +32,3 @@ export async function sendEmail({ to, subject, html, text }: SendArgs): Promise<
     }
   }
 }
-

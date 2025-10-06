@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { signInWithEmailAndPassword } from 'firebase/auth'
 import { FirebaseError } from 'firebase/app'
 import { doc, getDoc } from 'firebase/firestore'
 import { auth, db } from '@/lib/firebase'
 import { toast } from 'react-hot-toast'
+import { useAuth } from '@/context/AuthContext'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -14,6 +15,21 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
+  const rawNext = searchParams.get('next')
+  const nextParam = rawNext && rawNext.startsWith('/') && !rawNext.startsWith('/user/login') ? rawNext : null
+  const { user, role, loading: authLoading } = useAuth()
+
+  useEffect(() => {
+    if (authLoading || !user) return
+    const destination = nextParam
+      ? nextParam
+      : role === 'admin'
+        ? '/admin'
+        : '/user/profile'
+    if (destination !== '/user/login') {
+      router.replace(destination)
+    }
+  }, [authLoading, user, role, router, nextParam])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -23,26 +39,27 @@ export default function LoginPage() {
       const normalizedPassword = password
       if (!normalizedEmail || !normalizedPassword) {
         toast.error('Email and password are required')
+        setLoading(false)
         return
       }
 
       const credential = await signInWithEmailAndPassword(auth, normalizedEmail, normalizedPassword)
 
-      let role: 'admin' | 'user' = 'user'
+      let resolvedRole: 'admin' | 'user' = 'user'
       try {
         const user = credential.user
         if (user) {
           const snap = await getDoc(doc(db, 'users', user.uid))
           const data = snap.exists() ? (snap.data() as { role?: string }) : null
           if (data?.role === 'admin') {
-            role = 'admin'
+            resolvedRole = 'admin'
           } else if (user.email) {
             const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || '')
               .split(',')
               .map((s) => s.trim().toLowerCase())
               .filter(Boolean)
             if (adminEmails.includes(user.email.toLowerCase())) {
-              role = 'admin'
+              resolvedRole = 'admin'
             }
           }
         }
@@ -50,15 +67,14 @@ export default function LoginPage() {
         console.error('Failed to resolve user role after login', err)
       }
 
-      const nextParam = searchParams.get('next')
-      const destination = nextParam && nextParam.startsWith('/')
+      const destination = nextParam
         ? nextParam
-        : role === 'admin'
+        : resolvedRole === 'admin'
           ? '/admin'
           : '/user/profile'
 
       toast.success('Logged in successfully')
-      router.push(destination)
+      router.replace(destination)
     } catch (error) {
       const message =
         error instanceof FirebaseError

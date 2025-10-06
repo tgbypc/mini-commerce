@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
@@ -31,6 +31,22 @@ export default function ProductDetailClient({ id }: { id: string }) {
   const [product, setProduct] = useState<PDPProduct | null>(null)
   const [loading, setLoading] = useState(true)
   const [qty, setQty] = useState(1)
+  const currency = useMemo(
+    () =>
+      new Intl.NumberFormat(locale === 'nb' ? 'nb-NO' : 'en-US', {
+        style: 'currency',
+        currency: 'USD',
+      }),
+    [locale]
+  )
+  const perks = useMemo(
+    () => [
+      { icon: '🚚', text: t('product.detail.perks.freeReturns') },
+      { icon: '🔒', text: t('product.detail.perks.secureCheckout') },
+      { icon: '💬', text: t('product.detail.perks.support') },
+    ],
+    [t]
+  )
 
   useEffect(() => {
     const ref = doc(db, 'products', id)
@@ -68,11 +84,11 @@ export default function ProductDetailClient({ id }: { id: string }) {
         console.error(err)
         setLoading(false)
         setProduct(null)
-        toast.error('Failed to load product')
+        toast.error(t('product.detail.toast.loadError'))
       }
     )
     return () => unsub()
-  }, [id, locale])
+  }, [id, locale, t])
 
   if (loading) {
     return (
@@ -93,7 +109,7 @@ export default function ProductDetailClient({ id }: { id: string }) {
   if (!product) {
     return (
       <div className="rounded-3xl border border-zinc-200 bg-white/80 p-6 text-sm text-zinc-600 shadow-sm">
-        Product not found.
+        {t('product.detail.notFound')}
       </div>
     )
   }
@@ -110,6 +126,19 @@ export default function ProductDetailClient({ id }: { id: string }) {
     stock: t('product.labels.stock'),
   }
 
+  const detailText = {
+    quantity: t('product.detail.quantity'),
+    inStock: t('product.detail.inStock'),
+    outOfStock: t('product.detail.outOfStock'),
+    stockLeft: (count: number) => t('product.detail.stockLeft').replace('{count}', String(count)),
+    addToCart: t('product.detail.addToCart'),
+    addToCartDisabled: t('product.detail.addToCartDisabled'),
+    collection: t('product.detail.collectionFallback'),
+    favAdd: t('product.detail.actions.addToFavorites'),
+    favIn: t('product.detail.actions.inFavorites'),
+  }
+
+
   const handleAdd = async () => {
     try {
       await add(
@@ -121,17 +150,17 @@ export default function ProductDetailClient({ id }: { id: string }) {
         },
         qty
       )
-      toast.success('Added to cart')
+      toast.success(t('product.detail.toast.addSuccess'))
     } catch (e) {
       console.error(e)
-      toast.error('Failed to add to cart')
+      toast.error(t('product.detail.toast.addError'))
     }
   }
 
   const handleFav = async () => {
     if (!product) return
     if (!user) {
-      toast.error('Please sign in to manage favorites')
+      toast.error(t('product.detail.toast.favAuth'))
       return
     }
     try {
@@ -143,7 +172,7 @@ export default function ProductDetailClient({ id }: { id: string }) {
       })
     } catch (e) {
       console.error(e)
-      toast.error('Failed to update favorites')
+      toast.error(t('product.detail.toast.favError'))
     }
   }
 
@@ -165,7 +194,7 @@ export default function ProductDetailClient({ id }: { id: string }) {
         )}
 
         <div className="mt-5 grid gap-3 text-sm sm:grid-cols-3">
-          {[{ icon: '🚚', text: 'Free returns (14 days)' }, { icon: '🔒', text: 'Secure checkout' }, { icon: '💬', text: 'Support 7/24' }].map((item) => (
+          {perks.map((item) => (
             <div
               key={item.text}
               className="inline-flex items-center gap-2 rounded-2xl border border-zinc-200 bg-white/90 px-3 py-2 text-zinc-600 shadow-sm"
@@ -180,14 +209,14 @@ export default function ProductDetailClient({ id }: { id: string }) {
       <div className="flex flex-col gap-6 rounded-3xl border border-zinc-200 bg-white/90 p-6 shadow-[0_18px_36px_rgba(15,23,42,0.08)]">
         <div className="space-y-3">
           <div className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-[#f4f4f5] px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-zinc-600">
-            {product.brand || 'Collection'}
+            {product.brand || detailText.collection}
           </div>
           <h1 className="text-2xl font-semibold leading-tight text-[#0d141c]">
             {product.title}
           </h1>
           <div className="flex flex-wrap items-center gap-3">
             <span className="text-2xl font-semibold text-[#0d141c]">
-              ${product.price.toFixed(2)}
+              {currency.format(product.price)}
             </span>
             <button
               type="button"
@@ -200,25 +229,27 @@ export default function ProductDetailClient({ id }: { id: string }) {
               }`}
             >
               <span>❤</span>
-              <span>{isFavorite(product.id) ? 'In favorites' : 'Add to favorites'}</span>
+              <span>{isFavorite(product.id) ? detailText.favIn : detailText.favAdd}</span>
             </button>
           </div>
           <div className="flex flex-wrap items-center gap-2 text-sm">
             {inStock ? (
               <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-emerald-700">
                 <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                In stock
-                {typeof product.stock === 'number' ? ` · ${product.stock} left` : ''}
+                {detailText.inStock}
+                {typeof product.stock === 'number'
+                  ? ` · ${detailText.stockLeft(product.stock)}`
+                  : ''}
               </span>
             ) : (
               <span className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-rose-700">
                 <span className="h-2 w-2 rounded-full bg-rose-500" />
-                Out of stock
+                {detailText.outOfStock}
               </span>
             )}
             {product.category && (
               <span className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-[#f4f4f5] px-3 py-1 text-zinc-600">
-                <span className="h-2 w-2 rounded-full bg-[#0d141c]" /> {product.category}
+                <span className="h-2 w-2 rounded-full bg-[var(--color-primary-dark)]" /> {product.category}
               </span>
             )}
           </div>
@@ -232,7 +263,7 @@ export default function ProductDetailClient({ id }: { id: string }) {
 
         <div className="flex flex-wrap items-end gap-4 border border-zinc-200 bg-white/70 px-4 py-4 rounded-2xl">
           <label className="flex flex-col text-sm font-medium text-zinc-600">
-            <span className="mb-1">Quantity</span>
+            <span className="mb-1">{detailText.quantity}</span>
             <div className="relative">
               <select
                 className="h-11 w-28 appearance-none rounded-2xl border border-zinc-200 bg-[#f4f4f5] px-4 pr-8 text-sm font-semibold text-[#0d141c] focus:border-[#0d141c] focus:outline-none focus:ring-2 focus:ring-[#0d141c]/10"
@@ -259,11 +290,11 @@ export default function ProductDetailClient({ id }: { id: string }) {
             disabled={!inStock}
             className={`inline-flex h-11 min-w-[160px] items-center justify-center rounded-full px-6 text-sm font-semibold transition ${
               inStock
-                ? 'bg-[#0d141c] text-white hover:bg-[#1f2a37]'
+                ? 'bg-[var(--color-primary-dark)] text-white hover:bg-[var(--color-primary)]'
                 : 'cursor-not-allowed bg-zinc-300 text-zinc-600'
             }`}
           >
-            {inStock ? 'Add to Cart' : 'Out of stock'}
+            {inStock ? detailText.addToCart : detailText.addToCartDisabled}
           </button>
         </div>
 
@@ -281,7 +312,7 @@ export default function ProductDetailClient({ id }: { id: string }) {
               </li>
             )}
             <li>
-              {detailsLabels.price}: ${product.price.toFixed(2)}
+              {detailsLabels.price}: {currency.format(product.price)}
             </li>
             {typeof product.stock === 'number' && (
               <li>

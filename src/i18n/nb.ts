@@ -40,12 +40,163 @@ const nb = {
     empty: 'Du har ingen favorittprodukter ennå.',
     continue: 'Fortsett å handle',
   },
+  success: {
+    title: 'Bestilling bekreftet!',
+    subtitle: 'Takk for bestillingen. Vi har sendt kvittering på e-post og holder deg oppdatert.',
+    celebration: 'Se sammendraget nedenfor.',
+    summary: {
+      orderNumber: 'Bestillingsnummer',
+      delivery: 'Estimert levering',
+      deliveryValue: '{date}',
+      paymentMethod: 'Betalingsmetode',
+      paymentStatus: 'Betalingsstatus',
+    },
+    paymentMethods: {
+      card: 'Bankkort',
+      klarna: 'Klarna',
+      paypal: 'PayPal',
+      default: 'Onlinebetaling',
+    },
+    status: {
+      paid: 'Betaling mottatt',
+      complete: 'Fullført',
+      fulfilled: 'Levert',
+      open: 'Behandles',
+      canceled: 'Avbrutt',
+      unpaid: 'Venter på betaling',
+      default: 'Behandles',
+    },
+    items: {
+      title: 'Bestillingslinjer',
+      empty: 'Ingen varer funnet.',
+      fallback: 'Produkt',
+      quantity: '× {count}',
+    },
+    total: {
+      label: 'Totalsum',
+    },
+    actions: {
+      view: 'Se bestillingsdetaljer',
+      profile: 'Gå til profilen min',
+      continue: 'Fortsett å handle',
+    },
+    next: {
+      title: 'Hva skjer nå?',
+      shipping: 'Vi pakker ordren din og sender sporingsinformasjon snart.',
+      receipt: 'En digital kvittering er sendt til {email}.',
+      emailFallback: 'e-postadressen din',
+    },
+  },
+  cart: {
+    title: 'Handlekurv',
+    subtitle: 'Se gjennom {items} før du går til betaling.',
+    emptyTitle: 'Handlekurven din er tom',
+    emptyMessage: 'Fortsett å handle for å legge til produktene du liker.',
+    emptyCta: 'Bla gjennom produkter',
+    count: {
+      one: '{count} vare',
+      other: '{count} varer',
+    },
+    unitPrice: 'Stykkpris',
+    lineTotal: 'Linjesum',
+    remove: 'Fjern',
+    quantity: {
+      increase: 'Øk antall',
+      decrease: 'Reduser antall',
+    },
+    productFallback: 'Produkt',
+    imageAlt: 'Bilde av {product}',
+    summary: {
+      title: 'Bestillingsoversikt',
+      products: 'Produkter ({items})',
+      shipping: 'Frakt',
+      shippingTbd: 'Beregnes i kassen',
+      subtotal: 'Delsum',
+      taxNote: 'Avgifter og frakt beregnes i kassen.',
+    },
+    checkout: {
+      cta: 'Gå til betaling',
+      loading: 'Sender deg videre...',
+    },
+    continue: 'Fortsett å handle',
+    reminder: 'Husk å lagre favorittene dine - de kan forsvinne raskt.',
+  },
   orders: {
     title: 'Bestillingene mine',
     loginPrompt: 'Logg inn for å se bestillingene dine.',
     empty: 'Du har ingen bestillinger ennå.',
     seeAll: 'Se alle',
     seeDetail: 'Se detaljer',
+    summary: {
+      subtitle: 'Hold oversikt over kjøpene dine, last ned kvitteringer og følg leveringer.',
+      count: '{count} bestilling(er)',
+      totalLabel: 'Totalt forbruk',
+      totalValue: '{amount}',
+      averageLabel: 'Snittordre',
+      averageValue: '{amount}',
+    },
+    orderCard: {
+      label: 'Bestilling',
+      total: 'Totalt',
+      items: '{count} vare(r)',
+      session: 'Sesjon: {id}',
+      details: 'Se detaljer',
+      placedOn: 'Bestilt {date}',
+      status: {
+        paid: 'Betalt',
+        complete: 'Fullført',
+        fulfilled: 'Levert',
+        shipped: 'Sendt',
+        delivered: 'Levert',
+        open: 'Behandles',
+        canceled: 'Avbrutt',
+        unpaid: 'Ubetalt',
+      },
+      payment: {
+        paid: 'Betalt',
+        unpaid: 'Ubetalt',
+        refunded: 'Refundert',
+        no_payment_required: 'Ingen betaling nødvendig',
+      },
+      progress: {
+        current: 'Nåværende steg',
+        upcoming: 'Kommende',
+      },
+    },
+  },
+  orderDetail: {
+    title: 'Bestillingsoversikt',
+    placedOn: 'Bestilt {date}',
+    session: 'Sesjon',
+    back: 'Tilbake til bestillinger',
+    status: {
+      heading: 'Status',
+      paid: 'Betaling bekreftet',
+      fulfilled: 'Behandles',
+      shipped: 'Sendt',
+      delivered: 'Levert',
+      canceled: 'Avbrutt',
+      current: 'Nåværende',
+      completed: 'Ferdig',
+      upcoming: 'Kommer',
+    },
+    items: {
+      heading: 'Varer',
+      quantity: '× {count}',
+      fallback: 'Produkt',
+    },
+    payment: {
+      heading: 'Betalingsoversikt',
+      subtotal: 'Delsum',
+      shipping: 'Frakt ({method})',
+      total: 'Totalt betalt',
+    },
+    shipping: {
+      heading: 'Fraktinformasjon',
+      method: 'Metode',
+      address: 'Leveringsadresse',
+      missing: 'Ingen fraktinformasjon',
+    },
   },
   profile: {
     title: 'Min profil',
@@ -53,6 +204,389 @@ const nb = {
     save: 'Lagre',
     saving: 'Lagrer…',
     logout: 'Logg ut',
+    hero: {
+      greeting: 'Velkommen tilbake, {name}',
+      fallbackName: 'venn',
+      subtitle: 'Administrer informasjonen din og hold leveringsdetaljer oppdatert.',
+      ordersCount: '{count} bestilling(er)',
+    },
+    verification: {
+      verified: 'E-post bekreftet',
+      notVerified: 'E-post ikke bekreftet',
+      resend: 'Send bekreftelse på nytt',
+      resendCooldown: 'Send på nytt ({seconds}s)',
+      sending: 'Sender…',
+      success: 'Bekreftelsesmail er sendt. Sjekk innboksen.',
+      alreadyVerified: 'E-posten er allerede bekreftet.',
+      error: 'Kunne ikke sende bekreftelsesmail. Prøv igjen senere.',
+    },
+    accountCard: {
+      heading: 'Kontaktinformasjon',
+      description: 'Disse detaljene vises på kvitteringer og leveringsdokumenter.',
+      nameLabel: 'Fullt navn',
+      phoneLabel: 'Telefonnummer',
+      notesLabel: 'Leveringsnotat (valgfritt)',
+      notesPlaceholder: 'Legg til spesielle leveringsinstruksjoner',
+      save: 'Lagre endringer',
+    },
+    favorites: {
+      heading: 'Favoritter',
+      description: 'Hurtigkoblinger til produktene du liker best.',
+      view: 'Se favoritter',
+    },
+    addresses: {
+      heading: 'Leveringsadresser',
+      description: 'Standardadressen brukes i kassen. Du kan endre når som helst.',
+      add: 'Legg til adresse',
+      empty: 'Du har ingen lagrede adresser enda.',
+      defaultBadge: 'Standard',
+      actions: {
+        edit: 'Rediger',
+        delete: 'Slett',
+        setDefault: 'Sett som standard',
+        confirmDelete: 'Vil du slette adressen?',
+      },
+      form: {
+        headingAdd: 'Legg til ny adresse',
+        headingEdit: 'Rediger adresse',
+        name: 'Fullt navn',
+        phone: 'Telefonnummer',
+        line1: 'Adresselinje 1',
+        line2: 'Adresselinje 2 (valgfritt)',
+        city: 'By',
+        state: 'Fylke/Region',
+        zip: 'Postnummer',
+        country: 'Land',
+        setDefault: 'Sett som standardadresse',
+        cancel: 'Avbryt',
+        save: 'Lagre adresse',
+        update: 'Oppdater adresse',
+      },
+      toast: {
+        saved: 'Adresse lagt til',
+        updated: 'Adresse oppdatert',
+        deleted: 'Adresse fjernet',
+        required: 'Vennligst fyll ut alle obligatoriske felt',
+        error: 'Kunne ikke lagre adressen',
+      },
+    },
+    ordersPreview: {
+      heading: 'Siste bestillinger',
+      empty: 'Du har ingen bestillinger enda.',
+      viewAll: 'Se alle bestillinger',
+    },
+  },
+  store: {
+    hero: {
+      kicker: 'Kuraterte kolleksjoner',
+      title: 'Alt du trenger til hjem, jobb og fritid',
+      subtitle:
+        'Oppdag nøye utvalgte produkter fra uavhengige skapere og globale favoritter. Handle trygt med rask levering og premium kundestøtte.',
+      primaryCta: 'Utforsk høydepunkter',
+      secondaryCta: 'Se favoritter',
+    },
+    metrics: {
+      orders: 'Sendte ordre',
+      products: 'Kuraterte produkter',
+      delivery: 'Snittlevering',
+    },
+    categories: {
+      title: 'Handle etter kategori',
+      subtitle: 'Utforsk sesongens utvalg, nyheter og tidløse favoritter håndplukket for deg.',
+      cta: 'Se hele sortimentet',
+      list: {
+        beauty: {
+          label: 'Skjønnhet & egenpleie',
+          description: 'Hudpleie, kosmetikk og velværeprodukter støttet av forskning og brukeranmeldelser.',
+        },
+        electronics: {
+          label: 'Smart teknologi',
+          description: 'Smidige duppeditter og premium utstyr som forenkler hverdagen hjemme og på farten.',
+        },
+        home: {
+          label: 'Hjem & kjøkken',
+          description: 'Løft hvert rom med funksjonelle dekorprodukter, kjøkkenutstyr og smart oppbevaring.',
+        },
+        fashion: {
+          label: 'Moderne garderobe',
+          description: 'Kvalitetsplagg og statement-plagg laget med ansvarlige materialer og produksjon.',
+        },
+        wellness: {
+          label: 'Velvære',
+          description: 'Utvalgte produkter for søvn, restitusjon og trening valgt av våre spesialister.',
+        },
+        outdoor: {
+          label: 'Uteliv',
+          description: 'Robust bekledning, utstyr og tilbehør for helgeturer og daglige pendler.',
+        },
+        cta: 'Handle i kategorien',
+      },
+    },
+    bestSellers: {
+      title: 'Nyheter & bestselgere',
+      subtitle: 'Ferske lanseringer sammen med kunders favoritter—oppdatert daglig og klare for levering.',
+      empty: 'Ingen utvalgte produkter akkurat nå. Kom gjerne tilbake snart!',
+      error: 'Produktene kunne ikke lastes. Oppdater siden og prøv igjen.',
+      noImage: 'Bilde kommer snart',
+      unknownCategory: 'Kategori',
+      cta: 'Se produkt',
+    },
+    benefits: {
+      title: 'Derfor velger kunder MiniCommerce',
+      subtitle: 'Vi stiller premiumkrav til hele opplevelsen – fra inspirasjon til levering.',
+      cta: 'Les om levering',
+      list: {
+        shipping: {
+          title: 'Ekspress og karbonnøytral frakt',
+          description: 'Sporbar levering innen 48 timer i de største byene og gratis oppgradering over 1200 kr.',
+        },
+        returns: {
+          title: 'Enkel retur & bytte',
+          description: 'Gratis henting hjemme og øyeblikkelig kreditering på godkjente returer innen 30 dager.',
+        },
+        support: {
+          title: 'Spesialister 7 dager i uken',
+          description: 'Stilister og produkteksperter tilgjengelig via chat, telefon eller video når du trenger dem.',
+        },
+      },
+    },
+    reviews: {
+      title: 'Elsket av moderne hjem',
+      subtitle: 'Tusener av verifiserte kunder gir toppscore for service, tempo og kvalitet.',
+      items: {
+        amelia: {
+          name: 'Amelia Rice',
+          role: 'Interiørdesigner, København',
+          quote:
+            'Kurateringen er spot on. Jeg bygger hele rom fra sortimentet og vet at kvaliteten alltid leverer.',
+        },
+        sverre: {
+          name: 'Sverre Hågensen',
+          role: 'Produktsjef, Oslo',
+          quote:
+            'Levering under to døgn og kundeservice som husker prosjektene mine. Det føles som en personlig shopper.',
+        },
+      },
+    },
+    cta: {
+      title: 'Klar for neste oppgradering?',
+      subtitle:
+        'Bli med i et fellesskap som handler smartere. Lag ønskelister, lagre størrelser og følg hver levering i sanntid.',
+      primaryCta: 'Gå til kassen',
+      secondaryCta: 'Administrer preferanser',
+    },
+  },
+  about: {
+    hero: {
+      kicker: 'Vår historie',
+      title: 'Designfokusert handel for hverdagen',
+      subtitle:
+        'MiniCommerce samler uavhengige produsenter, folkekjære merker og bærekraftige innovasjoner under ett tak. Vi prioriterer brukervennlighet, transparens og ansvarlig vekst.',
+      metrics: {
+        customers: 'Kunder betjent',
+        partners: 'Merke-partnere',
+        countries: 'Markeder levert',
+      },
+    },
+    story: {
+      title: 'Fra nyhetsbrev til global markedsplass',
+      paragraphOne:
+        'MiniCommerce startet som et ukentlig nyhetsbrev med designfavoritter. Sideprosjektet vokste raskt til en markedsplass som løfter frem kvalitet og bekvemmelighet.',
+      paragraphTwo:
+        'Vi samarbeider med leverandører som oppfyller strenge miljø- og sosiale standarder, og bygger digitale opplevelser som gjør det enkelt å oppdage dem. Hver kolleksjon testes av fellesskapet vårt og forbedres kontinuerlig.',
+      paragraphThree:
+        'I dag kombinerer vi datadrevet personalisering med menneskelig kuratering for å hjelpe bevisste kunder å finne produkter som varer.',
+    },
+    timeline: {
+      title: 'Milepæler',
+      items: {
+        founded: {
+          year: '2018',
+          title: 'Første lansering',
+          description: 'Startet med 30 skandinaviske håndverkere og et løfte om ansvarlig frakt.',
+        },
+        marketplace: {
+          year: '2020',
+          title: 'Marketplace lanseres',
+          description: 'Lanserte digitalt showroom og åpnet for internasjonale merker.',
+        },
+        growth: {
+          year: '2022',
+          title: 'Fellesskapet vokser',
+          description: 'Passerte 100 000 medlemmer og introduserte personlige anbefalinger med personvern i fokus.',
+        },
+        today: {
+          year: 'I dag',
+          title: 'Skalerer bærekraftig',
+          description: 'Opererer i 18 markeder med klimapositive logistikk- og sirkulære program.',
+        },
+      },
+    },
+    values: {
+      title: 'Hva som styrer oss',
+      subtitle: 'Tre prinsipper leder hvert valg vi tar.',
+      items: {
+        people: {
+          title: 'Mennesker først',
+          description: 'Rettferdig lønn, inkluderende design og eksepsjonell service for både kunder og skapere.',
+        },
+        planet: {
+          title: 'For planeten',
+          description: 'Vi investerer i lavutslippsmaterialer, karbonnøytral logistikk og reparasjonsprogrammer.',
+        },
+        progress: {
+          title: 'Fremgang hver dag',
+          description: 'Fra UX til emballasje forbedrer vi kontinuerlig slik at gode valg blir det enkle valget.',
+        },
+      },
+    },
+    team: {
+      title: 'Teamet bak skjermen',
+      subtitle: 'Designere, utviklere og operatører som bygger handel med menneskelig preg.',
+      members: {
+        ceo: {
+          initials: 'AR',
+          name: 'Ayla Røed',
+          role: 'Grunnlegger & daglig leder',
+          bio: 'Tidligere produktsjef i ledende nordiske kjeder. Ayla fokuserer på meningsfull vekst og partnerskap.',
+        },
+        headOfProduct: {
+          initials: 'LN',
+          name: 'Liam Nygaard',
+          role: 'Produktsjef',
+          bio: 'Leder produktopplevelsen og sikrer at reisen fra inspirasjon til levering er sømløs.',
+        },
+        customerLead: {
+          initials: 'ME',
+          name: 'Maya Elmi',
+          role: 'Kundeserviceleder',
+          bio: 'Styrer vårt supportteam på tvers av tidssoner for å tilby personlig oppfølging hver eneste dag.',
+        },
+      },
+    },
+    cta: {
+      title: 'Bygg fremtidens handel sammen med oss',
+      subtitle: 'Samarbeid med MiniCommerce for å bringe gjennomtenkte produkter til en global målgruppe.',
+      primaryCta: 'Utforsk butikken',
+      secondaryCta: 'Kontakt partnerskap',
+    },
+  },
+  contact: {
+    hero: {
+      kicker: 'Vi er her',
+      title: 'La oss snakke om din bestilling, et samarbeid eller press',
+      subtitle:
+        'Ta kontakt med kundeservice, salgsteam eller presse. Vi svarer innen én arbeidsdag og følger opp hastesaker fortløpende.',
+    },
+    cards: {
+      support: {
+        title: 'Kundeservice',
+        description: 'Ordrestatus, retur, størrelser eller produktspørsmål – teamet står klart.',
+        email: 'support@minicommerce.com',
+      },
+      sales: {
+        title: 'Partnerskap',
+        description: 'Bli med på markedsplassen eller lanser et samarbeid med vårt innkjøpsteam.',
+        email: 'partners@minicommerce.com',
+      },
+      press: {
+        title: 'Presse & media',
+        description: 'Intervjuer, materiell og retningslinjer for journalister og skapere.',
+        email: 'press@minicommerce.com',
+      },
+    },
+    form: {
+      title: 'Send oss en melding',
+      description: 'Vi leser alt. Del gjerne detaljer slik at riktig spesialist kan svare raskt.',
+      fields: {
+        name: 'Fullt navn',
+        email: 'E-postadresse',
+        topic: 'Tema',
+        message: 'Hvordan kan vi hjelpe?',
+      },
+      topicOptions: {
+        general: 'Generell henvendelse',
+        order: 'Ordrestatus eller levering',
+        returns: 'Retur eller bytte',
+        partnership: 'Samarbeid',
+      },
+      submit: 'Send melding',
+      submitting: 'Sender…',
+      success: 'Takk! Vi har mottatt henvendelsen og svarer så snart som mulig.',
+      error: 'Kunne ikke sende melding. Prøv igjen.',
+    },
+    locations: {
+      title: 'Besøk våre studioer',
+      items: {
+        oslo: {
+          name: 'Oslo HQ & showroom',
+          address: 'Torggata 15, 0181 Oslo, Norge',
+          hours: 'Man–lør 10:00–18:00',
+        },
+        stockholm: {
+          name: 'Stockholm studio',
+          address: 'Åsögatan 108, 118 29 Stockholm, Sverige',
+          hours: 'Tir–søn 11:00–19:00',
+        },
+      },
+    },
+    faq: {
+      title: 'Ofte spurt',
+      items: {
+        shipping: {
+          question: 'Hvor raskt leverer dere?',
+          answer: 'Ekspresslevering innen 48 timer i Norden. Kveldslevering kan bestilles i utvalgte byer.',
+        },
+        returns: {
+          question: 'Hva er returpolitikken?',
+          answer: 'Retur er mulig innen 30 dager med forhåndsbetalt etikett. Bytter sendes samme dag vi mottar varen.',
+        },
+        payment: {
+          question: 'Hvilke betalingsmetoder aksepterer dere?',
+          answer: 'Vi støtter bankkort, Klarna, Vipps og PayPal. Faktura for bedrifter er tilgjengelig på forespørsel.',
+        },
+      },
+    },
+  },
+  footer: {
+    about:
+      'Gjennomtenkte favoritter for moderne liv. Vi løfter ansvarlige produsenter og gir en handleopplevelse i toppklasse.',
+    social: {
+      instagram: 'Besøk oss på Instagram',
+      pinterest: 'Finn inspirasjon på Pinterest',
+      linkedin: 'Koble med oss på LinkedIn',
+    },
+    shop: {
+      title: 'Butikk',
+      links: {
+        home: 'Forside',
+        store: 'Butikk',
+        about: 'Om oss',
+        contact: 'Kontakt',
+      },
+    },
+    support: {
+      title: 'Kundeservice',
+      links: {
+        orders: 'Spor bestillinger',
+        shipping: 'Frakt & levering',
+        returns: 'Returvilkår',
+        contact: 'Kontakt oss',
+      },
+    },
+    newsletter: {
+      title: 'Hold deg oppdatert',
+      description: 'Få kuraterte produktnyheter, stylingtips og forhåndstilgang til lanseringer.',
+      emailLabel: 'E-postadresse',
+      placeholder: 'din@email.no',
+      submit: 'Meld meg på',
+    },
+    legal: {
+      rights: 'Alle rettigheter forbeholdt.',
+      privacy: 'Personvern',
+      terms: 'Vilkår',
+      contact: 'Datahenvendelser',
+    },
   },
   cat: {
     cosmetics: 'Kosmetikk',
@@ -99,6 +633,32 @@ const nb = {
       brand: 'Merke',
       price: 'Pris',
       stock: 'Lager',
+    },
+    detail: {
+      collectionFallback: 'Kolleksjon',
+      notFound: 'Fant ikke produktet.',
+      quantity: 'Antall',
+      inStock: 'På lager',
+      outOfStock: 'Ikke på lager',
+      stockLeft: '{count} igjen',
+      addToCart: 'Legg i handlekurv',
+      addToCartDisabled: 'Ikke på lager',
+      perks: {
+        freeReturns: 'Gratis retur (14 dager)',
+        secureCheckout: 'Sikker betaling',
+        support: 'Kundeservice 24/7',
+      },
+      actions: {
+        addToFavorites: 'Legg til favoritter',
+        inFavorites: 'I favoritter',
+      },
+      toast: {
+        addSuccess: 'Lagt i handlekurven',
+        addError: 'Kunne ikke legge i handlekurven',
+        loadError: 'Kunne ikke laste produktet',
+        favAuth: 'Logg inn for å administrere favoritter',
+        favError: 'Kunne ikke oppdatere favoritter',
+      },
     },
   },
 }

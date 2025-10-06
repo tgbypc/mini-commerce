@@ -60,18 +60,40 @@ export async function GET(req: Request) {
     ])
 
     const topOrders = topSnap.docs.map((d) => ({ id: d.id, ...d.data() })) as Array<Record<string, unknown> & { id: string }>
-    const topOrderIds = new Set(topOrders.map((o) => o.id))
-    const subOrders = subOrdersRaw.filter((o) => {
-      const source = (o as { source?: string }).source
-      if (source === 'ensure' && topOrderIds.has(o.id)) return false
-      return true
-    })
     const emailOrders = emailSnap
       ? (emailSnap.docs.map((d) => ({ id: d.id, ...d.data() })) as Array<Record<string, unknown> & { id: string }>)
       : []
     const emailExactOrders = emailExactSnap
       ? (emailExactSnap.docs.map((d) => ({ id: d.id, ...d.data() })) as Array<Record<string, unknown> & { id: string }>)
       : []
+
+    const canonicalOrderIds = new Set<string>([
+      ...topOrders.map((o) => o.id),
+      ...emailOrders.map((o) => o.id),
+      ...emailExactOrders.map((o) => o.id),
+    ])
+
+    const staleUserOrderIds: string[] = []
+    const subOrders = subOrdersRaw.filter((o) => {
+      if (!canonicalOrderIds.has(o.id)) {
+        staleUserOrderIds.push(o.id)
+        return false
+      }
+      return true
+    })
+
+    if (staleUserOrderIds.length) {
+      try {
+        const batch = adminDb.batch()
+        const userOrdersRef = adminDb.collection('users').doc(uid).collection('orders')
+        for (const id of staleUserOrderIds) {
+          batch.delete(userOrdersRef.doc(id))
+        }
+        await batch.commit()
+      } catch (cleanupError) {
+        console.warn('[user-orders] cleanup stale ensure docs failed', cleanupError)
+      }
+    }
 
     // Merge by id and sort desc by createdAt
     type OrderDoc = Record<string, unknown> & { id: string }
@@ -140,7 +162,56 @@ export async function GET(req: Request) {
       return toMillis(aCreated) < toMillis(bCreated) ? 1 : -1
     })
 
-    return NextResponse.json(merged)
+    // Collect product ids for enrichment
+    const productIds = new Set<string>()
+    type OrderItem = { productId?: unknown; title?: unknown; description?: unknown; quantity?: unknown; unitAmount?: unknown; currency?: unknown }
+    const normalized = merged.map((order) => {
+      const items = Array.isArray((order as { items?: unknown }).items)
+        ? ((order as { items?: unknown }).items as OrderItem[])
+        : []
+      for (const it of items) {
+        const pid = String(it?.productId ?? '')
+        if (pid) productIds.add(pid)
+      }
+      return { ...order, items }
+    })
+
+    const productMeta = new Map<string, { title?: string; thumbnail?: string }>()
+    for (const pid of productIds) {
+      try {
+        const snap = await adminDb.collection('products').doc(pid).get()
+        if (snap.exists) {
+          const data = snap.data() as { title?: string; thumbnail?: string }
+          productMeta.set(pid, {
+            title: typeof data?.title === 'string' ? data.title : undefined,
+            thumbnail: typeof data?.thumbnail === 'string' ? data.thumbnail : undefined,
+          })
+        }
+      } catch {
+        // ignore individual failures
+      }
+    }
+
+    const enriched = normalized.map((order) => {
+      const items = (order.items as OrderItem[]).map((item) => {
+        const pid = String(item?.productId ?? '')
+        const meta = productMeta.get(pid)
+        return {
+          ...item,
+          productId: pid || undefined,
+          title:
+            typeof item?.title === 'string' && item.title.trim()
+              ? item.title
+              : typeof item?.description === 'string' && item.description.trim()
+                ? item.description
+                : meta?.title,
+          thumbnail: meta?.thumbnail ?? undefined,
+        }
+      })
+      return { ...order, items }
+    })
+
+    return NextResponse.json(enriched)
   } catch (error) {
     console.error('Failed to fetch orders:', error)
     // Fail gracefully with empty list to avoid hard client errors

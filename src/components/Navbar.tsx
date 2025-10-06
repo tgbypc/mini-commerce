@@ -1,16 +1,17 @@
 'use client'
 
 import Link from 'next/link'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useCart } from '@/context/CartContext'
 import { useI18n } from '@/context/I18nContext'
+import ThemeToggle from '@/components/ThemeToggle'
 
 const NAV_ITEMS: Array<{ key: 'home' | 'store' | 'about' | 'contact'; href: string }> = [
   { key: 'home', href: '/' },
-  { key: 'store', href: '#' },
-  { key: 'about', href: '#' },
-  { key: 'contact', href: '#' },
+  { key: 'store', href: '/store' },
+  { key: 'about', href: '/about' },
+  { key: 'contact', href: '/contact' },
 ]
 
 export default function Navbar() {
@@ -19,6 +20,7 @@ export default function Navbar() {
   const { user, role, loading, logout } = useAuth()
   const { count } = useCart()
   const [profileOpen, setProfileOpen] = useState(false)
+  const profileRef = useRef<HTMLDivElement | null>(null)
 
   const initials = useMemo(() => {
     const raw = user?.displayName || user?.email || ''
@@ -28,8 +30,7 @@ export default function Navbar() {
     return (a + b).slice(0, 2)
   }, [user])
 
-  const iconButtonClass =
-    'relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 bg-[#f4f4f5] text-[#0d141c] transition hover:bg-white hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0d141c]'
+  const iconButtonClass = 'relative theme-icon-button'
 
   function toggleMobileMenu() {
     setIsOpen((prev) => !prev)
@@ -44,13 +45,30 @@ export default function Navbar() {
     setProfileOpen(false)
   }
 
+  useEffect(() => {
+    if (!profileOpen) return
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const container = profileRef.current
+      if (!container) return
+      if (!container.contains(event.target as Node)) {
+        setProfileOpen(false)
+      }
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown)
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown)
+    }
+  }, [profileOpen])
+
   return (
-    <header className="sticky top-0 z-40 bg-white/70 px-3 py-3 backdrop-blur md:px-6">
-      <div className="mx-auto flex w-full max-w-[1100px] items-center justify-between gap-3 rounded-[24px] border border-zinc-200/80 bg-white/85 px-3 py-2.5 shadow-[0_12px_28px_rgba(15,23,42,0.08)] md:px-5">
+    <header className="sticky top-0 z-40 bg-[var(--navbar-surface)] px-3 py-3 backdrop-blur transition-colors duration-200 md:px-6">
+      <div className="mx-auto flex w-full max-w-[1100px] items-center justify-between gap-3 rounded-[24px] border border-[var(--navbar-border)] bg-[var(--navbar-card)] px-3 py-2.5 shadow-[var(--navbar-shadow)] transition-colors duration-200 md:px-5">
         <div className="flex flex-1 items-center gap-4 md:gap-6">
           <Link
             href="/"
-            className="flex items-center gap-3 text-[#0d141c] transition hover:opacity-90"
+            className="flex items-center gap-3 text-[var(--foreground)] transition hover:opacity-90"
           >
             <div className="size-4">
               <svg
@@ -64,12 +82,12 @@ export default function Navbar() {
             <span className="text-lg font-semibold tracking-[-0.015em]">MiniCommerce</span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-1 rounded-full border border-zinc-200 bg-[#f4f4f5] px-1 py-1">
+          <nav className="hidden md:flex items-center gap-1 rounded-full border border-zinc-200 bg-[#f4f4f5] px-1 py-1 transition-colors duration-200">
             {NAV_ITEMS.map(({ key, href }) => (
               <Link
                 key={key}
                 href={href}
-                className="inline-flex items-center rounded-full px-3 py-1.5 text-sm font-medium text-[#0d141c] transition hover:bg-white hover:shadow-sm"
+                className="inline-flex items-center rounded-full px-3 py-1.5 text-sm font-medium text-[var(--foreground)] transition hover:bg-white hover:shadow-sm"
               >
                 {t(`nav.${key}`)}
               </Link>
@@ -78,6 +96,7 @@ export default function Navbar() {
         </div>
 
         <div className="hidden md:flex items-center gap-2">
+          <ThemeToggle />
           <Link href="/favorites" className={iconButtonClass} title={t('nav.favorites')}>
             <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 32 32">
               <path
@@ -99,13 +118,13 @@ export default function Navbar() {
               </g>
             </svg>
             {count > 0 && (
-              <span className="absolute -top-2 -right-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#0d141c] px-1 text-[11px] font-semibold text-white">
+              <span className="absolute -top-2 -right-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--color-primary-dark)] px-1 text-[11px] font-semibold text-white">
                 {count}
               </span>
             )}
           </Link>
 
-          <div className="flex items-center gap-1 rounded-full border border-zinc-200 bg-[#f4f4f5] p-1">
+          <div className="flex items-center gap-1 rounded-full border border-[var(--btn-outline-border)] bg-[var(--btn-outline-bg)] p-1 transition-colors duration-200">
             {(['en', 'nb'] as const).map((code) => (
               <button
                 key={code}
@@ -113,7 +132,9 @@ export default function Navbar() {
                 onClick={() => setLocale(code)}
                 aria-pressed={locale === code}
                 className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold transition ${
-                  locale === code ? 'bg-[#0d141c] text-white shadow-sm' : 'text-[#0d141c] hover:bg-white'
+                  locale === code
+                    ? 'bg-[var(--color-primary-dark)] text-white shadow-[0_8px_18px_rgba(91,91,214,0.3)]'
+                    : 'text-[var(--btn-outline-text)] hover:bg-white/60 hover:text-[var(--color-primary-dark)]'
                 }`}
               >
                 {code.toUpperCase()}
@@ -123,29 +144,23 @@ export default function Navbar() {
 
           {!loading && !user && (
             <div className="flex items-center gap-2">
-              <Link
-                href="/user/login"
-                className="inline-flex items-center rounded-full border border-zinc-200 px-3 py-1.5 text-sm font-medium text-[#0d141c] transition hover:bg-white hover:shadow-sm"
-              >
+              <Link href="/user/login" className="btn-outline px-4 py-1.5">
                 {t('nav.login')}
               </Link>
-              <Link
-                href="/user/register"
-                className="inline-flex items-center rounded-full bg-[#0d141c] px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-[#1f2a37]"
-              >
+              <Link href="/user/register" className="btn-primary px-4 py-1.5">
                 {t('nav.register')}
               </Link>
             </div>
           )}
 
           {!loading && user && (
-            <div className="relative">
+            <div className="relative" ref={profileRef}>
               <button
                 type="button"
                 onClick={() => setProfileOpen((prev) => !prev)}
                 aria-haspopup="menu"
                 aria-expanded={profileOpen}
-                className="inline-flex size-10 items-center justify-center rounded-full border border-zinc-200 bg-[#f4f4f5] text-sm font-semibold text-[#0d141c] transition hover:bg-white hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0d141c]"
+                className="theme-icon-button font-semibold uppercase tracking-tight text-[var(--foreground)]"
               >
                 {initials}
               </button>
@@ -155,7 +170,7 @@ export default function Navbar() {
                     <Link
                       href="/admin"
                       onClick={closeProfileMenu}
-                      className="block rounded-xl px-3 py-2 text-sm font-medium text-[#0d141c] transition hover:bg-[#f4f4f5]"
+                      className="block rounded-xl px-3 py-2 text-sm font-medium text-[var(--foreground)] transition hover:bg-[#f4f4f5]"
                     >
                       {t('nav.admin')}
                     </Link>
@@ -164,14 +179,14 @@ export default function Navbar() {
                       <Link
                         href="/user/profile"
                         onClick={closeProfileMenu}
-                        className="block rounded-xl px-3 py-2 text-sm font-medium text-[#0d141c] transition hover:bg-[#f4f4f5]"
+                        className="block rounded-xl px-3 py-2 text-sm font-medium text-[var(--foreground)] transition hover:bg-[#f4f4f5]"
                       >
                         {t('nav.profile')}
                       </Link>
                       <Link
                         href="/user/orders"
                         onClick={closeProfileMenu}
-                        className="block rounded-xl px-3 py-2 text-sm font-medium text-[#0d141c] transition hover:bg-[#f4f4f5]"
+                        className="block rounded-xl px-3 py-2 text-sm font-medium text-[var(--foreground)] transition hover:bg-[#f4f4f5]"
                       >
                         {t('nav.orders')}
                       </Link>
@@ -195,7 +210,7 @@ export default function Navbar() {
 
         <button
           type="button"
-          className="inline-flex items-center justify-center rounded-full border border-zinc-200 bg-white p-2 text-[#0d141c] shadow-sm transition hover:bg-[#f4f4f5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0d141c] md:hidden"
+          className="theme-icon-button md:hidden"
           aria-label={isOpen ? 'Close menu' : 'Open menu'}
           aria-expanded={isOpen}
           onClick={toggleMobileMenu}
@@ -214,18 +229,22 @@ export default function Navbar() {
                 key={`mobile-${key}`}
                 href={href}
                 onClick={closeMobileMenu}
-                className="rounded-xl px-3 py-2 text-sm font-medium text-[#0d141c] transition hover:bg-[#f4f4f5]"
+                className="rounded-xl px-3 py-2 text-sm font-medium text-[var(--foreground)] transition hover:bg-[#f4f4f5]"
               >
                 {t(`nav.${key}`)}
               </Link>
             ))}
           </nav>
 
+          <div className="mt-4 flex justify-center">
+            <ThemeToggle />
+          </div>
+
           <div className="mt-4 flex items-center gap-3">
             <Link
               href="/favorites"
               onClick={closeMobileMenu}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-[#f4f4f5] px-3 py-2 text-sm font-semibold text-[#0d141c]"
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-[#f4f4f5] px-3 py-2 text-sm font-semibold text-[var(--foreground)]"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 32 32">
                 <path
@@ -238,7 +257,7 @@ export default function Navbar() {
             <Link
               href="/cart"
               onClick={closeMobileMenu}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-[#f4f4f5] px-3 py-2 text-sm font-semibold text-[#0d141c]"
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-[#f4f4f5] px-3 py-2 text-sm font-semibold text-[var(--foreground)]"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24">
                 <g fill="currentColor">
@@ -252,7 +271,7 @@ export default function Navbar() {
             </svg>
             {t('nav.cart')}
             {count > 0 && (
-              <span className="ml-1 inline-flex items-center justify-center rounded-full bg-[#0d141c] px-2 text-xs font-semibold text-white">
+              <span className="ml-1 inline-flex items-center justify-center rounded-full bg-[var(--color-primary-dark)] px-2 text-xs font-semibold text-white">
                 {count}
               </span>
             )}
@@ -267,7 +286,9 @@ export default function Navbar() {
                 onClick={() => setLocale(code)}
                 aria-pressed={locale === code}
                 className={`flex-1 rounded-xl px-3 py-2 text-sm font-semibold transition ${
-                  locale === code ? 'bg-[#0d141c] text-white' : 'border border-zinc-200 bg-[#f4f4f5] text-[#0d141c]'
+                  locale === code
+                    ? 'bg-[var(--color-primary-dark)] text-white shadow-[0_10px_22px_rgba(91,91,214,0.3)]'
+                    : 'border border-zinc-200 bg-[#f4f4f5] text-[var(--foreground)] hover:bg-white'
                 }`}
               >
                 {code.toUpperCase()}
@@ -280,14 +301,14 @@ export default function Navbar() {
               <Link
                 href="/user/login"
                 onClick={closeMobileMenu}
-                className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-center text-sm font-medium text-[#0d141c]"
+                className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-center text-sm font-medium text-[var(--foreground)]"
               >
                 {t('nav.login')}
               </Link>
               <Link
                 href="/user/register"
                 onClick={closeMobileMenu}
-                className="rounded-xl bg-[#0d141c] px-3 py-2 text-center text-sm font-semibold text-white"
+                className="rounded-xl bg-[var(--color-primary-dark)] px-3 py-2 text-center text-sm font-semibold text-white"
               >
                 {t('nav.register')}
               </Link>
@@ -300,7 +321,7 @@ export default function Navbar() {
                 <Link
                   href="/admin"
                   onClick={closeMobileMenu}
-                  className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-[#0d141c]"
+                  className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-[var(--foreground)]"
                 >
                   {t('nav.admin')}
                 </Link>
@@ -309,14 +330,14 @@ export default function Navbar() {
                   <Link
                     href="/user/profile"
                     onClick={closeMobileMenu}
-                    className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-[#0d141c]"
+                    className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-[var(--foreground)]"
                   >
                     {t('nav.profile')}
                   </Link>
                   <Link
                     href="/user/orders"
                     onClick={closeMobileMenu}
-                    className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-[#0d141c]"
+                    className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-[var(--foreground)]"
                   >
                     {t('nav.orders')}
                   </Link>

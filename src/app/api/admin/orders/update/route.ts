@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { adminDb, FieldValue } from '@/lib/firebaseAdmin'
 import { requireAdminFromRequest } from '@/lib/adminAuth'
+import type { DocumentData, PartialWithFieldValue, UpdateData } from 'firebase-admin/firestore'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -29,7 +30,7 @@ export async function POST(req: Request) {
     const snap = await orderRef.get()
     if (!snap.exists) return NextResponse.json({ error: 'Not found' }, { status: 404 })
     const data = snap.data() as { userId?: string | null }
-    const patch: Record<string, unknown> = {
+    const patch: PartialWithFieldValue<DocumentData> & UpdateData<DocumentData> = {
       status,
       updatedAt: FieldValue.serverTimestamp(),
     }
@@ -51,4 +52,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: msg }, { status: 500 })
   }
 }
-

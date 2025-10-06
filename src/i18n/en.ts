@@ -13,6 +13,53 @@ const en = {
     cart: 'Cart',
     logout: 'Sign out',
   },
+  success: {
+    title: 'Order confirmed!',
+    subtitle: 'Thank you for your purchase. We emailed a receipt and will keep you updated.',
+    celebration: 'You can review the highlights below.',
+    summary: {
+      orderNumber: 'Order number',
+      delivery: 'Estimated delivery',
+      deliveryValue: '{date}',
+      paymentMethod: 'Payment method',
+      paymentStatus: 'Payment status',
+    },
+    paymentMethods: {
+      card: 'Credit card',
+      klarna: 'Klarna',
+      paypal: 'PayPal',
+      default: 'Online payment',
+    },
+    status: {
+      paid: 'Payment received',
+      complete: 'Completed',
+      fulfilled: 'Fulfilled',
+      open: 'Processing',
+      canceled: 'Canceled',
+      unpaid: 'Awaiting payment',
+      default: 'Processing',
+    },
+    items: {
+      title: 'Order items',
+      empty: 'No items found.',
+      fallback: 'Product',
+      quantity: '× {count}',
+    },
+    total: {
+      label: 'Total amount',
+    },
+    actions: {
+      view: 'View order details',
+      profile: 'Go to my profile',
+      continue: 'Continue shopping',
+    },
+    next: {
+      title: 'Next steps',
+      shipping: 'We are preparing your package and will share tracking details soon.',
+      receipt: 'A digital receipt has been sent to {email}.',
+      emailFallback: 'your email address',
+    },
+  },
   home: {
     searchPlaceholder: 'Search products',
     searchHint: 'Discover products by name, brand or category. Use filters or try a popular search below.',
@@ -40,12 +87,116 @@ const en = {
     empty: 'You have no favorite products yet.',
     continue: 'Continue shopping',
   },
+  cart: {
+    title: 'Cart',
+    subtitle: 'Review {items} before checkout.',
+    emptyTitle: 'Your cart is empty',
+    emptyMessage: 'Keep shopping to add products you love.',
+    emptyCta: 'Browse products',
+    count: {
+      one: '{count} item',
+      other: '{count} items',
+    },
+    unitPrice: 'Unit price',
+    lineTotal: 'Line total',
+    remove: 'Remove',
+    quantity: {
+      increase: 'Increase quantity',
+      decrease: 'Decrease quantity',
+    },
+    productFallback: 'Product',
+    imageAlt: '{product} image',
+    summary: {
+      title: 'Order summary',
+      products: 'Products ({items})',
+      shipping: 'Shipping',
+      shippingTbd: 'Calculated at checkout',
+      subtotal: 'Subtotal',
+      taxNote: 'Tax and shipping are calculated at checkout.',
+    },
+    checkout: {
+      cta: 'Proceed to checkout',
+      loading: 'Redirecting...',
+    },
+    continue: 'Continue shopping',
+    reminder: 'Save your favorites before they sell out.',
+  },
   orders: {
     title: 'My Orders',
     loginPrompt: 'Please sign in to view your orders.',
     empty: 'You have no orders yet.',
     seeAll: 'See all',
     seeDetail: 'View details',
+    summary: {
+      subtitle: 'Track your purchases, download receipts and follow delivery updates.',
+      count: '{count} order(s)',
+      totalLabel: 'Total spend',
+      totalValue: '{amount}',
+      averageLabel: 'Average order',
+      averageValue: '{amount}',
+    },
+    orderCard: {
+      label: 'Order',
+      total: 'Total',
+      items: '{count} item(s)',
+      session: 'Session: {id}',
+      details: 'View details',
+      placedOn: 'Placed {date}',
+      status: {
+        paid: 'Paid',
+        complete: 'Completed',
+        fulfilled: 'Fulfilled',
+        shipped: 'Shipped',
+        delivered: 'Delivered',
+        open: 'Processing',
+        canceled: 'Canceled',
+        unpaid: 'Unpaid',
+      },
+      payment: {
+        paid: 'Paid',
+        unpaid: 'Unpaid',
+        refunded: 'Refunded',
+        no_payment_required: 'No payment required',
+      },
+      progress: {
+        current: 'Current step',
+        upcoming: 'Upcoming',
+      },
+    },
+  },
+  orderDetail: {
+    title: 'Order summary',
+    placedOn: 'Placed on {date}',
+    session: 'Session',
+    back: 'Back to orders',
+    status: {
+      heading: 'Status',
+      paid: 'Payment confirmed',
+      fulfilled: 'Processing',
+      shipped: 'Shipped',
+      delivered: 'Delivered',
+      canceled: 'Canceled',
+      current: 'Current',
+      completed: 'Completed',
+      upcoming: 'Upcoming',
+    },
+    items: {
+      heading: 'Items',
+      quantity: '× {count}',
+      fallback: 'Product',
+    },
+    payment: {
+      heading: 'Payment summary',
+      subtotal: 'Subtotal',
+      shipping: 'Shipping ({method})',
+      total: 'Total paid',
+    },
+    shipping: {
+      heading: 'Shipping details',
+      method: 'Method',
+      address: 'Delivery address',
+      missing: 'No shipping information',
+    },
   },
   profile: {
     title: 'My Profile',
@@ -53,6 +204,389 @@ const en = {
     save: 'Save',
     saving: 'Saving…',
     logout: 'Sign out',
+    hero: {
+      greeting: 'Welcome back, {name}',
+      fallbackName: 'friend',
+      subtitle: 'Manage your details and keep delivery information up to date.',
+      ordersCount: '{count} order(s)',
+    },
+    verification: {
+      verified: 'Email verified',
+      notVerified: 'Email not verified',
+      resend: 'Resend verification',
+      resendCooldown: 'Resend ({seconds}s)',
+      sending: 'Sending…',
+      success: 'Verification email sent. Please check your inbox.',
+      alreadyVerified: 'Email already verified.',
+      error: 'Could not send verification email. Please try again later.',
+    },
+    accountCard: {
+      heading: 'Contact details',
+      description: 'These details appear on your receipts and delivery documents.',
+      nameLabel: 'Full name',
+      phoneLabel: 'Phone number',
+      notesLabel: 'Delivery notes (optional)',
+      notesPlaceholder: 'Add any special delivery instructions',
+      save: 'Save changes',
+    },
+    favorites: {
+      heading: 'Favorites',
+      description: 'Quick links to the products you love.',
+      view: 'View favorites',
+    },
+    addresses: {
+      heading: 'Shipping addresses',
+      description: 'Default address is used at checkout. You can switch it at any time.',
+      add: 'Add address',
+      empty: 'You have no saved addresses yet.',
+      defaultBadge: 'Default',
+      actions: {
+        edit: 'Edit',
+        delete: 'Delete',
+        setDefault: 'Set as default',
+        confirmDelete: 'Remove this address?',
+      },
+      form: {
+        headingAdd: 'Add new address',
+        headingEdit: 'Edit address',
+        name: 'Full name',
+        phone: 'Phone number',
+        line1: 'Address line 1',
+        line2: 'Address line 2 (optional)',
+        city: 'City',
+        state: 'State / Region',
+        zip: 'Postal code',
+        country: 'Country',
+        setDefault: 'Set as default',
+        cancel: 'Cancel',
+        save: 'Save address',
+        update: 'Update address',
+      },
+      toast: {
+        saved: 'Address added',
+        updated: 'Address updated',
+        deleted: 'Address removed',
+        required: 'Please complete all required fields',
+        error: 'Address could not be saved',
+      },
+    },
+    ordersPreview: {
+      heading: 'Recent orders',
+      empty: 'You have not placed any orders yet.',
+      viewAll: 'View all orders',
+    },
+  },
+  store: {
+    hero: {
+      kicker: 'Curated collections',
+      title: 'Everything you need for home, work and downtime',
+      subtitle:
+        'Discover standout products from independent brands and global icons. Shop confidently with fast fulfillment and concierge-level support.',
+      primaryCta: 'Browse highlights',
+      secondaryCta: 'View favorites',
+    },
+    metrics: {
+      orders: 'Orders shipped',
+      products: 'Curated products',
+      delivery: 'Average delivery',
+    },
+    categories: {
+      title: 'Shop by category',
+      subtitle: 'Explore seasonal picks, new arrivals and timeless essentials tailored for you.',
+      cta: 'Explore the full catalog',
+      list: {
+        beauty: {
+          label: 'Beauty & self care',
+          description: 'Skincare, cosmetics and wellness formulas backed by science and trusted by our community.',
+        },
+        electronics: {
+          label: 'Smart tech',
+          description: 'Everyday gadgets and premium gear designed to simplify your routines at home or on the go.',
+        },
+        home: {
+          label: 'Home & kitchen',
+          description: 'Elevate each room with functional decor, cookware and organizational must-haves.',
+        },
+        fashion: {
+          label: 'Modern wardrobe',
+          description: 'Elevated staples and statement pieces crafted with premium fabrics and responsible sourcing.',
+        },
+        wellness: {
+          label: 'Wellness studio',
+          description: 'Mindful picks to support rest, recovery and movement, handpicked by our in-house experts.',
+        },
+        outdoor: {
+          label: 'Outdoor escapes',
+          description: 'Durable apparel, gear and accessories built for weekend adventures and everyday commutes.',
+        },
+        cta: 'Shop this category',
+      },
+    },
+    bestSellers: {
+      title: 'New in & best sellers',
+      subtitle: 'Fresh releases alongside community favorites—updated daily and ready to ship.',
+      empty: 'No featured products available right now. Check back soon!',
+      error: 'Products could not be loaded. Refresh to try again.',
+      noImage: 'Image coming soon',
+      unknownCategory: 'Collection',
+      cta: 'View details',
+    },
+    benefits: {
+      title: 'Why shop with MiniCommerce',
+      subtitle: 'Premium standards applied to every part of the journey—from discovery to delivery.',
+      cta: 'Review shipping details',
+      list: {
+        shipping: {
+          title: 'Express, carbon-neutral shipping',
+          description: 'Tracked delivery within 48 hours in major cities and free upgrades on orders over $120.',
+        },
+        returns: {
+          title: 'Easy returns & exchanges',
+          description: 'Complimentary doorstep pickup and instant credit on eligible returns within 30 days.',
+        },
+        support: {
+          title: 'Specialist support 7 days a week',
+          description: 'Dedicated stylists and product experts available via chat, phone or video to help you decide.',
+        },
+      },
+    },
+    reviews: {
+      title: 'Trusted by modern households',
+      subtitle: 'Thousands of verified shoppers rate their experiences five stars for service, speed and quality.',
+      items: {
+        amelia: {
+          name: 'Amelia Rice',
+          role: 'Interior designer, Copenhagen',
+          quote:
+            'The curation is spot on. I build entire room schemes from their ready-to-ship catalog knowing quality is consistent.',
+        },
+        sverre: {
+          name: 'Sverre Hågensen',
+          role: 'Product lead, Oslo',
+          quote:
+            'Delivery in under two days and customer service that remembers my projects. It feels like having a personal buyer.',
+        },
+      },
+    },
+    cta: {
+      title: 'Ready for your next upgrade?',
+      subtitle:
+        'Join a community that shops smarter. Build wishlists, save preferred sizes and track every delivery in real time.',
+      primaryCta: 'Go to checkout',
+      secondaryCta: 'Manage preferences',
+    },
+  },
+  about: {
+    hero: {
+      kicker: 'Our story',
+      title: 'Design-first commerce for everyday living',
+      subtitle:
+        'MiniCommerce gathers independent makers, beloved brands and sustainable innovations under one thoughtful roof. We obsess over usability, transparency and responsible growth.',
+      metrics: {
+        customers: 'Customers served',
+        partners: 'Brand partners',
+        countries: 'Markets shipped',
+      },
+    },
+    story: {
+      title: 'From a curated newsletter to a global marketplace',
+      paragraphOne:
+        'MiniCommerce began as a weekly selection of good design finds shared with friends. What started as a side project quickly grew into a vibrant marketplace championing craftsmanship and convenience.',
+      paragraphTwo:
+        'We partner with suppliers who meet strict environmental and social standards, then build digital experiences that make discovering them effortless. Every collection is tested by our community and improved through continuous feedback.',
+      paragraphThree:
+        'Today, we balance data-driven personalization with human curation. Our goal is to help conscious shoppers fall in love with products that last.',
+    },
+    timeline: {
+      title: 'Milestones',
+      items: {
+        founded: {
+          year: '2018',
+          title: 'First drop',
+          description: 'Launched with 30 Scandinavian artisans and a promise to ship responsibly.',
+        },
+        marketplace: {
+          year: '2020',
+          title: 'Marketplace launch',
+          description: 'Introduced our digital showroom experience and opened to international brands.',
+        },
+        growth: {
+          year: '2022',
+          title: 'Community growth',
+          description: 'Reached 100K members and introduced personalization powered by privacy-first data.',
+        },
+        today: {
+          year: 'Today',
+          title: 'Scaling sustainably',
+          description: 'Operating across 18 markets with climate positive logistics and circular programs.',
+        },
+      },
+    },
+    values: {
+      title: 'What guides us',
+      subtitle: 'We anchor every decision around three simple principles.',
+      items: {
+        people: {
+          title: 'People first',
+          description: 'Fair pay, inclusive design and world-class service for the shoppers and makers we serve.',
+        },
+        planet: {
+          title: 'Planet conscious',
+          description: 'We invest in low-impact materials, carbon neutral logistics and repair-or-reuse programs.',
+        },
+        progress: {
+          title: 'Progress every day',
+          description: 'From UX to packaging, we iterate relentlessly so buying better becomes the easy choice.',
+        },
+      },
+    },
+    team: {
+      title: 'The team behind the screens',
+      subtitle: 'A collective of designers, engineers and operators building commerce that feels human.',
+      members: {
+        ceo: {
+          initials: 'AR',
+          name: 'Ayla Røed',
+          role: 'Founder & CEO',
+          bio: 'Former product director at leading Nordic retailers, Ayla focuses on purposeful growth and brand partnerships.',
+        },
+        headOfProduct: {
+          initials: 'LN',
+          name: 'Liam Nygaard',
+          role: 'Head of Product',
+          bio: 'Oversees our experience design, ensuring every interaction from discovery to delivery is intuitive.',
+        },
+        customerLead: {
+          initials: 'ME',
+          name: 'Maya Elmi',
+          role: 'Customer Experience Lead',
+          bio: 'Leads our CX specialists across time zones to provide seven-day support with a personal touch.',
+        },
+      },
+    },
+    cta: {
+      title: 'Build the future of retail with us',
+      subtitle: 'Partner with MiniCommerce to bring thoughtful products to a global audience.',
+      primaryCta: 'Explore the store',
+      secondaryCta: 'Talk to partnerships',
+    },
+  },
+  contact: {
+    hero: {
+      kicker: 'Here to help',
+      title: 'Let’s talk about your next order, partnership or project',
+      subtitle:
+        'Reach our support crew, sales specialists or press team. We reply within one business day and monitor urgent tickets around the clock.',
+    },
+    cards: {
+      support: {
+        title: 'Customer support',
+        description: 'Order updates, returns, sizing or product questions—our CX team is ready.',
+        email: 'support@minicommerce.com',
+      },
+      sales: {
+        title: 'Retail partnerships',
+        description: 'Join the marketplace or launch a limited collaboration with our merchandising team.',
+        email: 'partners@minicommerce.com',
+      },
+      press: {
+        title: 'Press & media',
+        description: 'Interviews, media assets and brand guidelines for journalists and creators.',
+        email: 'press@minicommerce.com',
+      },
+    },
+    form: {
+      title: 'Send us a message',
+      description: 'We read every note. Share as much detail as possible so the right specialist can respond fast.',
+      fields: {
+        name: 'Full name',
+        email: 'Email address',
+        topic: 'Topic',
+        message: 'How can we help?',
+      },
+      topicOptions: {
+        general: 'General inquiry',
+        order: 'Order status or delivery',
+        returns: 'Return or exchange',
+        partnership: 'Partnership opportunity',
+      },
+      submit: 'Send message',
+      submitting: 'Sending…',
+      success: 'Thank you! We have received your request and will respond shortly.',
+      error: 'Could not send message. Please try again.',
+    },
+    locations: {
+      title: 'Visit our studios',
+      items: {
+        oslo: {
+          name: 'Oslo HQ & showroom',
+          address: 'Torggata 15, 0181 Oslo, Norway',
+          hours: 'Mon–Sat 10:00–18:00',
+        },
+        stockholm: {
+          name: 'Stockholm studio',
+          address: 'Åsögatan 108, 118 29 Stockholm, Sweden',
+          hours: 'Tue–Sun 11:00–19:00',
+        },
+      },
+    },
+    faq: {
+      title: 'Frequently asked',
+      items: {
+        shipping: {
+          question: 'How fast do you deliver?',
+          answer: 'Express orders arrive within 48 hours in the Nordics. You can schedule evening delivery in select cities.',
+        },
+        returns: {
+          question: 'What is your return policy?',
+          answer: 'Eligible items can be returned within 30 days using our prepaid label. Exchanges ship out the same day we receive the return.',
+        },
+        payment: {
+          question: 'Which payment methods do you accept?',
+          answer: 'We support major cards, Klarna, Vipps and PayPal. Corporate invoicing is available on request.',
+        },
+      },
+    },
+  },
+  footer: {
+    about:
+      'Thoughtfully curated essentials for modern living. We champion responsible makers and deliver a best-in-class shopping experience.',
+    social: {
+      instagram: 'Visit our Instagram',
+      pinterest: 'Discover inspiration on Pinterest',
+      linkedin: 'Connect with us on LinkedIn',
+    },
+    shop: {
+      title: 'Shop',
+      links: {
+        home: 'Home',
+        store: 'Store',
+        about: 'About',
+        contact: 'Contact',
+      },
+    },
+    support: {
+      title: 'Support',
+      links: {
+        orders: 'Track orders',
+        shipping: 'Shipping & delivery',
+        returns: 'Returns policy',
+        contact: 'Contact support',
+      },
+    },
+    newsletter: {
+      title: 'Stay in the loop',
+      description: 'Sign up for curated product drops, styling tips and early access announcements.',
+      emailLabel: 'Email address',
+      placeholder: 'your@email.com',
+      submit: 'Subscribe',
+    },
+    legal: {
+      rights: 'All rights reserved.',
+      privacy: 'Privacy',
+      terms: 'Terms',
+      contact: 'Data inquiries',
+    },
   },
   cat: {
     cosmetics: 'Cosmetics',
@@ -99,6 +633,32 @@ const en = {
       brand: 'Brand',
       price: 'Price',
       stock: 'Stock',
+    },
+    detail: {
+      collectionFallback: 'Collection',
+      notFound: 'Product not found.',
+      quantity: 'Quantity',
+      inStock: 'In stock',
+      outOfStock: 'Out of stock',
+      stockLeft: '{count} left',
+      addToCart: 'Add to cart',
+      addToCartDisabled: 'Out of stock',
+      perks: {
+        freeReturns: 'Free returns (14 days)',
+        secureCheckout: 'Secure checkout',
+        support: 'Support 24/7',
+      },
+      actions: {
+        addToFavorites: 'Add to favorites',
+        inFavorites: 'In favorites',
+      },
+      toast: {
+        addSuccess: 'Added to cart',
+        addError: 'Failed to add to cart',
+        loadError: 'Failed to load product',
+        favAuth: 'Please sign in to manage favorites',
+        favError: 'Failed to update favorites',
+      },
     },
   },
 }
