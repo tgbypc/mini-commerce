@@ -1,6 +1,5 @@
 import Script from 'next/script'
 import type { Metadata } from 'next'
-import { headers } from 'next/headers'
 import HomeClient from '@/components/home/HomeClient'
 
 const DEFAULT_LOCALE = 'en'
@@ -43,15 +42,16 @@ export const metadata: Metadata = {
 
 function getBaseUrl() {
   const envUrl = process.env.NEXT_PUBLIC_SITE_URL
-  if (envUrl) return envUrl
-  try {
-    const hdrs = headers()
-    const host = hdrs.get('host') || 'localhost:3000'
-    const protocol = host.startsWith('localhost') ? 'http' : 'https'
-    return `${protocol}://${host}`
-  } catch {
-    return 'http://localhost:3000'
+  if (envUrl?.length) {
+    return envUrl.startsWith('http') ? envUrl : `https://${envUrl}`
   }
+
+  const vercelUrl = process.env.VERCEL_URL
+  if (vercelUrl?.length) {
+    return vercelUrl.startsWith('http') ? vercelUrl : `https://${vercelUrl}`
+  }
+
+  return 'http://localhost:3000'
 }
 
 async function fetchInitialProducts(): Promise<{ items: ListItem[]; nextCursor: string | null }> {
