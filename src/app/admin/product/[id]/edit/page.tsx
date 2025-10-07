@@ -1,18 +1,24 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { useForm } from 'react-hook-form'
-import type { Resolver, SubmitHandler } from 'react-hook-form'
+import { useForm, type Resolver, type SubmitHandler } from 'react-hook-form'
 import { z } from 'zod'
-import { useI18n } from '@/context/I18nContext'
 import { zodResolver } from '@hookform/resolvers/zod'
-// Firestore update is handled by API; keep only types/helpers if needed
+import Image from 'next/image'
+import Link from 'next/link'
+import { toast } from 'react-hot-toast'
+import {
+  ArrowLeftCircle,
+  Copy,
+  Loader2,
+  UploadCloud,
+} from 'lucide-react'
+import { useI18n } from '@/context/I18nContext'
 import { getProductById } from '@/lib/products'
 import type { Product } from '@/types/product'
 import { CATEGORIES } from '@/lib/constants/categories'
 import type { Category } from '@/lib/constants/categories'
-import Image from 'next/image'
 import { useAuth } from '@/context/AuthContext'
 
 const schema = z.object({
@@ -27,28 +33,23 @@ const schema = z.object({
     .optional(),
   category: z.enum(CATEGORIES),
   brand: z.string().max(50).optional().or(z.literal('')),
-  thumbnail: z
-    .string()
-    .url('Must be a valid URL')
-    .optional()
-    .or(z.literal('')),
-  images: z
-    .string()
-    .transform((s) => s.trim())
-    .optional()
-    .or(z.literal('')),
+  thumbnail: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  images: z.string().transform((s) => s.trim()).optional().or(z.literal('')),
   description: z.string().optional().or(z.literal('')),
   description_en: z.string().optional().or(z.literal('')),
   description_nb: z.string().optional().or(z.literal('')),
-  tags: z
-    .string()
-    .transform((s) => s.trim())
-    .optional()
-    .or(z.literal('')),
+  tags: z.string().transform((s) => s.trim()).optional().or(z.literal('')),
 })
 
 type FormValues = z.infer<typeof schema>
 type LocaleCode = 'en' | 'nb'
+
+const inputClass =
+  'w-full rounded-2xl border admin-border bg-[rgb(var(--admin-surface-soft-rgb)/0.95)] px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[rgb(var(--admin-muted-rgb))] shadow-[0_8px_24px_-18px_rgba(15,23,42,0.18)] focus:border-blue-400/45 focus:outline-none focus:ring-0'
+const textareaClass =
+  'w-full rounded-2xl border admin-border bg-[rgb(var(--admin-surface-soft-rgb)/0.95)] px-3 py-2 text-sm text-[var(--foreground)] placeholder:text-[rgb(var(--admin-muted-rgb))] shadow-[0_8px_24px_-18px_rgba(15,23,42,0.18)] focus:border-blue-400/45 focus:outline-none focus:ring-0 min-h-[140px]'
+const selectClass =
+  'w-full rounded-2xl border admin-border bg-[rgb(var(--admin-surface-soft-rgb)/0.95)] px-3 py-2 text-sm text-[var(--foreground)] focus:border-blue-400/45 focus:outline-none focus:ring-0'
 
 const TITLE_FIELD_BY_LOCALE: Record<LocaleCode, 'title_en' | 'title_nb'> = {
   en: 'title_en',
@@ -63,6 +64,21 @@ const DESCRIPTION_FIELD_BY_LOCALE: Record<
   nb: 'description_nb',
 }
 
+function toCsv(value?: string) {
+  return toSet(value).join(', ')
+}
+
+function toSet(value?: string) {
+  return Array.from(
+    new Set(
+      (value ?? '')
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean)
+    )
+  )
+}
+
 export default function EditProductPage() {
   const { t } = useI18n()
   const { user } = useAuth()
@@ -71,7 +87,9 @@ export default function EditProductPage() {
   const [initial, setInitial] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeLocale, setActiveLocale] = useState<'en' | 'nb'>('en')
+  const [activeLocale, setActiveLocale] = useState<LocaleCode>('en')
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
 
   const {
     register,
@@ -88,37 +106,41 @@ export default function EditProductPage() {
     let alive = true
     ;(async () => {
       try {
-        const p = await getProductById(String(id))
+        setLoading(true)
+        const product = await getProductById(String(id))
         if (!alive) return
-        if (!p) {
+        if (!product) {
           setError('Product not found')
           return
         }
-        setInitial(p)
-
+        setInitial(product)
         reset({
-          title: p.title,
-          title_en: p.title_en ?? p.title,
-          title_nb: p.title_nb ?? '',
-          price: Number(p.price) || 0,
-          stock: typeof p.stock === 'number' ? p.stock : 0,
-          category: (p.category as Category) ?? CATEGORIES[0],
-          brand: p.brand ?? '',
+          title: product.title,
+          title_en: product.title_en ?? product.title,
+          title_nb: product.title_nb ?? '',
+          price: Number(product.price) || 0,
+          stock: typeof product.stock === 'number' ? product.stock : 0,
+          category: (product.category as Category) ?? CATEGORIES[0],
+          brand: product.brand ?? '',
           thumbnail:
-            typeof p.thumbnail === 'string'
-              ? p.thumbnail
-              : typeof (p as unknown as { image?: string }).image === 'string'
-              ? (p as unknown as { image?: string }).image
+            typeof product.thumbnail === 'string'
+              ? product.thumbnail
+              : typeof (product as { image?: string }).image === 'string'
+              ? (product as { image?: string }).image
               : '',
-          images: Array.isArray((p as unknown as { images?: string[] }).images)
-            ? ((p as unknown as { images?: string[] }).images || []).join(', ')
-            : '',
-          description: p.description ?? '',
-          description_en: p.description_en ?? p.description ?? '',
-          description_nb: p.description_nb ?? '',
-          tags: Array.isArray((p as unknown as { tags?: string[] }).tags)
-            ? ((p as unknown as { tags?: string[] }).tags || []).join(', ')
-            : '',
+          images: toCsv(
+            Array.isArray((product as { images?: string[] }).images)
+              ? ((product as { images?: string[] }).images || []).join(', ')
+              : ''
+          ),
+          description: product.description ?? '',
+          description_en: product.description_en ?? product.description ?? '',
+          description_nb: product.description_nb ?? '',
+          tags: toCsv(
+            Array.isArray((product as { tags?: string[] }).tags)
+              ? ((product as { tags?: string[] }).tags || []).join(', ')
+              : ''
+          ),
         })
       } catch (e) {
         if (!alive) return
@@ -134,51 +156,47 @@ export default function EditProductPage() {
 
   const onSubmit: SubmitHandler<FormValues> = async (values) => {
     if (!initial) return
+    const toastId = toast.loading('Updating product…')
+    try {
+      const payload = {
+        id: String(initial.id),
+        title: values.title?.trim() || '',
+        title_en: values.title_en?.trim() || undefined,
+        title_nb: values.title_nb?.trim() || undefined,
+        description: values.description?.trim() || undefined,
+        description_en: values.description_en?.trim() || undefined,
+        description_nb: values.description_nb?.trim() || undefined,
+        price: Number(values.price) || 0,
+        stock: Math.max(0, Number(values.stock) || 0),
+        category: values.category,
+        brand: values.brand?.trim() || undefined,
+        thumbnail: values.thumbnail?.trim() || undefined,
+        images: toSet(values.images),
+        tags: toSet(values.tags),
+      } as const
 
-    const toArr = (s?: string) =>
-      Array.from(
-        new Set(
-          (s ?? '')
-            .split(',')
-            .map((x) => x.trim())
-            .filter(Boolean)
-        )
-      )
-
-    const payload = {
-      id: String(initial.id),
-      title: values.title?.trim() || '',
-      title_en: values.title_en?.trim() || undefined,
-      title_nb: values.title_nb?.trim() || undefined,
-      description: values.description?.trim() || undefined,
-      description_en: values.description_en?.trim() || undefined,
-      description_nb: values.description_nb?.trim() || undefined,
-      price: Number(values.price) || 0,
-      stock: Math.max(0, Number(values.stock) || 0),
-      category: values.category,
-      brand: values.brand?.trim() || undefined,
-      thumbnail: values.thumbnail?.trim() || undefined,
-      images: toArr(values.images),
-      tags: toArr(values.tags),
-    } as const
-
-    const token = await user?.getIdToken().catch(() => undefined)
-    const res = await fetch('/api/admin/product', {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      body: JSON.stringify(payload),
-    })
-
-    const data = await res.json()
-    if (!res.ok) {
-      throw new Error(data?.error || 'Update failed')
+      const token = await user?.getIdToken().catch(() => undefined)
+      const res = await fetch('/api/admin/product', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(payload),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        const message = (data && data.error) || 'Update failed'
+        throw new Error(message)
+      }
+      toast.success('Product updated', { id: toastId })
+      router.push('/admin/product')
+      router.refresh()
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Update failed', {
+        id: toastId,
+      })
     }
-
-    router.push('/admin/product')
-    router.refresh()
   }
 
   const title = useMemo(
@@ -188,317 +206,357 @@ export default function EditProductPage() {
 
   if (loading) {
     return (
-      <div className="max-w-2xl p-6">
-        <div className="h-7 w-64 bg-slate-200 rounded animate-pulse mb-4" />
-        <div className="h-10 w-full bg-slate-100 rounded animate-pulse mb-3" />
-        <div className="h-10 w-full bg-slate-100 rounded animate-pulse mb-3" />
-        <div className="h-24 w-full bg-slate-100 rounded animate-pulse" />
+      <div className="admin-card space-y-4 rounded-3xl p-6">
+        <div className="h-7 w-64 rounded bg-[rgba(var(--admin-border-rgb),0.12)]" />
+        <div className="h-10 w-full rounded bg-[rgba(var(--admin-border-rgb),0.08)]" />
+        <div className="h-10 w-full rounded bg-[rgba(var(--admin-border-rgb),0.08)]" />
+        <div className="h-24 w-full rounded bg-[rgba(var(--admin-border-rgb),0.08)]" />
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="rounded-xl border p-4 text-sm text-rose-600">{error}</div>
+      <div className="rounded-3xl border border-rose-400/40 bg-rose-500/12 p-6 text-sm text-rose-700">
+        {error}
+      </div>
     )
   }
 
   if (!initial) {
     return (
-      <div className="rounded-xl border p-4 text-sm text-zinc-600">
+      <div className="admin-card rounded-3xl p-6 text-sm text-[rgb(var(--admin-muted-rgb))]">
         Product not found.
       </div>
     )
   }
 
   return (
-    <div className="max-w-2xl p-6 space-y-4">
-      <h1 className="text-2xl font-semibold">{title}</h1>
-
-      <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
-        {/* Base title removed; use localized fields below */}
-
-        <div className="inline-flex gap-2 rounded-lg bg-zinc-100 p-1">
-          {(['en', 'nb'] as const).map((loc) => (
-            <button
-              key={loc}
-              type="button"
-              onClick={() => setActiveLocale(loc)}
-              className={`px-3 py-1 text-sm rounded ${
-                activeLocale === loc ? 'bg-white border' : ''
-              }`}
-            >
-              {loc.toUpperCase()}
-            </button>
-          ))}
-          <button
-            type="button"
-            onClick={() => {
-              const sourceLocale: LocaleCode = activeLocale
-              const targetLocale: LocaleCode =
-                sourceLocale === 'en' ? 'nb' : 'en'
-              const srcField = TITLE_FIELD_BY_LOCALE[sourceLocale]
-              const dstField = TITLE_FIELD_BY_LOCALE[targetLocale]
-              const val = watch(srcField) || ''
-              if (!val.trim()) return
-              setValue(dstField, val, {
-                shouldDirty: true,
-                shouldValidate: true,
-              })
-              setActiveLocale(targetLocale)
-            }}
-            className="ml-2 text-xs rounded border px-2"
-          >
-            {t('admin.copyTo').replace(
-              '{loc}',
-              activeLocale === 'en' ? 'NB' : 'EN'
-            )}
-          </button>
-        </div>
-
+    <div className="space-y-8 text-[rgb(var(--admin-text-rgb))]">
+      <header className="admin-card rounded-3xl px-5 py-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <label className="block text-sm text-zinc-600 mb-1">
-            {t('admin.localeTitle').replace(
-              '{loc}',
-              activeLocale.toUpperCase()
-            )}
-          </label>
-          <input
-            {...register('title_en')}
-            className={`w-full rounded-lg border px-3 py-2 ${
-              activeLocale !== 'en' ? 'hidden' : ''
-            }`}
-          />
-          <input
-            {...register('title_nb')}
-            className={`w-full rounded-lg border px-3 py-2 ${
-              activeLocale !== 'nb' ? 'hidden' : ''
-            }`}
-          />
+          <p className="text-xs uppercase tracking-[0.32em] text-blue-600/60">
+            Edit product
+          </p>
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+            {title}
+          </h1>
+          <p className="mt-2 max-w-2xl text-sm text-[rgb(var(--admin-muted-rgb))]">
+            Update localized content, pricing, and media. Changes sync to the
+            storefront instantly.
+          </p>
         </div>
+        <Link
+          href="/admin/product"
+          className="inline-flex items-center gap-2 rounded-xl border admin-border bg-[rgba(var(--admin-surface-soft-rgb),0.92)] px-4 py-2 text-sm font-semibold text-[var(--foreground)] transition hover:border-blue-400/35 hover:bg-blue-500/12"
+        >
+          <ArrowLeftCircle className="size-4" strokeWidth={1.75} />
+          Back to catalog
+        </Link>
+      </header>
 
-        <div className="grid grid-cols-2 gap-4">
-          <label className="block">
-            <span className="block text-sm text-zinc-600 mb-1">
-              {t('admin.price')}
-            </span>
-            <input
-              type="number"
-              step="0.01"
-              className="w-full rounded-lg border px-3 py-2"
-              {...register('price')}
-            />
-            {errors.price && (
-              <p className="text-sm text-rose-600">{errors.price.message}</p>
-            )}
-          </label>
-
-          <label className="block">
-            <span className="block text-sm text-zinc-600 mb-1">
-              {t('admin.stock')}
-            </span>
-            <input
-              type="number"
-              className="w-full rounded-lg border px-3 py-2"
-              {...register('stock')}
-            />
-            {errors.stock && (
-              <p className="text-sm text-rose-600">{errors.stock.message}</p>
-            )}
-          </label>
-        </div>
-
-        <label className="block">
-          <span className="block text-sm text-zinc-600 mb-1">
-            {t('admin.category')}
-          </span>
-          <select
-            className="w-full rounded-lg border px-3 py-2"
-            {...register('category')}
-          >
-            {CATEGORIES.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <FormSection
+          title="Localized content"
+          description="Ensure both locales stay aligned before go-live."
+        >
+          <div className="flex flex-wrap items-center gap-3">
+            {(['en', 'nb'] as const).map((loc) => (
+              <button
+                key={loc}
+                type="button"
+                onClick={() => setActiveLocale(loc)}
+                className={`rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.28em] transition ${
+                  activeLocale === loc
+                    ? 'border border-blue-400/55 bg-blue-500/20 text-blue-700 shadow-[0_6px_18px_-8px_rgba(59,130,246,0.45)]'
+                    : 'border border-blue-400/20 bg-blue-500/8 text-blue-600 hover:border-blue-400/35 hover:bg-blue-500/15'
+                }`}
+              >
+                {loc.toUpperCase()}
+              </button>
             ))}
-          </select>
-          {errors.category && (
-            <p className="text-sm text-rose-600">{errors.category.message}</p>
-          )}
-        </label>
+            <button
+              type="button"
+              onClick={() => {
+                const source = activeLocale
+                const target = source === 'en' ? 'nb' : 'en'
+                const srcField = TITLE_FIELD_BY_LOCALE[source]
+                const dstField = TITLE_FIELD_BY_LOCALE[target]
+                const value = watch(srcField) || ''
+                if (!value.trim()) {
+                  toast.error('Nothing to copy — add content first.')
+                  return
+                }
+                setValue(dstField, value, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                })
+                setActiveLocale(target)
+              }}
+              className="inline-flex items-center gap-2 rounded-xl border border-blue-400/20 bg-blue-500/8 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.24em] text-blue-600 transition hover:border-blue-400/35 hover:bg-blue-500/15"
+            >
+              <Copy className="size-3.5" strokeWidth={1.75} />
+              Copy locale
+            </button>
+          </div>
 
-        <label className="block">
-          <span className="block text-sm text-zinc-600 mb-1">
-            {t('admin.brand')}
-          </span>
-          <input
-            className="w-full rounded-lg border px-3 py-2"
-            {...register('brand')}
-          />
-        </label>
-
-        <label className="block">
-          <span className="block text-sm text-zinc-600 mb-1">
-            Thumbnail (URL)
-          </span>
-          <input
-            className="w-full rounded-lg border px-3 py-2"
-            {...register('thumbnail')}
-          />
-          {errors.thumbnail && (
-            <p className="text-sm text-rose-600">{errors.thumbnail.message}</p>
-          )}
-        </label>
-        {/* Upload image (Vercel Blob) */}
-        <div>
-          <label className="block text-sm text-zinc-600 mb-1">
-            Upload image
-          </label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={async (e) => {
-              const file = e.target.files && e.target.files[0]
-              if (!file) return
-              const token = await user?.getIdToken().catch(() => undefined)
-              if (!token) {
-                console.error('Upload blocked: failed to obtain admin token')
-                return
-              }
-              const fd = new FormData()
-              fd.append('file', file)
-              const res = await fetch('/api/admin/upload', {
-                method: 'POST',
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-                body: fd,
-              })
-              if (!res.ok) {
-                console.error('Upload failed')
-                return
-              }
-              const data: { url: string } = await res.json()
-              setValue('thumbnail', data.url, {
-                shouldDirty: true,
-                shouldValidate: true,
-              })
-            }}
-            className="block w-full text-sm"
-          />
-          {watch('thumbnail') ? (
-            <div className="mt-2 relative w-32 h-32 rounded border overflow-hidden">
-              <Image
-                src={watch('thumbnail')!}
-                alt="Preview"
-                fill
-                sizes="128px"
-                className="object-cover"
+          <div className="mt-4 space-y-6">
+            <div>
+              <Label>
+                {t('admin.localeTitle').replace(
+                  '{loc}',
+                  activeLocale.toUpperCase()
+                )}
+              </Label>
+              <input
+                {...register('title_en')}
+                className={`${inputClass} ${activeLocale !== 'en' ? 'hidden' : ''}`}
+              />
+              <input
+                {...register('title_nb')}
+                className={`${inputClass} ${activeLocale !== 'nb' ? 'hidden' : ''}`}
               />
             </div>
-          ) : null}
-        </div>
 
-        <label className="block">
-          <span className="block text-sm text-zinc-600 mb-1">
-            Images (comma separated URLs)
-          </span>
-          <input
-            className="w-full rounded-lg border px-3 py-2"
-            {...register('images')}
-          />
-        </label>
-
-        {/* Base description removed; use localized fields below */}
-
-        <div className="inline-flex gap-2 rounded-lg bg-zinc-100 p-1">
-          {(['en', 'nb'] as const).map((loc) => (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <Label>
+              {t('admin.localeDescription').replace(
+                '{loc}',
+                activeLocale.toUpperCase()
+              )}
+            </Label>
             <button
-              key={loc}
               type="button"
-              onClick={() => setActiveLocale(loc)}
-              className={`px-3 py-1 text-sm rounded ${
-                activeLocale === loc ? 'bg-white border' : ''
-              }`}
+              onClick={() => {
+                const source: LocaleCode = activeLocale
+                const target: LocaleCode = source === 'en' ? 'nb' : 'en'
+                const srcField = DESCRIPTION_FIELD_BY_LOCALE[source]
+                const dstField = DESCRIPTION_FIELD_BY_LOCALE[target]
+                const value = watch(srcField) || ''
+                if (!value.trim()) {
+                  toast.error('Nothing to copy — add content first.')
+                  return
+                }
+                setValue(dstField, value, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                })
+                setActiveLocale(target)
+              }}
+              className="inline-flex items-center gap-2 rounded-xl border border-blue-400/20 bg-blue-500/8 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-blue-600 transition hover:border-blue-400/35 hover:bg-blue-500/15"
             >
-              {loc.toUpperCase()}
+              <Copy className="size-3" strokeWidth={1.75} />
+              Copy description
             </button>
-          ))}
-          <button
-            type="button"
-            onClick={() => {
-              const sourceLocale: LocaleCode = activeLocale
-              const targetLocale: LocaleCode =
-                sourceLocale === 'en' ? 'nb' : 'en'
-              const srcField = DESCRIPTION_FIELD_BY_LOCALE[sourceLocale]
-              const dstField = DESCRIPTION_FIELD_BY_LOCALE[targetLocale]
-              const val = watch(srcField) || ''
-              if (!val.trim()) return
-              setValue(dstField, val, {
-                shouldDirty: true,
-                shouldValidate: true,
-              })
-              setActiveLocale(targetLocale)
-            }}
-            className="ml-2 text-xs rounded border px-2"
-          >
-            {t('admin.copyTo').replace(
-              '{loc}',
-              activeLocale === 'en' ? 'NB' : 'EN'
-            )}
-          </button>
-        </div>
-
-        <div>
-          <label className="block text-sm text-zinc-600 mb-1">
-            {t('admin.localeDescription').replace(
-              '{loc}',
-              activeLocale.toUpperCase()
-            )}
-          </label>
+          </div>
           <textarea
             {...register('description_en')}
-            rows={4}
-            className={`w-full rounded-lg border px-3 py-2 ${
+            className={`${textareaClass} ${
               activeLocale !== 'en' ? 'hidden' : ''
             }`}
-          />
-          <textarea
-            {...register('description_nb')}
-            rows={4}
-            className={`w-full rounded-lg border px-3 py-2 ${
-              activeLocale !== 'nb' ? 'hidden' : ''
-            }`}
-          />
-        </div>
+              />
+              <textarea
+                {...register('description_nb')}
+                className={`${textareaClass} ${
+                  activeLocale !== 'nb' ? 'hidden' : ''
+                }`}
+              />
+            </div>
+          </div>
+        </FormSection>
 
-        <label className="block">
-          <span className="block text-sm text-zinc-600 mb-1">
-            Tags (comma separated)
-          </span>
-          <input
-            className="w-full rounded-lg border px-3 py-2"
-            {...register('tags')}
-          />
-        </label>
+        <FormSection
+          title="Pricing & inventory"
+          description="Keep these values aligned with your live storefront."
+        >
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <Label>{t('admin.price')}</Label>
+              <input type="number" step="0.01" {...register('price')} className={inputClass} />
+              {errors.price && <ErrorMessage>{errors.price.message}</ErrorMessage>}
+            </div>
+            <div>
+              <Label>{t('admin.stock')}</Label>
+              <input type="number" {...register('stock')} className={inputClass} />
+              {errors.stock && <ErrorMessage>{errors.stock.message}</ErrorMessage>}
+            </div>
+          </div>
 
-        <div className="flex gap-3 pt-2">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <Label>{t('admin.category')}</Label>
+              <select {...register('category')} className={selectClass}>
+                {CATEGORIES.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+              {errors.category && (
+                <ErrorMessage>{errors.category.message}</ErrorMessage>
+              )}
+            </div>
+            <div>
+              <Label>{t('admin.brand')}</Label>
+              <input {...register('brand')} className={inputClass} />
+              {errors.brand && <ErrorMessage>{errors.brand.message}</ErrorMessage>}
+            </div>
+          </div>
+        </FormSection>
+
+        <FormSection
+          title="Media & merchandising"
+          description="Update hero imagery and marketing tags."
+        >
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
+            <div className="space-y-4">
+              <div>
+                <Label>Thumbnail (URL)</Label>
+                <input {...register('thumbnail')} className={inputClass} />
+                {errors.thumbnail && (
+                  <ErrorMessage>{errors.thumbnail.message}</ErrorMessage>
+                )}
+              </div>
+
+              <div>
+                <Label>Images (comma separated URLs)</Label>
+                <input {...register('images')} className={inputClass} />
+                {errors.images && <ErrorMessage>{errors.images.message}</ErrorMessage>}
+              </div>
+
+              <div>
+                <Label>Tags (comma separated)</Label>
+                <input {...register('tags')} className={inputClass} />
+              </div>
+            </div>
+
+        <div className="space-y-3 rounded-3xl admin-card p-4">
+          <Label>Upload image</Label>
+          <div className="rounded-2xl admin-card-soft p-4 text-sm text-[rgb(var(--admin-muted-rgb))]">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="sr-only"
+                  onChange={async (event) => {
+                    const file = event.target.files && event.target.files[0]
+                    if (!file) return
+                    setUploading(true)
+                    try {
+                      const token = await user?.getIdToken().catch(() => undefined)
+                      if (!token) throw new Error('Failed to obtain admin token')
+                      const formData = new FormData()
+                      formData.append('file', file)
+                      const res = await fetch('/api/admin/upload', {
+                        method: 'POST',
+                        headers: {
+                          Authorization: `Bearer ${token}`,
+                        },
+                        body: formData,
+                      })
+                      if (!res.ok) throw new Error('Upload failed')
+                      const data = (await res.json()) as { url: string }
+                      setValue('thumbnail', data.url, {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      })
+                      toast.success('Image uploaded and linked')
+                    } catch (e) {
+                      toast.error(
+                        e instanceof Error ? e.message : 'Upload failed'
+                      )
+                    } finally {
+                      setUploading(false)
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="inline-flex items-center gap-2 rounded-xl border admin-border bg-[rgba(var(--admin-surface-soft-rgb),0.92)] px-3 py-2 text-sm font-semibold text-[var(--foreground)] transition hover:border-blue-400/35 hover:bg-blue-500/12 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {uploading ? (
+                    <Loader2 className="size-4 animate-spin" strokeWidth={1.75} />
+                  ) : (
+                    <UploadCloud className="size-4" strokeWidth={1.75} />
+                  )}
+                  {uploading ? t('admin.saving') : t('admin.chooseImage')}
+                </button>
+              </div>
+              {watch('thumbnail') ? (
+                <div className="relative h-40 w-full overflow-hidden rounded-2xl border admin-border">
+                  <Image
+                    src={watch('thumbnail')!}
+                    alt="Preview"
+                    fill
+                    sizes="300px"
+                    className="object-cover"
+                  />
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </FormSection>
+
+        <div className="flex flex-col gap-3 sm:flex-row">
           <button
             type="submit"
             disabled={isSubmitting}
-            className="rounded-xl bg-black text-white px-4 py-2"
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-blue-500/35 bg-blue-500/15 px-6 py-2 text-sm font-semibold text-blue-700 shadow-[0_18px_35px_-20px_rgba(59,130,246,0.45)] transition hover:border-blue-500/55 hover:bg-blue-500/25 disabled:cursor-not-allowed disabled:opacity-60"
           >
+            {isSubmitting ? (
+              <Loader2 className="size-4 animate-spin" strokeWidth={1.75} />
+            ) : null}
             {isSubmitting ? t('admin.saving') : t('admin.saveChanges')}
           </button>
           <button
             type="button"
             onClick={() => router.push('/admin/product')}
-            className="rounded-xl border px-4 py-2"
+            className="inline-flex items-center justify-center gap-2 rounded-xl border admin-border bg-[rgba(var(--admin-surface-soft-rgb),0.92)] px-6 py-2 text-sm font-semibold text-[var(--foreground)] transition hover:border-blue-400/35 hover:bg-blue-500/12"
           >
             {t('admin.cancel')}
           </button>
         </div>
       </form>
     </div>
+  )
+}
+
+function FormSection({
+  title,
+  description,
+  children,
+}: {
+  title: string
+  description: string
+  children: ReactNode
+}) {
+  return (
+    <section className="rounded-3xl admin-card p-6 shadow-[0_18px_40px_-35px_rgba(59,130,246,0.22)]">
+      <div className="max-w-2xl">
+        <h2 className="text-lg font-semibold">{title}</h2>
+        <p className="text-sm text-[rgb(var(--admin-muted-rgb))]">{description}</p>
+      </div>
+      <div className="mt-5 space-y-4">{children}</div>
+    </section>
+  )
+}
+
+function Label({ children }: { children: ReactNode }) {
+  return (
+    <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.28em] text-blue-600/60">
+      {children}
+    </label>
+  )
+}
+
+function ErrorMessage({ children }: { children?: string }) {
+  if (!children) return null
+  return (
+    <p className="mt-1 text-xs font-medium text-rose-600">
+      {children}
+    </p>
   )
 }

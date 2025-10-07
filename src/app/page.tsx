@@ -1,6 +1,7 @@
 import Script from 'next/script'
 import type { Metadata } from 'next'
 import HomeClient from '@/components/home/HomeClient'
+import { getBaseUrl, getInternalFetchHeaders } from '@/lib/runtimeEnv'
 
 const DEFAULT_LOCALE = 'en'
 export const revalidate = 120
@@ -40,25 +41,13 @@ export const metadata: Metadata = {
   },
 }
 
-function getBaseUrl() {
-  const envUrl = process.env.NEXT_PUBLIC_SITE_URL
-  if (envUrl?.length) {
-    return envUrl.startsWith('http') ? envUrl : `https://${envUrl}`
-  }
-
-  const vercelUrl = process.env.VERCEL_URL
-  if (vercelUrl?.length) {
-    return vercelUrl.startsWith('http') ? vercelUrl : `https://${vercelUrl}`
-  }
-
-  return 'http://localhost:3000'
-}
-
 async function fetchInitialProducts(): Promise<{ items: ListItem[]; nextCursor: string | null }> {
   try {
     const baseUrl = getBaseUrl()
+    const internalHeaders = getInternalFetchHeaders()
     const res = await fetch(`${baseUrl}/api/products?limit=20&sort=createdAt-desc&locale=${DEFAULT_LOCALE}`, {
       next: { revalidate, tags: ['products'] },
+      headers: internalHeaders,
     })
     if (!res.ok) throw new Error(`status_${res.status}`)
     const payload = (await res.json()) as ProductsResponse

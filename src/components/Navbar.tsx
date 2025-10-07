@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import { useCart } from '@/context/CartContext'
 import { useI18n } from '@/context/I18nContext'
@@ -15,6 +16,7 @@ const NAV_ITEMS: Array<{ key: 'home' | 'store' | 'about' | 'contact'; href: stri
 ]
 
 export default function Navbar() {
+  const pathname = usePathname()
   const { t, locale, setLocale } = useI18n()
   const [isOpen, setIsOpen] = useState(false)
   const { user, role, loading, logout } = useAuth()
@@ -61,6 +63,10 @@ export default function Navbar() {
       document.removeEventListener('pointerdown', handlePointerDown)
     }
   }, [profileOpen])
+
+  if (pathname?.startsWith('/admin')) {
+    return null
+  }
 
   return (
     <header className="sticky top-0 z-40 bg-[var(--navbar-surface)] px-3 py-3 backdrop-blur transition-colors duration-200 md:px-6">

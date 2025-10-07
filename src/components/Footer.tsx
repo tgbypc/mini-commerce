@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useI18n } from '@/context/I18nContext'
 
 const NAV_LINKS: Array<{ key: 'home' | 'store' | 'about' | 'contact'; href: string }> = [
@@ -24,8 +25,13 @@ const SOCIAL_LINKS: Array<{ key: 'instagram' | 'pinterest' | 'linkedin'; href: s
 ]
 
 export default function Footer() {
+  const pathname = usePathname()
   const { t } = useI18n()
   const year = new Date().getFullYear()
+
+  if (pathname?.startsWith('/admin')) {
+    return null
+  }
 
   return (
     <footer className="bg-gradient-to-br from-[#0d141c] via-[#272162] to-[#5b5bd6] px-4 py-12 text-white md:py-16">
