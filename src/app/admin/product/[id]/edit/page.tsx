@@ -204,6 +204,10 @@ export default function EditProductPage() {
     [initial]
   )
 
+  const alternateLocale: LocaleCode = activeLocale === 'en' ? 'nb' : 'en'
+  const localeCopyLabel = `Copy ${activeLocale.toUpperCase()} → ${alternateLocale.toUpperCase()}`
+  const descriptionCopyLabel = `Copy description ${activeLocale.toUpperCase()} → ${alternateLocale.toUpperCase()}`
+
   if (loading) {
     return (
       <div className="admin-card space-y-4 rounded-3xl p-6">
@@ -233,7 +237,7 @@ export default function EditProductPage() {
 
   return (
     <div className="space-y-8 text-[rgb(var(--admin-text-rgb))]">
-      <header className="admin-card rounded-3xl px-5 py-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <header className="admin-card admin-card--static rounded-3xl px-5 py-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.32em] text-blue-600/60">
             Edit product
@@ -277,9 +281,10 @@ export default function EditProductPage() {
             ))}
             <button
               type="button"
+              aria-label={`Copy ${activeLocale.toUpperCase()} content to ${alternateLocale.toUpperCase()}`}
               onClick={() => {
                 const source = activeLocale
-                const target = source === 'en' ? 'nb' : 'en'
+                const target = alternateLocale
                 const srcField = TITLE_FIELD_BY_LOCALE[source]
                 const dstField = TITLE_FIELD_BY_LOCALE[target]
                 const value = watch(srcField) || ''
@@ -296,7 +301,7 @@ export default function EditProductPage() {
               className="inline-flex items-center gap-2 rounded-xl border border-blue-400/20 bg-blue-500/8 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.24em] text-blue-600 transition hover:border-blue-400/35 hover:bg-blue-500/15"
             >
               <Copy className="size-3.5" strokeWidth={1.75} />
-              Copy locale
+              {localeCopyLabel}
             </button>
           </div>
 
@@ -318,43 +323,44 @@ export default function EditProductPage() {
               />
             </div>
 
-        <div className="space-y-2">
-          <div className="flex items-center justify-between gap-2">
-            <Label>
-              {t('admin.localeDescription').replace(
-                '{loc}',
-                activeLocale.toUpperCase()
-              )}
-            </Label>
-            <button
-              type="button"
-              onClick={() => {
-                const source: LocaleCode = activeLocale
-                const target: LocaleCode = source === 'en' ? 'nb' : 'en'
-                const srcField = DESCRIPTION_FIELD_BY_LOCALE[source]
-                const dstField = DESCRIPTION_FIELD_BY_LOCALE[target]
-                const value = watch(srcField) || ''
-                if (!value.trim()) {
-                  toast.error('Nothing to copy — add content first.')
-                  return
-                }
-                setValue(dstField, value, {
-                  shouldDirty: true,
-                  shouldValidate: true,
-                })
-                setActiveLocale(target)
-              }}
-              className="inline-flex items-center gap-2 rounded-xl border border-blue-400/20 bg-blue-500/8 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-blue-600 transition hover:border-blue-400/35 hover:bg-blue-500/15"
-            >
-              <Copy className="size-3" strokeWidth={1.75} />
-              Copy description
-            </button>
-          </div>
-          <textarea
-            {...register('description_en')}
-            className={`${textareaClass} ${
-              activeLocale !== 'en' ? 'hidden' : ''
-            }`}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <Label>
+                  {t('admin.localeDescription').replace(
+                    '{loc}',
+                    activeLocale.toUpperCase()
+                  )}
+                </Label>
+                <button
+                  type="button"
+                  aria-label={`Copy ${activeLocale.toUpperCase()} description to ${alternateLocale.toUpperCase()}`}
+                  onClick={() => {
+                    const source: LocaleCode = activeLocale
+                    const target: LocaleCode = alternateLocale
+                    const srcField = DESCRIPTION_FIELD_BY_LOCALE[source]
+                    const dstField = DESCRIPTION_FIELD_BY_LOCALE[target]
+                    const value = watch(srcField) || ''
+                    if (!value.trim()) {
+                      toast.error('Nothing to copy — add content first.')
+                      return
+                    }
+                    setValue(dstField, value, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                    setActiveLocale(target)
+                  }}
+                  className="inline-flex items-center gap-2 rounded-xl border border-blue-400/20 bg-blue-500/8 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-blue-600 transition hover:border-blue-400/35 hover:bg-blue-500/15"
+                >
+                  <Copy className="size-3" strokeWidth={1.75} />
+                  {descriptionCopyLabel}
+                </button>
+              </div>
+              <textarea
+                {...register('description_en')}
+                className={`${textareaClass} ${
+                  activeLocale !== 'en' ? 'hidden' : ''
+                }`}
               />
               <textarea
                 {...register('description_nb')}
@@ -431,7 +437,7 @@ export default function EditProductPage() {
               </div>
             </div>
 
-        <div className="space-y-3 rounded-3xl admin-card p-4">
+        <div className="space-y-3 rounded-3xl admin-card admin-card--static p-4">
           <Label>Upload image</Label>
           <div className="rounded-2xl admin-card-soft p-4 text-sm text-[rgb(var(--admin-muted-rgb))]">
                 <input
@@ -534,7 +540,7 @@ function FormSection({
   children: ReactNode
 }) {
   return (
-    <section className="rounded-3xl admin-card p-6 shadow-[0_18px_40px_-35px_rgba(59,130,246,0.22)]">
+    <section className="rounded-3xl admin-card admin-card--static p-6 shadow-[0_18px_40px_-35px_rgba(59,130,246,0.22)]">
       <div className="max-w-2xl">
         <h2 className="text-lg font-semibold">{title}</h2>
         <p className="text-sm text-[rgb(var(--admin-muted-rgb))]">{description}</p>

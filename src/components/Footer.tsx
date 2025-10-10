@@ -97,9 +97,12 @@ export default function Footer() {
                   id="footer-email"
                   type="email"
                   placeholder={t('footer.newsletter.placeholder')}
-                  className="w-full rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm text-white placeholder:text-white/40 focus:border-white/40 focus:outline-none"
+                  className="w-full rounded-full border border-white/25 bg-white/10 px-4 py-2.5 text-sm text-white shadow-[0_18px_40px_-28px_rgba(15,23,42,0.9)] backdrop-blur transition focus:border-white/55 focus:outline-none focus:ring-2 focus:ring-white/55 placeholder:text-white/55"
                 />
-                <button type="submit" className="btn-muted w-full">
+                <button
+                  type="submit"
+                  className="inline-flex w-full items-center justify-center rounded-full border border-white/25 bg-white px-4 py-2.5 text-sm font-semibold text-[#0d141c] shadow-[0_18px_38px_-20px_rgba(15,23,42,0.85)] transition-all hover:-translate-y-0.5 hover:border-white/45 hover:bg-white/95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgba(13,20,28,0.55)]"
+                >
                   {t('footer.newsletter.submit')}
                 </button>
               </form>

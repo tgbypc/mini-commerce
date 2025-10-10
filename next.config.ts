@@ -13,6 +13,7 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "blob.vercel-storage.com" }, // ileride upload için
       { protocol: "https", hostname: "**.public.blob.vercel-storage.com" },
       { protocol: "https", hostname: "**.blob.vercel-storage.com" },
+      { protocol: "https", hostname: "img.kwcdn.com" },
     ],
   },
 };

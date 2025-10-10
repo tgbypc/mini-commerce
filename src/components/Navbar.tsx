@@ -88,16 +88,37 @@ export default function Navbar() {
             <span className="text-lg font-semibold tracking-[-0.015em]">MiniCommerce</span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-1 rounded-full border border-zinc-200 bg-[#f4f4f5] px-1 py-1 transition-colors duration-200">
-            {NAV_ITEMS.map(({ key, href }) => (
-              <Link
-                key={key}
-                href={href}
-                className="inline-flex items-center rounded-full px-3 py-1.5 text-sm font-medium text-[var(--foreground)] transition hover:bg-white hover:shadow-sm"
-              >
-                {t(`nav.${key}`)}
-              </Link>
-            ))}
+          <nav className="hidden md:flex items-center gap-1 rounded-full border border-[#e2e6ef] bg-[#f9fafc] px-1 py-1 shadow-[0_22px_36px_-28px_rgba(15,23,42,0.35)] transition-colors duration-200 dark:border-white/35 dark:bg-[#0d111f] dark:shadow-[0_32px_60px_-36px_rgba(3,8,24,0.9)]">
+            {NAV_ITEMS.map(({ key, href }) => {
+              const isActive =
+                href === '/'
+                  ? pathname === '/'
+                  : pathname?.startsWith(href) ?? false
+              return (
+                <Link
+                  key={key}
+                  href={href}
+                  className={`inline-flex items-center rounded-full px-4 py-1.5 text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366f1]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[rgba(15,18,28,0.85)] ${
+                    isActive
+                      ? [
+                          // LIGHT: parlak beyaz pill
+                          'bg-white text-[#111827] shadow-[0_20px_44px_-24px_rgba(15,23,42,0.3)] ring-1 ring-black/10 hover:-translate-y-0.5 hover:shadow-[0_24px_48px_-22px_rgba(15,23,42,0.32)]',
+                          // DARK: beyaz pill, koyu zemin üzerinde kontrast
+                          'dark:text-[#0f172a] dark:ring-1 dark:ring-[rgba(200,206,240,0.4)] dark:shadow-[0_34px_66px_-32px_rgba(5,9,27,0.78)]',
+                          'dark:bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(228,232,255,0.88))] dark:hover:-translate-y-0.5 dark:hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.97),rgba(236,240,255,0.92))] dark:hover:shadow-[0_36px_72px_-30px_rgba(6,10,28,0.82)]'
+                        ].join(' ')
+                      : [
+                          // LIGHT: sade, hover’da beyaz pill efekti
+                          'text-[#334155] hover:-translate-y-0.5 hover:text-[#0f172a] hover:bg-white hover:ring-1 hover:ring-black/8 hover:shadow-[0_20px_42px_-26px_rgba(15,23,42,0.28)]',
+                          // DARK: beyaz yazı, hover’da beyaz zemin ve koyu yazı
+                          'dark:text-white/90 dark:hover:text-[#0f172a] dark:hover:bg-white dark:hover:ring-1 dark:hover:ring-white/45 dark:hover:shadow-[0_30px_62px_-34px_rgba(5,9,28,0.8)]'
+                        ].join(' ')
+                  }`}
+                >
+                  {t(`nav.${key}`)}
+                </Link>
+              )
+            })}
           </nav>
         </div>
 
@@ -228,18 +249,28 @@ export default function Navbar() {
       </div>
 
       {isOpen && (
-        <div className="mx-auto mt-3 w-full max-w-[1100px] rounded-2xl border border-zinc-200 bg-white/95 p-4 shadow-xl md:hidden">
+        <div className="mx-auto mt-3 w-full max-w-[1100px] rounded-2xl border border-[#e2e6ef] bg-white p-4 shadow-[0_32px_58px_-38px_rgba(15,23,42,0.3)] transition-colors duration-200 dark:border-white/12 dark:bg-[rgba(15,18,28,0.95)] dark:shadow-[0_36px_64px_-42px_rgba(4,9,22,0.75)] md:hidden">
           <nav className="grid gap-2">
-            {NAV_ITEMS.map(({ key, href }) => (
-              <Link
-                key={`mobile-${key}`}
-                href={href}
-                onClick={closeMobileMenu}
-                className="rounded-xl px-3 py-2 text-sm font-medium text-[var(--foreground)] transition hover:bg-[#f4f4f5]"
-              >
-                {t(`nav.${key}`)}
-              </Link>
-            ))}
+            {NAV_ITEMS.map(({ key, href }) => {
+              const isActive =
+                href === '/'
+                  ? pathname === '/'
+                  : pathname?.startsWith(href) ?? false
+              return (
+                <Link
+                  key={`mobile-${key}`}
+                  href={href}
+                  onClick={closeMobileMenu}
+                  className={`rounded-2xl px-3 py-2 text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366f1]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[rgba(15,18,28,0.9)] ${
+                    isActive
+                      ? 'border border-transparent bg-gradient-to-r from-[#4f46e5] via-[#7c3aed] to-[#f472b6] text-white shadow-[0_28px_54px_-28px_rgba(82,75,232,0.5)] hover:-translate-y-0.5 dark:bg-[rgba(245,247,255,0.92)] dark:text-[#0f172a] dark:shadow-[0_28px_52px_-26px_rgba(8,11,26,0.62)] dark:ring-white/18 dark:bg-none dark:hover:bg-white dark:hover:text-[#0f172a]'
+                      : 'border border-[#e5e9f2] bg-white text-[#334155] hover:bg-[#f6f7fb] hover:-translate-y-0.5 hover:shadow-[0_20px_42px_-26px_rgba(15,23,42,0.3)] hover:ring-1 hover:ring-black/10 dark:border-white/12 dark:bg-[rgba(24,28,38,0.92)] dark:text-white/75 dark:hover:text-white dark:hover:bg-[rgba(255,255,255,0.12)] dark:hover:ring-1 dark:hover:ring-white/18 dark:hover:shadow-[0_26px_56px_-28px_rgba(8,11,28,0.6)]'
+                  }`}
+                >
+                  {t(`nav.${key}`)}
+                </Link>
+              )
+            })}
           </nav>
 
           <div className="mt-4 flex justify-center">
@@ -250,7 +281,7 @@ export default function Navbar() {
             <Link
               href="/favorites"
               onClick={closeMobileMenu}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-[#f4f4f5] px-3 py-2 text-sm font-semibold text-[var(--foreground)]"
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#e5e9f2] bg-[#f6f7fb] px-3 py-2 text-sm font-semibold text-[#334155] transition hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_18px_40px_-26px_rgba(15,23,42,0.28)] dark:border-white/12 dark:bg-[rgba(24,28,38,0.9)] dark:text-white/80 dark:hover:text-white dark:hover:bg-[rgba(33,38,54,0.96)] dark:hover:shadow-[0_24px_44px_-24px_rgba(118,120,255,0.45)]"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 32 32">
                 <path
@@ -263,7 +294,7 @@ export default function Navbar() {
             <Link
               href="/cart"
               onClick={closeMobileMenu}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-[#f4f4f5] px-3 py-2 text-sm font-semibold text-[var(--foreground)]"
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#e5e9f2] bg-[#f6f7fb] px-3 py-2 text-sm font-semibold text-[#334155] transition hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_18px_40px_-26px_rgba(15,23,42,0.28)] dark:border-white/12 dark:bg-[rgba(24,28,38,0.9)] dark:text-white/80 dark:hover:text-white dark:hover:bg-[rgba(33,38,54,0.96)] dark:hover:shadow-[0_24px_44px_-24px_rgba(118,120,255,0.45)]"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24">
                 <g fill="currentColor">
@@ -293,8 +324,8 @@ export default function Navbar() {
                 aria-pressed={locale === code}
                 className={`flex-1 rounded-xl px-3 py-2 text-sm font-semibold transition ${
                   locale === code
-                    ? 'bg-[var(--color-primary-dark)] text-white shadow-[0_10px_22px_rgba(91,91,214,0.3)]'
-                    : 'border border-zinc-200 bg-[#f4f4f5] text-[var(--foreground)] hover:bg-white'
+                    ? 'bg-[var(--color-primary-dark)] text-white shadow-[0_12px_26px_rgba(91,91,214,0.35)] hover:-translate-y-0.5'
+                    : 'border border-[#e5e9f2] bg-[#f6f7fb] text-[#334155] hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_18px_40px_-26px_rgba(15,23,42,0.28)] dark:border-white/12 dark:bg-[rgba(24,28,38,0.9)] dark:text-white/80 dark:hover:text-white dark:hover:bg-[rgba(33,38,54,0.95)]'
                 }`}
               >
                 {code.toUpperCase()}

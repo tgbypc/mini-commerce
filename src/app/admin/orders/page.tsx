@@ -227,159 +227,161 @@ export default function AdminOrdersPage() {
   }, [orders])
 
   return (
-    <div className="space-y-8 text-[var(--foreground)]">
-      <header className="admin-section flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-        <div>
-          <p className="text-xs uppercase tracking-[0.32em] text-blue-600/60">
-            Fulfillment
-          </p>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
-            Orders
-          </h1>
-          <p className="mt-2 max-w-2xl text-sm text-[rgb(var(--admin-muted-rgb))]">
-            Track payment status, update fulfillment, and keep shipping notes
-            aligned with your logistics workflow.
-          </p>
-        </div>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
-          <div className="flex items-center gap-2 rounded-2xl border admin-border bg-[rgb(var(--admin-surface-soft-rgb)/0.9)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-blue-600/70 shadow-[0_12px_30px_-18px_rgba(59,130,246,0.3)]">
-            <PackageSearch className="size-4 text-blue-500" strokeWidth={1.75} />
-            <span>{orders.length} orders</span>
-            <span className="mx-2 h-4 w-px bg-[rgba(var(--admin-border-rgb),0.15)]" />
-            <span>{pendingOrders} pending</span>
-            <span className="mx-2 h-4 w-px bg-[rgba(var(--admin-border-rgb),0.15)]" />
-            <span>{formatCurrency(totalRevenue)}</span>
+    <div className="admin-content-wrapper">
+      <div className="space-y-8 text-[var(--foreground)]">
+        <header className="admin-section flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.32em] text-blue-600/60">
+              Fulfillment
+            </p>
+            <h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+              Orders
+            </h1>
+            <p className="mt-2 max-w-2xl text-sm text-[rgb(var(--admin-muted-rgb))]">
+              Track payment status, update fulfillment, and keep shipping notes
+              aligned with your logistics workflow.
+            </p>
           </div>
-          <button
-            type="button"
-            onClick={handleRefresh}
-            disabled={refreshing}
-            className="inline-flex items-center gap-2 rounded-xl border border-blue-400/25 bg-blue-500/12 px-4 py-2 text-sm font-semibold text-blue-700 transition hover:border-blue-400/40 hover:bg-blue-500/20 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {refreshing ? (
-              <Loader2 className="size-4 animate-spin" strokeWidth={1.75} />
-            ) : (
-              <RefreshCcw className="size-4" strokeWidth={1.75} />
-            )}
-            {refreshing ? 'Refreshing…' : 'Refresh'}
-          </button>
-        </div>
-      </header>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+            <div className="flex items-center gap-2 rounded-2xl border admin-border bg-[rgb(var(--admin-surface-soft-rgb)/0.9)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-blue-600/70 shadow-[0_12px_30px_-18px_rgba(59,130,246,0.3)]">
+              <PackageSearch className="size-4 text-blue-500" strokeWidth={1.75} />
+              <span>{orders.length} orders</span>
+              <span className="mx-2 h-4 w-px bg-[rgba(var(--admin-border-rgb),0.15)]" />
+              <span>{pendingOrders} pending</span>
+              <span className="mx-2 h-4 w-px bg-[rgba(var(--admin-border-rgb),0.15)]" />
+              <span>{formatCurrency(totalRevenue)}</span>
+            </div>
+            <button
+              type="button"
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="inline-flex items-center gap-2 rounded-xl border border-blue-400/25 bg-blue-500/12 px-4 py-2 text-sm font-semibold text-blue-700 transition hover:border-blue-400/40 hover:bg-blue-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {refreshing ? (
+                <Loader2 className="size-4 animate-spin" strokeWidth={1.75} />
+              ) : (
+                <RefreshCcw className="size-4" strokeWidth={1.75} />
+              )}
+              {refreshing ? 'Refreshing…' : 'Refresh'}
+            </button>
+          </div>
+        </header>
 
-      <div className="admin-section flex flex-col gap-5">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.24em] text-[rgb(var(--admin-muted-rgb))]">
-            <span>Status filter</span>
+        <div className="admin-section flex flex-col gap-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2 text-xs uppercase tracking-[0.24em] text-[rgb(var(--admin-muted-rgb))]">
+              <span>Status filter</span>
+            </div>
+            <select
+              value={statusFilter || ''}
+              onChange={(event) => {
+                const value = event.target.value
+                setStatusFilter(value === '' ? '' : isStatus(value) ? value : '')
+              }}
+              className="w-full rounded-xl border admin-border bg-[rgb(var(--admin-surface-soft-rgb)/0.9)] px-4 py-2 text-sm text-[var(--foreground)] focus:border-blue-400/45 focus:outline-none focus:ring-0 sm:w-60"
+            >
+              <option value="">All statuses</option>
+              {STATUSES.map((status) => (
+                <option key={status} value={status}>
+                  {STATUS_STYLES[status].label}
+                </option>
+              ))}
+            </select>
           </div>
-          <select
-            value={statusFilter || ''}
-            onChange={(event) => {
-              const value = event.target.value
-              setStatusFilter(value === '' ? '' : isStatus(value) ? value : '')
-            }}
-            className="w-full rounded-xl border admin-border bg-[rgb(var(--admin-surface-soft-rgb)/0.9)] px-4 py-2 text-sm text-[var(--foreground)] focus:border-blue-400/45 focus:outline-none focus:ring-0 sm:w-60"
-          >
-            <option value="">All statuses</option>
-            {STATUSES.map((status) => (
-              <option key={status} value={status}>
-                {STATUS_STYLES[status].label}
-              </option>
-            ))}
-          </select>
-        </div>
 
-        {loading ? (
-          <div className="flex flex-col gap-3">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <div
-                key={index}
-                className="flex animate-pulse items-center gap-4 rounded-2xl admin-card-soft px-4 py-3"
-              >
-                <div className="h-6 w-20 rounded bg-[rgba(var(--admin-border-rgb),0.12)]" />
-                <div className="h-6 w-32 rounded bg-[rgba(var(--admin-border-rgb),0.08)]" />
-                <div className="h-6 w-24 rounded bg-[rgba(var(--admin-border-rgb),0.08)]" />
-                <div className="h-6 w-24 rounded bg-[rgba(var(--admin-border-rgb),0.08)]" />
-              </div>
-            ))}
-          </div>
-        ) : error ? (
-          <div className="rounded-2xl border border-rose-400/40 bg-rose-500/12 px-4 py-3 text-sm text-rose-700">
-            {error}
-          </div>
-        ) : orders.length === 0 ? (
-          <div className="rounded-2xl admin-card-soft px-4 py-6 text-sm text-[rgb(var(--admin-muted-rgb))]">
-            No orders match this filter yet. Once your first purchase is
-            completed, it will appear here automatically.
-          </div>
-        ) : (
-          <div className="admin-table-shell">
-            <table className="admin-table min-w-full text-sm">
-              <thead className="admin-table-head text-left text-xs uppercase">
-                <tr>
-                  <th>Order</th>
-                  <th>Customer</th>
-                  <th>Status</th>
-                  <th className="text-right">Amount</th>
-                  <th className="text-right">Placed</th>
-                  <th className="text-right">Update</th>
-                </tr>
-              </thead>
-              <tbody className="admin-table-body">
-                {orders.map((order) => {
-                  const status = order.status ?? 'paid'
-                  const style = STATUS_STYLES[status] ?? STATUS_STYLES.paid
-                  return (
-                    <tr
-                      key={order.id}
-                      className="admin-table-row"
-                    >
-                      <td className="font-semibold">
-                        #{order.id.slice(-6).toUpperCase()}
-                      </td>
-                      <td className="text-sm text-[rgb(var(--admin-muted-rgb))]">
-                        {order.email || order.userId || '—'}
-                      </td>
-                      <td>
-                        <span className={style.className}>{style.label}</span>
-                      </td>
-                      <td className="text-right font-semibold">
-                        {formatCurrency(order.amountTotal, order.currency || 'USD')}
-                      </td>
-                      <td className="text-right text-sm text-[rgb(var(--admin-muted-rgb))]">
-                        {formatDate(order.createdAt)}
-                      </td>
-                      <td className="text-right">
-                        <div className="inline-flex items-center gap-2">
-                          <select
-                            value={order.status || 'paid'}
-                            onChange={(event) =>
-                              updateStatus(order.id, event.target.value as Order['status'])
-                            }
-                            disabled={saving === order.id}
-                            className="rounded-xl border admin-border bg-[rgb(var(--admin-surface-soft-rgb)/0.9)] px-3 py-1.5 text-xs text-[var(--foreground)] focus:border-blue-400/45 focus:outline-none focus:ring-0"
-                          >
-                            {STATUSES.map((s) => (
-                              <option key={s} value={s}>
-                                {STATUS_STYLES[s].label}
-                              </option>
-                            ))}
-                          </select>
-                          <button
-                            type="button"
-                            className="inline-flex items-center justify-center rounded-xl border admin-border bg-[rgb(var(--admin-surface-soft-rgb)/0.92)] p-2 text-[var(--foreground)] transition hover:border-blue-400/35 hover:bg-blue-500/12"
-                            title="View customer record"
-                          >
-                            <ArrowUpRight className="size-4" strokeWidth={1.75} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+          {loading ? (
+            <div className="flex flex-col gap-3">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="flex animate-pulse items-center gap-4 rounded-2xl admin-card-soft px-4 py-3"
+                >
+                  <div className="h-6 w-20 rounded bg-[rgba(var(--admin-border-rgb),0.12)]" />
+                  <div className="h-6 w-32 rounded bg-[rgba(var(--admin-border-rgb),0.08)]" />
+                  <div className="h-6 w-24 rounded bg-[rgba(var(--admin-border-rgb),0.08)]" />
+                  <div className="h-6 w-24 rounded bg-[rgba(var(--admin-border-rgb),0.08)]" />
+                </div>
+              ))}
+            </div>
+          ) : error ? (
+            <div className="rounded-2xl border border-rose-400/40 bg-rose-500/12 px-4 py-3 text-sm text-rose-700">
+              {error}
+            </div>
+          ) : orders.length === 0 ? (
+            <div className="rounded-2xl admin-card-soft px-4 py-6 text-sm text-[rgb(var(--admin-muted-rgb))]">
+              No orders match this filter yet. Once your first purchase is
+              completed, it will appear here automatically.
+            </div>
+          ) : (
+            <div className="admin-table-shell">
+              <table className="admin-table min-w-full text-sm">
+                <thead className="admin-table-head text-left text-xs uppercase">
+                  <tr>
+                    <th>Order</th>
+                    <th>Customer</th>
+                    <th>Status</th>
+                    <th className="text-right">Amount</th>
+                    <th className="text-right">Placed</th>
+                    <th className="text-right">Update</th>
+                  </tr>
+                </thead>
+                <tbody className="admin-table-body">
+                  {orders.map((order) => {
+                    const status = order.status ?? 'paid'
+                    const style = STATUS_STYLES[status] ?? STATUS_STYLES.paid
+                    return (
+                      <tr
+                        key={order.id}
+                        className="admin-table-row"
+                      >
+                        <td className="font-semibold">
+                          #{order.id.slice(-6).toUpperCase()}
+                        </td>
+                        <td className="text-sm text-[rgb(var(--admin-muted-rgb))]">
+                          {order.email || order.userId || '—'}
+                        </td>
+                        <td>
+                          <span className={style.className}>{style.label}</span>
+                        </td>
+                        <td className="text-right font-semibold">
+                          {formatCurrency(order.amountTotal, order.currency || 'USD')}
+                        </td>
+                        <td className="text-right text-sm text-[rgb(var(--admin-muted-rgb))]">
+                          {formatDate(order.createdAt)}
+                        </td>
+                        <td className="text-right">
+                          <div className="inline-flex items-center gap-2">
+                            <select
+                              value={order.status || 'paid'}
+                              onChange={(event) =>
+                                updateStatus(order.id, event.target.value as Order['status'])
+                              }
+                              disabled={saving === order.id}
+                              className="rounded-xl border admin-border bg-[rgb(var(--admin-surface-soft-rgb)/0.9)] px-3 py-1.5 text-xs text-[var(--foreground)] focus:border-blue-400/45 focus:outline-none focus:ring-0"
+                            >
+                              {STATUSES.map((s) => (
+                                <option key={s} value={s}>
+                                  {STATUS_STYLES[s].label}
+                                </option>
+                              ))}
+                            </select>
+                            <button
+                              type="button"
+                              className="inline-flex items-center justify-center rounded-xl border admin-border bg-[rgb(var(--admin-surface-soft-rgb)/0.92)] p-2 text-[var(--foreground)] transition hover:border-blue-400/35 hover:bg-blue-500/12"
+                              title="View customer record"
+                            >
+                              <ArrowUpRight className="size-4" strokeWidth={1.75} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

@@ -14,7 +14,14 @@ type Order = {
   amountTotal?: number | null
   status?: string | null
   currency?: string | null
-  createdAt?: { seconds: number; nanoseconds: number }
+  createdAt?:
+    | { seconds?: number; nanoseconds?: number }
+    | { _seconds?: number; _nanoseconds?: number }
+    | { toDate?: () => Date }
+    | string
+    | number
+    | Date
+    | null
 }
 
 type ProductStats = {
@@ -90,10 +97,41 @@ function computeOrderStats(orders: Order[]): OrderStats {
   }
 }
 
-function formatDate(timestamp?: { seconds: number; nanoseconds: number }) {
-  if (!timestamp) return '—'
+function formatDate(input: Order['createdAt']) {
+  if (!input) return '—'
   try {
-    const date = new Date(timestamp.seconds * 1000)
+    let date: Date | null = null
+
+    if (typeof input === 'string' || typeof input === 'number') {
+      const parsed = new Date(input)
+      date = Number.isNaN(parsed.getTime()) ? null : parsed
+    } else if (input instanceof Date) {
+      date = input
+    } else if (typeof input === 'object') {
+      const maybeToDate = (input as { toDate?: () => Date }).toDate
+      if (typeof maybeToDate === 'function') {
+        const parsed = maybeToDate()
+        date = parsed instanceof Date ? parsed : null
+      } else {
+        const seconds =
+          typeof (input as { seconds?: number }).seconds === 'number'
+            ? (input as { seconds: number }).seconds
+            : typeof (input as { _seconds?: number })._seconds === 'number'
+            ? (input as { _seconds: number })._seconds
+            : undefined
+        const nanos =
+          typeof (input as { nanoseconds?: number }).nanoseconds === 'number'
+            ? (input as { nanoseconds: number }).nanoseconds
+            : typeof (input as { _nanoseconds?: number })._nanoseconds === 'number'
+            ? (input as { _nanoseconds: number })._nanoseconds
+            : 0
+        if (typeof seconds === 'number') {
+          date = new Date(seconds * 1000 + Math.floor(nanos / 1e6))
+        }
+      }
+    }
+
+    if (!date || Number.isNaN(date.getTime())) return '—'
     return date.toLocaleDateString(undefined, {
       month: 'short',
       day: 'numeric',

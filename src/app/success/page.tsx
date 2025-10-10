@@ -92,6 +92,16 @@ export default function SuccessPage() {
     return value.charAt(0).toUpperCase() + value.slice(1)
   }
 
+  const orderReference = useMemo(() => {
+    if (!orderDocId) {
+      return t('success.summary.pendingReference')
+    }
+    const normalized = orderDocId.replace(/[^0-9A-Za-z]/g, '')
+    const source = normalized.length > 0 ? normalized : orderDocId
+    const suffix = source.slice(-6).toUpperCase()
+    return `#${suffix}`
+  }, [orderDocId, t])
+
   useEffect(() => {
     if (!sessionId) {
       router.replace('/')
@@ -222,7 +232,6 @@ export default function SuccessPage() {
     )
   }
 
-  const orderId = sessionId
   const totalFormatted = total != null ? formatCurrency(total / 100, currency) : null
   const deliveryValue = t('success.summary.deliveryValue').replace('{date}', eta)
   const paymentStatusKey = paymentStatus?.toLowerCase() ?? ''
@@ -282,7 +291,7 @@ export default function SuccessPage() {
           <div className="grid gap-4 border-b border-zinc-100 px-6 py-6 md:grid-cols-4">
             <div className="rounded-2xl bg-[#f6f7fb] px-4 py-3">
               <div className="text-xs font-semibold uppercase tracking-[0.25em] text-zinc-500">{t('success.summary.orderNumber')}</div>
-              <div className="mt-2 truncate text-sm font-semibold text-[#0d141c]">#{orderId}</div>
+              <div className="mt-2 truncate text-sm font-semibold text-[#0d141c]">{orderReference}</div>
             </div>
             <div className="rounded-2xl bg-[#f6f7fb] px-4 py-3">
               <div className="text-xs font-semibold uppercase tracking-[0.25em] text-zinc-500">{t('success.summary.delivery')}</div>

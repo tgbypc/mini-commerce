@@ -16,7 +16,7 @@ const normalizeCategory = (v: unknown) =>
 
 export const productSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 chars').max(80),
-  description: z.string().min(50, 'Description must be at least 50 chars').max(1000),
+  description: z.string().min(50, 'Description should be at least 50 characters.').max(1000),
 
   // 🔧 Kategori: trim + lowercase sonra enum
   category: z.preprocess(

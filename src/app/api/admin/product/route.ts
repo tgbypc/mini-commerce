@@ -5,6 +5,7 @@ import { adminDb, FieldValue } from '@/lib/firebaseAdmin'
 import { productSchema } from '@/lib/validation/products'
 import { del as blobDel } from '@vercel/blob'
 import { requireAdminFromRequest } from '@/lib/adminAuth'
+import { ZodError } from 'zod'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -115,6 +116,12 @@ export async function POST(req: Request) {
       stripePriceId: stripePrice.id,
     })
   } catch (err) {
+    if (err instanceof ZodError) {
+      console.error('[api/product POST] validation error:', err)
+      const issue = err.issues[0]
+      const message = issue?.message || 'Invalid product data'
+      return NextResponse.json({ error: message }, { status: 400 })
+    }
     console.error('[api/product POST] error:', err)
     const msg = err instanceof Error ? err.message : 'Unexpected error'
     return NextResponse.json({ error: msg }, { status: 500 })
@@ -343,6 +350,12 @@ export async function PUT(req: Request) {
       priceChanged: !!newStripePriceId,
     })
   } catch (err) {
+    if (err instanceof ZodError) {
+      console.error('[api/product PUT] validation error:', err)
+      const issue = err.issues[0]
+      const message = issue?.message || 'Invalid product data'
+      return NextResponse.json({ error: message }, { status: 400 })
+    }
     console.error('[api/product PUT] error:', err)
     const msg = err instanceof Error ? err.message : 'Unexpected error'
     return NextResponse.json({ error: msg }, { status: 500 })
