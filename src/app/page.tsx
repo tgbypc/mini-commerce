@@ -2,6 +2,7 @@ import Script from 'next/script'
 import type { Metadata } from 'next'
 import HomeClient from '@/components/home/HomeClient'
 import { getBaseUrl, getInternalFetchHeaders } from '@/lib/runtimeEnv'
+import { fetchDistinctProductCategories } from '@/lib/server/categories'
 
 const DEFAULT_LOCALE = 'en'
 export const revalidate = 120
@@ -69,6 +70,7 @@ async function fetchInitialProducts(): Promise<{
 
 export default async function HomePage() {
   const { items, nextCursor } = await fetchInitialProducts()
+  const availableCategories = await fetchDistinctProductCategories()
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -92,6 +94,7 @@ export default async function HomePage() {
         initialItems={items}
         initialNextCursor={nextCursor}
         initialLocale={DEFAULT_LOCALE}
+        availableCategories={availableCategories}
       />
     </>
   )

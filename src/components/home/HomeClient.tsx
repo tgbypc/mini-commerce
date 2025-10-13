@@ -1,11 +1,15 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useI18n } from '@/context/I18nContext'
-import { CATEGORIES, CATEGORY_LABELS } from '@/lib/constants/categories'
+import {
+  collectGroupMatches,
+  fallbackLabelFromSlug,
+  resolveCategoryGroups,
+} from '@/lib/constants/categories'
 
 type ListItem = {
   id: string
@@ -27,12 +31,14 @@ type HomeClientProps = {
   initialItems: ListItem[]
   initialNextCursor: string | null
   initialLocale: string
+  availableCategories: string[]
 }
 
 export default function HomeClient({
   initialItems,
   initialNextCursor,
   initialLocale,
+  availableCategories,
 }: HomeClientProps) {
   const { t, locale } = useI18n()
   const [items, setItems] = useState<ListItem[]>(initialItems)
@@ -49,8 +55,69 @@ export default function HomeClient({
   const firstSearchRun = useRef(false)
   const initialLocaleRef = useRef(initialLocale)
 
-  const [selectedCats, setSelectedCats] = useState<string[]>([])
-  const categories = useMemo(() => CATEGORIES as unknown as string[], [])
+  const [selectedGroups, setSelectedGroups] = useState<string[]>([])
+  const resolvedGroups = useMemo(
+    () => resolveCategoryGroups(availableCategories),
+    [availableCategories]
+  )
+  const groupLookup = useMemo(
+    () => new Map(resolvedGroups.map((group) => [group.slug, group])),
+    [resolvedGroups]
+  )
+  const categoryToGroup = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const group of resolvedGroups) {
+      for (const category of group.categories) {
+        const key = category.trim().toLowerCase()
+        if (!key) continue
+        if (map.has(key)) continue
+        map.set(key, group.slug)
+      }
+    }
+    return map
+  }, [resolvedGroups])
+  const resolveGroupLabel = useCallback(
+    (slug: string) => {
+      const group = groupLookup.get(slug)
+      if (group) {
+        if (group.labelKey) {
+          const label = t(group.labelKey)
+          if (label && label !== group.labelKey) return label
+        }
+        const first = group.categories[0]
+        if (first) {
+          const normalized = first.trim().toLowerCase()
+          const categoryKey = `cat.${normalized}`
+          const altLabel = t(categoryKey)
+          if (altLabel && altLabel !== categoryKey) return altLabel
+          return fallbackLabelFromSlug(
+            normalized.replace(/[^a-z0-9]+/g, '-') || normalized
+          )
+        }
+      }
+      const fallbackKey = `cat.${slug}`
+      const fallbackLabel = t(fallbackKey)
+      if (fallbackLabel && fallbackLabel !== fallbackKey) return fallbackLabel
+      return fallbackLabelFromSlug(slug)
+    },
+    [groupLookup, t]
+  )
+  const resolveCategoryLabel = useCallback(
+    (raw?: string | null) => {
+      const value = raw?.trim()
+      if (!value) return t('store.bestSellers.unknownCategory')
+      const normalized = value.toLowerCase()
+      const groupSlug = categoryToGroup.get(normalized)
+      if (groupSlug) return resolveGroupLabel(groupSlug)
+      const categoryKey = `cat.${normalized}`
+      const altLabel = t(categoryKey)
+      if (altLabel && altLabel !== categoryKey) return altLabel
+      const fallbackSlug =
+        normalized.replace(/[^a-z0-9]+/g, '-') || normalized || 'category'
+      return fallbackLabelFromSlug(fallbackSlug)
+    },
+    [categoryToGroup, resolveGroupLabel, t]
+  )
   const currencyFormatter = useMemo(
     () =>
       new Intl.NumberFormat(locale === 'nb' ? 'nb-NO' : 'en-US', {
@@ -91,8 +158,15 @@ export default function HomeClient({
       if (opts.reset) setLoading(true)
       const params = new URLSearchParams()
       params.set('limit', '20')
-      if (selectedCats.length > 0)
-        params.set('categories', selectedCats.join(','))
+      const selectedCategoryValues = collectGroupMatches(
+        selectedGroups,
+        resolvedGroups
+      )
+      if (selectedCategoryValues.length === 1) {
+        params.set('category', selectedCategoryValues[0])
+      } else if (selectedCategoryValues.length > 1) {
+        params.set('categories', selectedCategoryValues.join(','))
+      }
       params.set('locale', locale)
       const querySource =
         typeof opts.overrideSearch === 'string' ? opts.overrideSearch : search
@@ -148,17 +222,17 @@ export default function HomeClient({
   }
 
   function toggleCategory(slug: string) {
-    setSelectedCats((prev) =>
+    setSelectedGroups((prev) =>
       prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug]
     )
   }
 
-  const quickCategories = categories.slice(0, 6)
-  const activeCategoryLabels = selectedCats.map(
-    (slug) =>
-      t(`cat.${slug}`) ||
-      CATEGORY_LABELS[slug as (typeof CATEGORIES)[number]] ||
-      slug
+  const quickGroups = useMemo(
+    () => resolvedGroups.slice(0, 6).map((group) => group.slug),
+    [resolvedGroups]
+  )
+  const activeCategoryLabels = selectedGroups.map((slug) =>
+    resolveGroupLabel(slug)
   )
 
   useEffect(() => {
@@ -183,7 +257,7 @@ export default function HomeClient({
     }
     fetchPage({ reset: true })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCats.join(','), sort])
+  }, [selectedGroups.join(','), sort])
 
   useEffect(() => {
     if (debounceTimer.current) clearTimeout(debounceTimer.current)
@@ -283,12 +357,9 @@ export default function HomeClient({
                 <span className="font-medium text-[#0d141c]">
                   {quickFiltersLabel}
                 </span>
-                {quickCategories.map((slug) => {
-                  const label =
-                    t(`cat.${slug}`) ||
-                    CATEGORY_LABELS[slug as (typeof CATEGORIES)[number]] ||
-                    slug
-                  const active = selectedCats.includes(slug)
+                {quickGroups.map((slug) => {
+                  const label = resolveGroupLabel(slug)
+                  const active = selectedGroups.includes(slug)
                   return (
                     <button
                       key={slug}
@@ -304,10 +375,10 @@ export default function HomeClient({
                     </button>
                   )
                 })}
-                {selectedCats.length > 0 && (
+                {selectedGroups.length > 0 && (
                   <button
                     type="button"
-                    onClick={() => setSelectedCats([])}
+                    onClick={() => setSelectedGroups([])}
                     className="btn-outline px-3 py-1 text-xs"
                   >
                     {clearLabel}
@@ -338,8 +409,8 @@ export default function HomeClient({
           <div>
             {t('home.activeFilters')}{' '}
             <span className="font-semibold text-[#0d141c]">
-              {selectedCats.length || search
-                ? `${selectedCats.length + (search ? 1 : 0)}`
+              {selectedGroups.length || search
+                ? `${selectedGroups.length + (search ? 1 : 0)}`
                 : t('home.all')}
             </span>
           </div>
@@ -409,9 +480,7 @@ export default function HomeClient({
                 </div>
                 <div className="flex flex-1 flex-col gap-2 px-4 py-4">
                   <span className="text-xs font-semibold uppercase tracking-[0.22em] text-zinc-500">
-                    {item.category
-                      ? t(`cat.${item.category}`) ?? item.category
-                      : t('store.bestSellers.unknownCategory')}
+                    {resolveCategoryLabel(item.category)}
                   </span>
                   <h3 className="line-clamp-2 text-sm font-semibold text-[#0d141c]">
                     {item.title}

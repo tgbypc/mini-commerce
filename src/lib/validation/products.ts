@@ -1,18 +1,27 @@
 // src/lib/validation/products.ts
 import { z } from 'zod'
 import { AvailabilityStatus } from '@/types/product'
-import { CATEGORIES } from '@/lib/constants/categories'
+import {
+  PRIMARY_CATEGORY_SLUGS,
+  getGroupSlugForCategory,
+} from '@/lib/constants/categories'
+
+const CATEGORY_ENUM_VALUES = PRIMARY_CATEGORY_SLUGS as [string, ...string[]]
 
 // ✅ Tek kaynaklı kategori listesi (Zod enum olarak tanımla)
-export const CategorySchema = z.enum(CATEGORIES)
-export type Category = (typeof CATEGORIES)[number]
+export const CategorySchema = z.enum(CATEGORY_ENUM_VALUES)
+export type Category = (typeof CATEGORY_ENUM_VALUES)[number]
 
 // küçük yardımcı
 const normalizeString = (v: unknown) =>
   typeof v === 'string' ? v.trim() : v
 
-const normalizeCategory = (v: unknown) =>
-  typeof v === 'string' ? v.trim().toLowerCase() : v
+const normalizeCategory = (v: unknown) => {
+  if (typeof v !== 'string') return v
+  const normalized = v.trim().toLowerCase()
+  const mapped = getGroupSlugForCategory(normalized)
+  return mapped ?? normalized
+}
 
 export const productSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 chars').max(80),

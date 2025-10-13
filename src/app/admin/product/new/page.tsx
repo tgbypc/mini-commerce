@@ -11,8 +11,9 @@ import { toast } from 'react-hot-toast'
 import { ArrowLeftCircle, Copy, Loader2, UploadCloud } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useI18n } from '@/context/I18nContext'
-import { CATEGORIES } from '@/lib/constants/categories'
-import type { Category } from '@/lib/constants/categories'
+import { PRIMARY_CATEGORY_SLUGS } from '@/lib/constants/categories'
+
+const CATEGORY_OPTIONS = PRIMARY_CATEGORY_SLUGS
 
 export type ProductFormValues = {
   title?: string
@@ -20,7 +21,7 @@ export type ProductFormValues = {
   title_nb?: string
   price: number
   stock: number
-  category: Category
+  category: string
   brand?: string
   thumbnail?: string
   images?: string
@@ -54,7 +55,12 @@ const productSchema = z.object({
   title_nb: z.string().optional().or(z.literal('')),
   price: z.coerce.number().min(0, 'Price must be 0 or greater'),
   stock: z.coerce.number().int().min(0, 'Stock must be 0 or greater'),
-  category: z.enum(CATEGORIES),
+  category: z
+    .string()
+    .min(1, 'Category is required')
+    .refine((value) => CATEGORY_OPTIONS.includes(value), {
+      message: 'Category is not supported',
+    }),
   brand: z
     .string()
     .max(50, 'Brand must be 50 chars or less')
@@ -140,7 +146,7 @@ export default function AdminNewProductPage() {
       title_nb: '',
       price: 0,
       stock: 0,
-      category: CATEGORIES[0],
+      category: CATEGORY_OPTIONS[0] ?? '',
       brand: '',
       thumbnail: '',
       images: '',
@@ -404,11 +410,16 @@ export default function AdminNewProductPage() {
             <div>
               <Label>{t('admin.category')}</Label>
               <select {...register('category')} className={selectClass}>
-                {CATEGORIES.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
+                {CATEGORY_OPTIONS.map((category) => {
+                  const key = `cat.${category}`
+                  const label = t(key)
+                  const displayLabel = label && label !== key ? label : category
+                  return (
+                    <option key={category} value={category}>
+                      {displayLabel}
+                    </option>
+                  )
+                })}
               </select>
               {errors.category && (
                 <ErrorMessage>{errors.category.message}</ErrorMessage>

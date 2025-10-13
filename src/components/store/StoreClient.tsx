@@ -1,9 +1,15 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useI18n } from '@/context/I18nContext'
+import {
+  collectGroupMatches,
+  fallbackLabelFromSlug,
+  getGroupAccent,
+  resolveCategoryGroups,
+} from '@/lib/constants/categories'
 
 interface ProductPreview {
   id: string
@@ -17,16 +23,8 @@ interface ProductPreview {
 interface StoreClientProps {
   initialProducts: ProductPreview[]
   initialLocale: string
+  availableCategories: string[]
 }
-
-const categoryCards = [
-  { slug: 'beauty', accent: 'from-[#fbe8ff] to-[#f2f8ff]' },
-  { slug: 'electronics', accent: 'from-[#e4f6ff] to-[#eef2ff]' },
-  { slug: 'home', accent: 'from-[#fff4e5] to-[#f2fbf2]' },
-  { slug: 'fashion', accent: 'from-[#fff0f3] to-[#f0f7ff]' },
-  { slug: 'wellness', accent: 'from-[#e6fdf5] to-[#edf3ff]' },
-  { slug: 'outdoor', accent: 'from-[#f1f8ff] to-[#f7fff1]' },
-] as const
 
 const benefits = [
   { key: 'shipping', icon: ShippingIcon },
@@ -39,6 +37,7 @@ const testimonials = [{ key: 'amelia' }, { key: 'sverre' }] as const
 export default function StoreClient({
   initialProducts,
   initialLocale,
+  availableCategories,
 }: StoreClientProps) {
   const { t, locale } = useI18n()
   const [bestSellers, setBestSellers] =
@@ -47,8 +46,13 @@ export default function StoreClient({
     initialProducts.length === 0
   )
   const [productError, setProductError] = useState<string | null>(null)
+  const [selectedGroup, setSelectedGroup] = useState<string | null>(null)
   const cancelRef = useRef(false)
   const previousLocale = useRef(initialLocale)
+  const previousGroup = useRef<string | null>(null)
+  const previousCategorySignature = useRef<string>('')
+  const featuredRef = useRef<HTMLDivElement | null>(null)
+  const firstLoad = useRef(true)
 
   const languageTag = locale === 'nb' ? 'nb-NO' : 'en-US'
   const currencyFormatter = useMemo(
@@ -60,19 +64,100 @@ export default function StoreClient({
       }),
     [languageTag]
   )
+  const resolvedGroups = useMemo( 
+    () => resolveCategoryGroups(availableCategories),
+    [availableCategories]
+  )
+  const groupLookup = useMemo(
+    () => new Map(resolvedGroups.map((group) => [group.slug, group])),
+    [resolvedGroups]
+  )
+  const categoryToGroup = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const group of resolvedGroups) {
+      for (const category of group.categories) {
+        const key = category.trim().toLowerCase()
+        if (!key || map.has(key)) continue
+        map.set(key, group.slug)
+      }
+    }
+    return map
+  }, [resolvedGroups])
+  const resolveGroupLabel = useCallback(
+    (slug: string) => {
+      const group = groupLookup.get(slug)
+      if (group) {
+        if (group.labelKey) {
+          const label = t(group.labelKey)
+          if (label && label !== group.labelKey) return label
+        }
+        const first = group.categories[0]
+        if (first) {
+          const normalized = first.trim().toLowerCase()
+          const categoryKey = `cat.${normalized}`
+          const altLabel = t(categoryKey)
+          if (altLabel && altLabel !== categoryKey) return altLabel
+          const fallbackSlug =
+            normalized.replace(/[^a-z0-9]+/g, '-') || normalized
+          return fallbackLabelFromSlug(fallbackSlug)
+        }
+      }
+      const fallbackKey = `cat.${slug}`
+      const fallbackLabel = t(fallbackKey)
+      if (fallbackLabel && fallbackLabel !== fallbackKey) return fallbackLabel
+      return fallbackLabelFromSlug(slug)
+    },
+    [groupLookup, t]
+  )
+  const resolveGroupDescription = useCallback(
+    (slug: string) => {
+      const group = groupLookup.get(slug)
+      if (group?.descriptionKey) {
+        const description = t(group.descriptionKey)
+        if (description && description !== group.descriptionKey)
+          return description
+      }
+      return t('store.categories.subtitle')
+    },
+    [groupLookup, t]
+  )
+  const resolveCategoryLabel = useCallback(
+    (raw?: string | null) => {
+      const value = raw?.trim()
+      if (!value) return t('store.bestSellers.unknownCategory')
+      const normalized = value.toLowerCase()
+      const groupSlug = categoryToGroup.get(normalized)
+      if (groupSlug) return resolveGroupLabel(groupSlug)
+      const categoryKey = `cat.${normalized}`
+      const altLabel = t(categoryKey)
+      if (altLabel && altLabel !== categoryKey) return altLabel
+      const fallbackSlug =
+        normalized.replace(/[^a-z0-9]+/g, '-') || normalized || 'category'
+      return fallbackLabelFromSlug(fallbackSlug)
+    },
+    [categoryToGroup, resolveGroupLabel, t]
+  )
+  const heroGroups = useMemo(() => {
+    const known = resolvedGroups.filter((group) => group.isKnown)
+    const fallback = resolvedGroups.filter((group) => !group.isKnown)
+    return [...known, ...fallback].slice(0, 6)
+  }, [resolvedGroups])
 
-  useEffect(() => {
-    if (previousLocale.current === locale && bestSellers.length > 0) return
-    previousLocale.current = locale
-    cancelRef.current = false
-    ;(async () => {
+  const fetchProducts = useCallback(
+    async (currentLocale: string, categoriesForQuery: string[]) => {
+      cancelRef.current = false
       setLoadingProducts(true)
       try {
         const params = new URLSearchParams({
           limit: '8',
           sort: 'createdAt-desc',
-          locale,
+          locale: currentLocale,
         })
+        if (categoriesForQuery.length === 1) {
+          params.set('category', categoriesForQuery[0])
+        } else if (categoriesForQuery.length > 1) {
+          params.set('categories', categoriesForQuery.join(','))
+        }
         const res = await fetch(`/api/products?${params.toString()}`, {
           cache: 'no-store',
         })
@@ -81,6 +166,7 @@ export default function StoreClient({
         if (!cancelRef.current) {
           setBestSellers(Array.isArray(data.items) ? data.items : [])
           setProductError(null)
+          previousLocale.current = currentLocale
         }
       } catch {
         if (!cancelRef.current) {
@@ -90,12 +176,71 @@ export default function StoreClient({
       } finally {
         if (!cancelRef.current) setLoadingProducts(false)
       }
-    })()
+    },
+    []
+  )
+
+  useEffect(() => {
+    const localeChanged = previousLocale.current !== locale
+    const groupChanged = previousGroup.current !== selectedGroup
+    const categoriesForQuery = collectGroupMatches(
+      selectedGroup ? [selectedGroup] : [],
+      resolvedGroups
+    )
+    const signature = categoriesForQuery
+      .map((value) => value.trim().toLowerCase())
+      .filter(Boolean)
+      .sort()
+      .join('|')
+    const signatureChanged = previousCategorySignature.current !== signature
+    const shouldFetch =
+      localeChanged ||
+      groupChanged ||
+      signatureChanged ||
+      (firstLoad.current && initialProducts.length === 0)
+
+    if (!shouldFetch) {
+      firstLoad.current = false
+      setLoadingProducts(false)
+      return
+    }
+
+    firstLoad.current = false
+    previousGroup.current = selectedGroup
+    previousCategorySignature.current = signature
+
+    fetchProducts(locale, categoriesForQuery)
 
     return () => {
       cancelRef.current = true
     }
-  }, [locale, bestSellers.length])
+  }, [
+    fetchProducts,
+    initialProducts.length,
+    locale,
+    resolvedGroups,
+    selectedGroup,
+  ])
+
+  const handleCategoryClick = useCallback(
+    (slug: string) => {
+      const next = selectedGroup === slug ? null : slug
+      setSelectedGroup(next)
+      if (typeof window !== 'undefined') {
+        requestAnimationFrame(() => {
+          const target = featuredRef.current
+          target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        })
+      }
+    },
+    [selectedGroup]
+  )
+
+  useEffect(() => {
+    return () => {
+      cancelRef.current = true
+    }
+  }, [])
 
   const metrics = [
     { label: t('store.metrics.orders'), value: '250K+' },
@@ -167,36 +312,45 @@ export default function StoreClient({
             </Link>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {categoryCards.map((item) => (
-              <div
-                key={item.slug}
-                className="relative overflow-hidden surface-card bg-white/95 p-6 transition hover:-translate-y-1 hover:shadow-[0_24px_48px_rgba(91,91,214,0.18)]"
-              >
-                <div
-                  className={`absolute right-[-20%] top-[-20%] size-40 rounded-full bg-gradient-to-br ${item.accent} blur-3xl`}
-                  aria-hidden
-                />
-                <div className="relative z-[1] flex flex-col gap-3">
-                  <span className="inline-flex w-fit items-center rounded-full bg-[var(--color-primary-dark)]/5 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#0d141c]">
-                    {t(`store.categories.list.${item.slug}.label`)}
-                  </span>
-                  <p className="text-sm text-zinc-600">
-                    {t(`store.categories.list.${item.slug}.description`)}
-                  </p>
-                  <Link
-                    href="/"
-                    className="inline-flex items-center gap-2 text-sm font-semibold text-[#4338ca] transition hover:text-[#5b5bd6]"
-                  >
-                    {t('store.categories.list.cta')}
-                    <span aria-hidden>→</span>
-                  </Link>
-                </div>
-              </div>
-            ))}
+            {heroGroups.map((group) => {
+              const isActive = selectedGroup === group.slug
+              const accent = getGroupAccent(group.slug)
+              const label = resolveGroupLabel(group.slug)
+              const description = resolveGroupDescription(group.slug)
+              return (
+                <button
+                  key={group.slug}
+                  type="button"
+                  aria-pressed={isActive}
+                  onClick={() => handleCategoryClick(group.slug)}
+                  className={`relative overflow-hidden surface-card bg-white/95 p-6 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4338ca]/50 ${
+                    isActive
+                      ? 'border-[#4338ca]/50 shadow-[0_28px_54px_rgba(67,56,202,0.25)]'
+                      : 'hover:-translate-y-1 hover:shadow-[0_24px_48px_rgba(91,91,214,0.18)]'
+                  } cursor-pointer`}
+                >
+                  <div
+                    className={`absolute right-[-20%] top-[-20%] size-40 rounded-full bg-gradient-to-br ${accent} blur-3xl`}
+                    aria-hidden
+                  />
+                  <div className="relative z-[1] flex flex-col gap-3">
+                    <span className="inline-flex w-fit items-center rounded-full bg-[var(--color-primary-dark)]/5 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#0d141c]">
+                      {label}
+                    </span>
+                    <p className="text-sm text-zinc-600">{description}</p>
+                    <span className="inline-flex items-center gap-2 text-sm font-semibold text-[#4338ca] transition">
+                      {t('store.categories.list.cta')}
+                      <span aria-hidden>→</span>
+                    </span>
+                  </div>
+                </button>
+              )
+            })}
           </div>
         </section>
 
         <section
+          ref={featuredRef}
           id="featured"
           aria-labelledby="store-featured"
           className="space-y-6"
@@ -211,6 +365,21 @@ export default function StoreClient({
             <p className="text-sm text-zinc-600">
               {t('store.bestSellers.subtitle')}
             </p>
+            {selectedGroup ? (
+              <div className="mt-1 inline-flex flex-wrap items-center gap-2 text-xs text-zinc-500">
+                <span className="inline-flex items-center gap-2 rounded-full border border-[#4338ca]/20 bg-[#4338ca]/10 px-3 py-1 font-semibold text-[#4338ca]">
+                  {resolveGroupLabel(selectedGroup)}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedGroup(null)}
+                  className="inline-flex items-center gap-1 rounded-full bg-transparent px-2 py-1 font-medium text-[#4338ca] transition hover:text-[#5b5bd6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4338ca]/50"
+                >
+                  {t('home.clear')}
+                  <span aria-hidden>×</span>
+                </button>
+              </div>
+            ) : null}
           </div>
           {loadingProducts ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -252,9 +421,7 @@ export default function StoreClient({
                   </div>
                   <div className="flex flex-1 flex-col gap-2 px-4 py-4">
                     <span className="text-xs font-semibold uppercase tracking-[0.22em] text-zinc-500">
-                      {product.category
-                        ? t(`cat.${product.category}`) ?? product.category
-                        : t('store.bestSellers.unknownCategory')}
+                      {resolveCategoryLabel(product.category)}
                     </span>
                     <h3 className="line-clamp-2 text-sm font-semibold text-[#0d141c]">
                       {product.title}

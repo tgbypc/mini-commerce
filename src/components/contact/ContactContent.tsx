@@ -31,10 +31,29 @@ export default function ContactContent() {
     e.preventDefault()
     setSubmitting(true)
     try {
-      await new Promise((resolve) => setTimeout(resolve, 600))
+      const payload = {
+        name: formState.name.trim(),
+        email: formState.email.trim(),
+        topic: formState.topic,
+        message: formState.message.trim(),
+      }
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        const errMsg =
+          typeof data?.error === 'string'
+            ? data.error
+            : t('contact.form.error')
+        throw new Error(errMsg)
+      }
       toast.success(t('contact.form.success'))
       setFormState({ name: '', email: '', topic: 'general', message: '' })
-    } catch {
+    } catch (err) {
+      console.error('[contact-form] submission failed', err)
       toast.error(t('contact.form.error'))
     } finally {
       setSubmitting(false)

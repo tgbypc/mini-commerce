@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  MailOpen,
   PackagePlus,
   PackageSearch,
   ShoppingBag,
@@ -45,6 +46,12 @@ const NAV_ITEMS: NavItem[] = [
     label: 'Add Product',
     description: 'Create a new listing',
     icon: PackagePlus,
+  },
+  {
+    href: '/admin/messages',
+    label: 'Messages',
+    description: 'Contact form submissions',
+    icon: MailOpen,
   },
   {
     href: '/admin/orders',

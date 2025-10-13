@@ -73,7 +73,7 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-40 bg-[var(--navbar-surface)] px-3 py-3 backdrop-blur transition-colors duration-200 md:px-6">
-      <div className="mx-auto flex w-full max-w-[1100px] items-center justify-between gap-3 rounded-[24px] border border-[var(--navbar-border)] bg-[var(--navbar-card)] px-3 py-2.5 shadow-[var(--navbar-shadow)] transition-colors duration-200 md:px-5">
+      <div className="navbar-card mx-auto flex w-full max-w-[1100px] items-center justify-between gap-3 rounded-[24px] px-3 py-2.5 md:px-5">
         <div className="flex flex-1 items-center gap-4 md:gap-6">
           <Link
             href="/"
@@ -93,7 +93,7 @@ export default function Navbar() {
             </span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-1 rounded-full border border-[#e2e6ef] bg-[#f9fafc] px-1 py-1 shadow-[0_22px_36px_-28px_rgba(15,23,42,0.35)] transition-colors duration-200 dark:border-white/35 dark:bg-[#0d111f] dark:shadow-[0_32px_60px_-36px_rgba(3,8,24,0.9)]">
+          <nav className="navbar-nav hidden md:flex items-center gap-1 rounded-full px-1 py-1">
             {NAV_ITEMS.map(({ key, href }) => {
               const isActive =
                 href === '/'
@@ -103,22 +103,9 @@ export default function Navbar() {
                 <Link
                   key={key}
                   href={href}
-                  className={`inline-flex items-center rounded-full px-4 py-1.5 text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366f1]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[rgba(15,18,28,0.85)] ${
-                    isActive
-                      ? [
-                          // LIGHT: parlak beyaz pill
-                          'bg-white text-[#111827] shadow-[0_20px_44px_-24px_rgba(15,23,42,0.3)] ring-1 ring-black/10 hover:-translate-y-0.5 hover:shadow-[0_24px_48px_-22px_rgba(15,23,42,0.32)]',
-                          // DARK: beyaz pill, koyu zemin üzerinde kontrast
-                          'dark:text-[#0f172a] dark:ring-1 dark:ring-[rgba(200,206,240,0.4)] dark:shadow-[0_34px_66px_-32px_rgba(5,9,27,0.78)]',
-                          'dark:bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(228,232,255,0.88))] dark:hover:-translate-y-0.5 dark:hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.97),rgba(236,240,255,0.92))] dark:hover:shadow-[0_36px_72px_-30px_rgba(6,10,28,0.82)]',
-                        ].join(' ')
-                      : [
-                          // LIGHT: sade, hover’da beyaz pill efekti
-                          'text-[#334155] hover:-translate-y-0.5 hover:text-[#0f172a] hover:bg-white hover:ring-1 hover:ring-black/8 hover:shadow-[0_20px_42px_-26px_rgba(15,23,42,0.28)]',
-                          // DARK: beyaz yazı, hover’da beyaz zemin ve koyu yazı
-                          'dark:text-white/90 dark:hover:text-[#0f172a] dark:hover:bg-white dark:hover:ring-1 dark:hover:ring-white/45 dark:hover:shadow-[0_30px_62px_-34px_rgba(5,9,28,0.8)]',
-                        ].join(' ')
-                  }`}
+                  className="navbar-pill"
+                  data-active={isActive ? 'true' : undefined}
+                  aria-current={isActive ? 'page' : undefined}
                 >
                   {t(`nav.${key}`)}
                 </Link>
@@ -179,8 +166,8 @@ export default function Navbar() {
                 aria-pressed={locale === code}
                 className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold transition ${
                   locale === code
-                    ? 'bg-[var(--color-primary-dark)] text-white shadow-[0_8px_18px_rgba(91,91,214,0.3)]'
-                    : 'text-[var(--btn-outline-text)] hover:bg-white/60 hover:text-[var(--color-primary-dark)]'
+                    ? 'bg-[var(--color-primary-dark)] text-white shadow-[0_8px_18px_rgba(91,91,214,0.3)] hover:-translate-y-0.5'
+                    : 'text-[var(--btn-outline-text)] hover:-translate-y-0.5 hover:bg-[rgba(99,102,241,0.12)] hover:text-[var(--color-primary-dark)]'
                 }`}
               >
                 {code.toUpperCase()}
@@ -211,12 +198,12 @@ export default function Navbar() {
                 {initials}
               </button>
               {profileOpen && (
-                <div className="absolute right-0 mt-2 w-52 rounded-2xl border border-zinc-200 bg-white p-2 shadow-xl">
+                <div className="navbar-mobile-panel absolute right-0 mt-2 w-52 rounded-2xl p-2">
                   {role === 'admin' ? (
                     <Link
                       href="/admin"
                       onClick={closeProfileMenu}
-                      className="block rounded-xl px-3 py-2 text-sm font-medium text-[var(--foreground)] transition hover:bg-[#f4f4f5]"
+                      className="navbar-dropdown-link"
                     >
                       {t('nav.admin')}
                     </Link>
@@ -225,14 +212,14 @@ export default function Navbar() {
                       <Link
                         href="/user/profile"
                         onClick={closeProfileMenu}
-                        className="block rounded-xl px-3 py-2 text-sm font-medium text-[var(--foreground)] transition hover:bg-[#f4f4f5]"
+                        className="navbar-dropdown-link"
                       >
                         {t('nav.profile')}
                       </Link>
                       <Link
                         href="/user/orders"
                         onClick={closeProfileMenu}
-                        className="block rounded-xl px-3 py-2 text-sm font-medium text-[var(--foreground)] transition hover:bg-[#f4f4f5]"
+                        className="navbar-dropdown-link"
                       >
                         {t('nav.orders')}
                       </Link>
@@ -244,7 +231,7 @@ export default function Navbar() {
                       closeProfileMenu()
                       logout()
                     }}
-                    className="mt-1 block w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-red-600 transition hover:bg-[#fef2f2]"
+                    className="navbar-dropdown-danger mt-1"
                   >
                     {t('nav.logout')}
                   </button>
@@ -279,7 +266,7 @@ export default function Navbar() {
       </div>
 
       {isOpen && (
-        <div className="mx-auto mt-3 w-full max-w-[1100px] rounded-2xl border border-[#e2e6ef] bg-white p-4 shadow-[0_32px_58px_-38px_rgba(15,23,42,0.3)] transition-colors duration-200 dark:border-white/12 dark:bg-[rgba(15,18,28,0.95)] dark:shadow-[0_36px_64px_-42px_rgba(4,9,22,0.75)] md:hidden">
+        <div className="navbar-mobile-panel mx-auto mt-3 w-full max-w-[1100px] rounded-2xl p-4 md:hidden">
           <nav className="grid gap-2">
             {NAV_ITEMS.map(({ key, href }) => {
               const isActive =
@@ -291,11 +278,9 @@ export default function Navbar() {
                   key={`mobile-${key}`}
                   href={href}
                   onClick={closeMobileMenu}
-                  className={`rounded-2xl px-3 py-2 text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366f1]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[rgba(15,18,28,0.9)] ${
-                    isActive
-                      ? 'border border-transparent bg-gradient-to-r from-[#4f46e5] via-[#7c3aed] to-[#f472b6] text-white shadow-[0_28px_54px_-28px_rgba(82,75,232,0.5)] hover:-translate-y-0.5 dark:bg-[rgba(245,247,255,0.92)] dark:text-[#0f172a] dark:shadow-[0_28px_52px_-26px_rgba(8,11,26,0.62)] dark:ring-white/18 dark:bg-none dark:hover:bg-white dark:hover:text-[#0f172a]'
-                      : 'border border-[#e5e9f2] bg-white text-[#334155] hover:bg-[#f6f7fb] hover:-translate-y-0.5 hover:shadow-[0_20px_42px_-26px_rgba(15,23,42,0.3)] hover:ring-1 hover:ring-black/10 dark:border-white/12 dark:bg-[rgba(24,28,38,0.92)] dark:text-white/75 dark:hover:text-white dark:hover:bg-[rgba(255,255,255,0.12)] dark:hover:ring-1 dark:hover:ring-white/18 dark:hover:shadow-[0_26px_56px_-28px_rgba(8,11,28,0.6)]'
-                  }`}
+                  className="navbar-mobile-link justify-between"
+                  data-active={isActive ? 'true' : undefined}
+                  aria-current={isActive ? 'page' : undefined}
                 >
                   {t(`nav.${key}`)}
                 </Link>
@@ -307,11 +292,11 @@ export default function Navbar() {
             <ThemeToggle />
           </div>
 
-          <div className="mt-4 flex items-center gap-3">
+          <div className="mt-4 grid gap-3">
             <Link
               href="/favorites"
               onClick={closeMobileMenu}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#e5e9f2] bg-[#f6f7fb] px-3 py-2 text-sm font-semibold text-[#334155] transition hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_18px_40px_-26px_rgba(15,23,42,0.28)] dark:border-white/12 dark:bg-[rgba(24,28,38,0.9)] dark:text-white/80 dark:hover:text-white dark:hover:bg-[rgba(33,38,54,0.96)] dark:hover:shadow-[0_24px_44px_-24px_rgba(118,120,255,0.45)]"
+              className="navbar-mobile-link justify-center gap-2"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -329,7 +314,7 @@ export default function Navbar() {
             <Link
               href="/cart"
               onClick={closeMobileMenu}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#e5e9f2] bg-[#f6f7fb] px-3 py-2 text-sm font-semibold text-[#334155] transition hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_18px_40px_-26px_rgba(15,23,42,0.28)] dark:border-white/12 dark:bg-[rgba(24,28,38,0.9)] dark:text-white/80 dark:hover:text-white dark:hover:bg-[rgba(33,38,54,0.96)] dark:hover:shadow-[0_24px_44px_-24px_rgba(118,120,255,0.45)]"
+              className="navbar-mobile-link justify-center gap-2"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -365,7 +350,7 @@ export default function Navbar() {
                 className={`flex-1 rounded-xl px-3 py-2 text-sm font-semibold transition ${
                   locale === code
                     ? 'bg-[var(--color-primary-dark)] text-white shadow-[0_12px_26px_rgba(91,91,214,0.35)] hover:-translate-y-0.5'
-                    : 'border border-[#e5e9f2] bg-[#f6f7fb] text-[#334155] hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_18px_40px_-26px_rgba(15,23,42,0.28)] dark:border-white/12 dark:bg-[rgba(24,28,38,0.9)] dark:text-white/80 dark:hover:text-white dark:hover:bg-[rgba(33,38,54,0.95)]'
+                    : 'border border-[var(--btn-outline-border)] bg-[var(--btn-outline-bg)] text-[var(--btn-outline-text)] hover:-translate-y-0.5 hover:bg-[var(--btn-outline-bg-hover)] hover:text-[var(--color-primary-dark)]'
                 }`}
               >
                 {code.toUpperCase()}
@@ -378,14 +363,14 @@ export default function Navbar() {
               <Link
                 href="/user/login"
                 onClick={closeMobileMenu}
-                className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-center text-sm font-medium text-[var(--foreground)]"
+                className="rounded-xl border border-[var(--btn-outline-border)] bg-[var(--btn-outline-bg)] px-3 py-2 text-center text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--btn-outline-bg-hover)] hover:text-[var(--color-primary-dark)]"
               >
                 {t('nav.login')}
               </Link>
               <Link
                 href="/user/register"
                 onClick={closeMobileMenu}
-                className="rounded-xl bg-[var(--color-primary-dark)] px-3 py-2 text-center text-sm font-semibold text-white"
+                className="rounded-xl bg-[var(--color-primary-dark)] px-3 py-2 text-center text-sm font-semibold text-white transition hover:bg-[var(--color-primary)]"
               >
                 {t('nav.register')}
               </Link>
@@ -398,7 +383,7 @@ export default function Navbar() {
                 <Link
                   href="/admin"
                   onClick={closeMobileMenu}
-                  className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-[var(--foreground)]"
+                  className="rounded-xl border border-[var(--btn-outline-border)] bg-[var(--btn-outline-bg)] px-3 py-2 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--btn-outline-bg-hover)] hover:text-[var(--color-primary-dark)]"
                 >
                   {t('nav.admin')}
                 </Link>
@@ -407,14 +392,14 @@ export default function Navbar() {
                   <Link
                     href="/user/profile"
                     onClick={closeMobileMenu}
-                    className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-[var(--foreground)]"
+                    className="rounded-xl border border-[var(--btn-outline-border)] bg-[var(--btn-outline-bg)] px-3 py-2 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--btn-outline-bg-hover)] hover:text-[var(--color-primary-dark)]"
                   >
                     {t('nav.profile')}
                   </Link>
                   <Link
                     href="/user/orders"
                     onClick={closeMobileMenu}
-                    className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-[var(--foreground)]"
+                    className="rounded-xl border border-[var(--btn-outline-border)] bg-[var(--btn-outline-bg)] px-3 py-2 text-sm font-medium text-[var(--foreground)] transition hover:bg-[var(--btn-outline-bg-hover)] hover:text-[var(--color-primary-dark)]"
                   >
                     {t('nav.orders')}
                   </Link>
@@ -426,7 +411,7 @@ export default function Navbar() {
                   closeMobileMenu()
                   logout()
                 }}
-                className="rounded-xl bg-[#fef2f2] px-3 py-2 text-sm font-semibold text-red-600"
+                className="rounded-xl bg-[#fef2f2] px-3 py-2 text-sm font-semibold text-red-600 transition hover:bg-[#fee2e2]"
               >
                 {t('nav.logout')}
               </button>

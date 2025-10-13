@@ -12,9 +12,10 @@ import { ArrowLeftCircle, Copy, Loader2, UploadCloud } from 'lucide-react'
 import { useI18n } from '@/context/I18nContext'
 import { getProductById } from '@/lib/products'
 import type { Product } from '@/types/product'
-import { CATEGORIES } from '@/lib/constants/categories'
-import type { Category } from '@/lib/constants/categories'
+import { PRIMARY_CATEGORY_SLUGS } from '@/lib/constants/categories'
 import { useAuth } from '@/context/AuthContext'
+
+const CATEGORY_OPTIONS = PRIMARY_CATEGORY_SLUGS
 
 const schema = z.object({
   title: z.string().optional().or(z.literal('')),
@@ -26,7 +27,7 @@ const schema = z.object({
     .int()
     .min(0, 'Stock must be zero or greater')
     .optional(),
-  category: z.enum(CATEGORIES),
+  category: z.string().min(1, 'Category is required'),
   brand: z.string().max(50).optional().or(z.literal('')),
   thumbnail: z.string().url('Must be a valid URL').optional().or(z.literal('')),
   images: z
@@ -93,6 +94,17 @@ export default function EditProductPage() {
   const [activeLocale, setActiveLocale] = useState<LocaleCode>('en')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
+  const categoryOptions = useMemo(() => {
+    const base = [...CATEGORY_OPTIONS]
+    const trimmed = initial?.category?.trim()
+    if (trimmed) {
+      const lowerBase = CATEGORY_OPTIONS.map((option) => option.toLowerCase())
+      if (!lowerBase.includes(trimmed.toLowerCase())) {
+        base.push(trimmed)
+      }
+    }
+    return base
+  }, [initial?.category])
 
   const {
     register,
@@ -123,7 +135,10 @@ export default function EditProductPage() {
           title_nb: product.title_nb ?? '',
           price: Number(product.price) || 0,
           stock: typeof product.stock === 'number' ? product.stock : 0,
-          category: (product.category as Category) ?? CATEGORIES[0],
+          category:
+            (typeof product.category === 'string' && product.category.trim()) ||
+            CATEGORY_OPTIONS[0] ||
+            '',
           brand: product.brand ?? '',
           thumbnail:
             typeof product.thumbnail === 'string'
@@ -413,11 +428,16 @@ export default function EditProductPage() {
             <div>
               <Label>{t('admin.category')}</Label>
               <select {...register('category')} className={selectClass}>
-                {CATEGORIES.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
+                {categoryOptions.map((category) => {
+                  const key = `cat.${category}`
+                  const label = t(key)
+                  const displayLabel = label && label !== key ? label : category
+                  return (
+                    <option key={category} value={category}>
+                      {displayLabel}
+                    </option>
+                  )
+                })}
               </select>
               {errors.category && (
                 <ErrorMessage>{errors.category.message}</ErrorMessage>
