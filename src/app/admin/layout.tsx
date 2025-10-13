@@ -101,7 +101,11 @@ function SidebarLink({
   )
 }
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   const pathname = usePathname()
   const { user } = useAuth()
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -109,7 +113,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const activeItem = useMemo(() => {
     return (
       NAV_ITEMS.find(
-        (item) => pathname === item.href || pathname?.startsWith(`${item.href}/`)
+        (item) =>
+          pathname === item.href || pathname?.startsWith(`${item.href}/`)
       ) ?? NAV_ITEMS[0]
     )
   }, [pathname])
@@ -121,7 +126,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <AdminOnly>
-      <div data-admin-shell className="admin-shell relative flex min-h-screen transition-colors">
+      <div
+        data-admin-shell
+        className="admin-shell relative flex min-h-screen transition-colors"
+      >
         {/* Sidebar (desktop) */}
         <aside className="admin-sidebar hidden w-72 shrink-0 flex-col px-6 py-8 text-[rgb(var(--admin-muted-rgb))] lg:flex">
           <div className="admin-sidebar-section">
@@ -145,7 +153,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   key={item.href}
                   item={item}
                   active={
-                    pathname === item.href || pathname?.startsWith(`${item.href}/`)
+                    pathname === item.href ||
+                    pathname?.startsWith(`${item.href}/`)
                   }
                 />
               ))}
@@ -183,7 +192,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         >
           <div className="admin-sidebar flex h-full flex-col p-5">
             <div className="flex items-center justify-between gap-3">
-              <Link href="/" className="text-base font-semibold tracking-tight text-[var(--foreground)]">
+              <Link
+                href="/"
+                className="text-base font-semibold tracking-tight text-[var(--foreground)]"
+              >
                 MiniCommerce Admin
               </Link>
               <button
@@ -201,7 +213,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   key={item.href}
                   item={item}
                   active={
-                    pathname === item.href || pathname?.startsWith(`${item.href}/`)
+                    pathname === item.href ||
+                    pathname?.startsWith(`${item.href}/`)
                   }
                   onNavigate={() => setSidebarOpen(false)}
                 />

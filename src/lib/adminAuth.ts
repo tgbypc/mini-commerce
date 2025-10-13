@@ -22,4 +22,3 @@ export async function requireAdminFromRequest(req: Request): Promise<{ uid: stri
     return { error: 'Unauthorized', status: 401 }
   }
 }
-

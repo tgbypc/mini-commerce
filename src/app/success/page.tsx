@@ -36,15 +36,14 @@ export default function SuccessPage() {
   const localeTag = locale === 'nb' ? 'nb-NO' : 'en-US'
 
   const formatCurrency = useMemo(
-    () =>
-      (value: number, curr: string | null | undefined) => {
-        const safeCurrency = (curr || 'USD').toUpperCase()
-        const amount = Number.isFinite(value) ? value : 0
-        return new Intl.NumberFormat(localeTag, {
-          style: 'currency',
-          currency: safeCurrency,
-        }).format(amount)
-      },
+    () => (value: number, curr: string | null | undefined) => {
+      const safeCurrency = (curr || 'USD').toUpperCase()
+      const amount = Number.isFinite(value) ? value : 0
+      return new Intl.NumberFormat(localeTag, {
+        style: 'currency',
+        currency: safeCurrency,
+      }).format(amount)
+    },
     [localeTag]
   )
 
@@ -150,9 +149,13 @@ export default function SuccessPage() {
 
           if (!cancelled) {
             setItems(li)
-            setTotal(typeof s?.amount_total === 'number' ? s.amount_total : null)
+            setTotal(
+              typeof s?.amount_total === 'number' ? s.amount_total : null
+            )
             setCurrency((s?.currency ?? 'usd').toUpperCase())
-            setPaymentStatus(typeof s?.payment_status === 'string' ? s.payment_status : null)
+            setPaymentStatus(
+              typeof s?.payment_status === 'string' ? s.payment_status : null
+            )
             const method = Array.isArray(s?.payment_method_types)
               ? s?.payment_method_types[0]
               : undefined
@@ -163,8 +166,12 @@ export default function SuccessPage() {
 
           if (isPaid) {
             // Clear cart once
-            try { clear() } catch {}
-            try { reloadFromStorage() } catch {}
+            try {
+              clear()
+            } catch {}
+            try {
+              reloadFromStorage()
+            } catch {}
           }
         }
 
@@ -191,7 +198,10 @@ export default function SuccessPage() {
               const token = await user.getIdToken()
               const ensureRes = await fetch('/api/user/orders/ensure', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${token}`,
+                },
                 body: JSON.stringify({ id: sessionId }),
               })
               if (ensureRes.ok) {
@@ -217,7 +227,10 @@ export default function SuccessPage() {
     }
 
     run()
-    return () => { cancelled = true; ac.abort() }
+    return () => {
+      cancelled = true
+      ac.abort()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId, authLoading, user])
 
@@ -232,17 +245,27 @@ export default function SuccessPage() {
     )
   }
 
-  const totalFormatted = total != null ? formatCurrency(total / 100, currency) : null
-  const deliveryValue = t('success.summary.deliveryValue').replace('{date}', eta)
+  const totalFormatted =
+    total != null ? formatCurrency(total / 100, currency) : null
+  const deliveryValue = t('success.summary.deliveryValue').replace(
+    '{date}',
+    eta
+  )
   const paymentStatusKey = paymentStatus?.toLowerCase() ?? ''
   const paymentStatusLabel = paymentStatusKey
-    ? statusLabels[paymentStatusKey as keyof typeof statusLabels] ?? statusLabels.default
+    ? statusLabels[paymentStatusKey as keyof typeof statusLabels] ??
+      statusLabels.default
     : statusLabels.default
   const paymentMethodKey = paymentMethod?.toLowerCase() ?? ''
-  const paymentMethodLabel = paymentLabels[paymentMethodKey as keyof typeof paymentLabels]
-    || (paymentMethod ? capitalize(paymentMethod) : paymentLabels.default)
+  const paymentMethodLabel =
+    paymentLabels[paymentMethodKey as keyof typeof paymentLabels] ||
+    (paymentMethod ? capitalize(paymentMethod) : paymentLabels.default)
   const statusTone = (() => {
-    if (paymentStatusKey === 'paid' || paymentStatusKey === 'fulfilled' || paymentStatusKey === 'complete') {
+    if (
+      paymentStatusKey === 'paid' ||
+      paymentStatusKey === 'fulfilled' ||
+      paymentStatusKey === 'complete'
+    ) {
       return 'border border-emerald-200 bg-emerald-50 text-emerald-700'
     }
     if (paymentStatusKey === 'canceled') {
@@ -265,22 +288,58 @@ export default function SuccessPage() {
     <div className="bg-[#f6f7fb] px-4 py-14">
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
         <div className="relative overflow-hidden rounded-3xl border border-zinc-200 bg-white/95 px-6 py-10 text-center shadow-[0_24px_48px_rgba(15,23,42,0.08)] md:px-12">
-          <div className="absolute left-8 top-6 size-24 rounded-full bg-gradient-to-br from-[#dcfce7] to-[#f0f9ff] blur-3xl" aria-hidden />
-          <div className="absolute -right-14 bottom-0 h-36 w-36 rounded-full bg-gradient-to-br from-[#e2e8f0] to-white blur-2xl" aria-hidden />
+          <div
+            className="absolute left-8 top-6 size-24 rounded-full bg-gradient-to-br from-[#dcfce7] to-[#f0f9ff] blur-3xl"
+            aria-hidden
+          />
+          <div
+            className="absolute -right-14 bottom-0 h-36 w-36 rounded-full bg-gradient-to-br from-[#e2e8f0] to-white blur-2xl"
+            aria-hidden
+          />
           <div className="relative z-[1] flex flex-col items-center gap-5">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                <path d="M5 12.5 9.5 17 19 7.5" strokeLinecap="round" strokeLinejoin="round" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+              >
+                <path
+                  d="M5 12.5 9.5 17 19 7.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
             </div>
             <div className="space-y-1">
-              <h1 className="text-2xl font-semibold text-[#0d141c]">{t('success.title')}</h1>
+              <h1 className="text-2xl font-semibold text-[#0d141c]">
+                {t('success.title')}
+              </h1>
               <p className="text-sm text-zinc-600">{t('success.subtitle')}</p>
-              <p className="text-xs text-zinc-500">{t('success.celebration')}</p>
+              <p className="text-xs text-zinc-500">
+                {t('success.celebration')}
+              </p>
             </div>
-            <span className={`inline-flex items-center gap-2 rounded-full px-4 py-1 text-xs font-semibold uppercase tracking-[0.25em] ${statusTone}`}>
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                <path d="M5 12.5 9.5 17 19 7.5" strokeLinecap="round" strokeLinejoin="round" />
+            <span
+              className={`inline-flex items-center gap-2 rounded-full px-4 py-1 text-xs font-semibold uppercase tracking-[0.25em] ${statusTone}`}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+              >
+                <path
+                  d="M5 12.5 9.5 17 19 7.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
               {paymentStatusLabel}
             </span>
@@ -290,51 +349,91 @@ export default function SuccessPage() {
         <div className="rounded-3xl border border-zinc-200 bg-white/95 shadow-[0_20px_40px_rgba(15,23,42,0.06)]">
           <div className="grid gap-4 border-b border-zinc-100 px-6 py-6 md:grid-cols-4">
             <div className="rounded-2xl bg-[#f6f7fb] px-4 py-3">
-              <div className="text-xs font-semibold uppercase tracking-[0.25em] text-zinc-500">{t('success.summary.orderNumber')}</div>
-              <div className="mt-2 truncate text-sm font-semibold text-[#0d141c]">{orderReference}</div>
+              <div className="text-xs font-semibold uppercase tracking-[0.25em] text-zinc-500">
+                {t('success.summary.orderNumber')}
+              </div>
+              <div className="mt-2 truncate text-sm font-semibold text-[#0d141c]">
+                {orderReference}
+              </div>
             </div>
             <div className="rounded-2xl bg-[#f6f7fb] px-4 py-3">
-              <div className="text-xs font-semibold uppercase tracking-[0.25em] text-zinc-500">{t('success.summary.delivery')}</div>
-              <div className="mt-2 text-sm font-semibold text-[#0d141c]">{deliveryValue}</div>
+              <div className="text-xs font-semibold uppercase tracking-[0.25em] text-zinc-500">
+                {t('success.summary.delivery')}
+              </div>
+              <div className="mt-2 text-sm font-semibold text-[#0d141c]">
+                {deliveryValue}
+              </div>
             </div>
             <div className="rounded-2xl bg-[#f6f7fb] px-4 py-3">
-              <div className="text-xs font-semibold uppercase tracking-[0.25em] text-zinc-500">{t('success.summary.paymentMethod')}</div>
-              <div className="mt-2 text-sm font-semibold text-[#0d141c]">{paymentMethodLabel}</div>
+              <div className="text-xs font-semibold uppercase tracking-[0.25em] text-zinc-500">
+                {t('success.summary.paymentMethod')}
+              </div>
+              <div className="mt-2 text-sm font-semibold text-[#0d141c]">
+                {paymentMethodLabel}
+              </div>
             </div>
             <div className="rounded-2xl bg-[#f6f7fb] px-4 py-3">
-              <div className="text-xs font-semibold uppercase tracking-[0.25em] text-zinc-500">{t('success.summary.paymentStatus')}</div>
-              <div className="mt-2 text-sm font-semibold text-[#0d141c]">{paymentStatusLabel}</div>
+              <div className="text-xs font-semibold uppercase tracking-[0.25em] text-zinc-500">
+                {t('success.summary.paymentStatus')}
+              </div>
+              <div className="mt-2 text-sm font-semibold text-[#0d141c]">
+                {paymentStatusLabel}
+              </div>
             </div>
           </div>
 
           <div className="px-6 py-6">
-            <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-zinc-500">{t('success.items.title')}</h2>
+            <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-zinc-500">
+              {t('success.items.title')}
+            </h2>
             {items.length ? (
               <ul className="mt-3 divide-y divide-zinc-200 overflow-hidden rounded-2xl border border-zinc-200 bg-[#f6f7fb]">
                 {items.map((it, i) => {
-                  const label = (it.name && it.name.trim().length ? it.name : productFallback)
+                  const label =
+                    it.name && it.name.trim().length ? it.name : productFallback
                   return (
-                    <li key={`${label}-${i}`} className="flex items-center justify-between gap-4 px-4 py-3 text-sm text-[#0d141c]">
-                      <span className="flex-1 truncate font-medium">{label}</span>
-                      <span className="text-xs font-semibold text-zinc-600">{quantityLabel(it.qty)}</span>
+                    <li
+                      key={`${label}-${i}`}
+                      className="flex items-center justify-between gap-4 px-4 py-3 text-sm text-[#0d141c]"
+                    >
+                      <span className="flex-1 truncate font-medium">
+                        {label}
+                      </span>
+                      <span className="text-xs font-semibold text-zinc-600">
+                        {quantityLabel(it.qty)}
+                      </span>
                     </li>
                   )
                 })}
               </ul>
             ) : (
-              <p className="mt-3 text-sm text-zinc-500">{t('success.items.empty')}</p>
+              <p className="mt-3 text-sm text-zinc-500">
+                {t('success.items.empty')}
+              </p>
             )}
 
             {totalFormatted && (
               <div className="mt-5 flex items-center justify-between rounded-2xl border border-zinc-200 bg-white px-4 py-3">
-                <span className="text-sm font-medium text-zinc-600">{t('success.total.label')}</span>
-                <span className="text-base font-semibold text-[#0d141c]">{totalFormatted}</span>
+                <span className="text-sm font-medium text-zinc-600">
+                  {t('success.total.label')}
+                </span>
+                <span className="text-base font-semibold text-[#0d141c]">
+                  {totalFormatted}
+                </span>
               </div>
             )}
 
             <div className="mt-6 grid gap-3 rounded-2xl border border-dashed border-zinc-200 bg-white px-4 py-4 text-sm text-zinc-600">
               <div className="flex items-center gap-2 text-[#0d141c]">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                >
                   <path d="M12 19v-6" strokeLinecap="round" />
                   <circle cx="12" cy="8" r="1" fill="currentColor" />
                   <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10Z" />

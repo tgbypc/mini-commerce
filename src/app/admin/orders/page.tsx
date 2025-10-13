@@ -2,12 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'react-hot-toast'
-import {
-  ArrowUpRight,
-  Loader2,
-  PackageSearch,
-  RefreshCcw,
-} from 'lucide-react'
+import { ArrowUpRight, Loader2, PackageSearch, RefreshCcw } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 
 type OrderItem = {
@@ -26,7 +21,11 @@ type Order = {
   currency?: string | null
   paymentStatus?: string | null
   status?: 'paid' | 'fulfilled' | 'shipped' | 'delivered' | 'canceled'
-  createdAt?: { seconds?: number; nanoseconds?: number } | string | number | null
+  createdAt?:
+    | { seconds?: number; nanoseconds?: number }
+    | string
+    | number
+    | null
   updatedAt?: unknown
   trackingNumber?: string | null
   carrier?: string | null
@@ -160,10 +159,9 @@ export default function AdminOrdersPage() {
       setOrders(items)
       toast.success('Orders updated', { id: toastId })
     } catch (e) {
-      toast.error(
-        e instanceof Error ? e.message : 'Failed to refresh orders',
-        { id: toastId }
-      )
+      toast.error(e instanceof Error ? e.message : 'Failed to refresh orders', {
+        id: toastId,
+      })
     } finally {
       setRefreshing(false)
     }
@@ -193,7 +191,9 @@ export default function AdminOrdersPage() {
         }
         setOrders((prev) =>
           prev.map((order) =>
-            order.id === id ? { ...order, status: status ?? order.status } : order
+            order.id === id
+              ? { ...order, status: status ?? order.status }
+              : order
           )
         )
         toast.success('Order updated', { id: toastId })
@@ -211,7 +211,8 @@ export default function AdminOrdersPage() {
   const pendingOrders = useMemo(
     () =>
       orders.filter(
-        (order) => order.status && !['delivered', 'canceled'].includes(order.status)
+        (order) =>
+          order.status && !['delivered', 'canceled'].includes(order.status)
       ).length,
     [orders]
   )
@@ -244,7 +245,10 @@ export default function AdminOrdersPage() {
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
             <div className="flex items-center gap-2 rounded-2xl border admin-border bg-[rgb(var(--admin-surface-soft-rgb)/0.9)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-blue-600/70 shadow-[0_12px_30px_-18px_rgba(59,130,246,0.3)]">
-              <PackageSearch className="size-4 text-blue-500" strokeWidth={1.75} />
+              <PackageSearch
+                className="size-4 text-blue-500"
+                strokeWidth={1.75}
+              />
               <span>{orders.length} orders</span>
               <span className="mx-2 h-4 w-px bg-[rgba(var(--admin-border-rgb),0.15)]" />
               <span>{pendingOrders} pending</span>
@@ -276,7 +280,9 @@ export default function AdminOrdersPage() {
               value={statusFilter || ''}
               onChange={(event) => {
                 const value = event.target.value
-                setStatusFilter(value === '' ? '' : isStatus(value) ? value : '')
+                setStatusFilter(
+                  value === '' ? '' : isStatus(value) ? value : ''
+                )
               }}
               className="w-full rounded-xl border admin-border bg-[rgb(var(--admin-surface-soft-rgb)/0.9)] px-4 py-2 text-sm text-[var(--foreground)] focus:border-blue-400/45 focus:outline-none focus:ring-0 sm:w-60"
             >
@@ -330,10 +336,7 @@ export default function AdminOrdersPage() {
                     const status = order.status ?? 'paid'
                     const style = STATUS_STYLES[status] ?? STATUS_STYLES.paid
                     return (
-                      <tr
-                        key={order.id}
-                        className="admin-table-row"
-                      >
+                      <tr key={order.id} className="admin-table-row">
                         <td className="font-semibold">
                           #{order.id.slice(-6).toUpperCase()}
                         </td>
@@ -344,7 +347,10 @@ export default function AdminOrdersPage() {
                           <span className={style.className}>{style.label}</span>
                         </td>
                         <td className="text-right font-semibold">
-                          {formatCurrency(order.amountTotal, order.currency || 'USD')}
+                          {formatCurrency(
+                            order.amountTotal,
+                            order.currency || 'USD'
+                          )}
                         </td>
                         <td className="text-right text-sm text-[rgb(var(--admin-muted-rgb))]">
                           {formatDate(order.createdAt)}
@@ -354,7 +360,10 @@ export default function AdminOrdersPage() {
                             <select
                               value={order.status || 'paid'}
                               onChange={(event) =>
-                                updateStatus(order.id, event.target.value as Order['status'])
+                                updateStatus(
+                                  order.id,
+                                  event.target.value as Order['status']
+                                )
                               }
                               disabled={saving === order.id}
                               className="rounded-xl border admin-border bg-[rgb(var(--admin-surface-soft-rgb)/0.9)] px-3 py-1.5 text-xs text-[var(--foreground)] focus:border-blue-400/45 focus:outline-none focus:ring-0"
@@ -370,7 +379,10 @@ export default function AdminOrdersPage() {
                               className="inline-flex items-center justify-center rounded-xl border admin-border bg-[rgb(var(--admin-surface-soft-rgb)/0.92)] p-2 text-[var(--foreground)] transition hover:border-blue-400/35 hover:bg-blue-500/12"
                               title="View customer record"
                             >
-                              <ArrowUpRight className="size-4" strokeWidth={1.75} />
+                              <ArrowUpRight
+                                className="size-4"
+                                strokeWidth={1.75}
+                              />
                             </button>
                           </div>
                         </td>

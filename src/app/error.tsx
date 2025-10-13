@@ -1,6 +1,12 @@
 'use client'
 
-export default function RootError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+export default function RootError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string }
+  reset: () => void
+}) {
   return (
     <div className="mx-auto max-w-2xl p-6">
       <div className="rounded-2xl border bg-white p-6 shadow-sm">
@@ -18,7 +24,11 @@ export default function RootError({ error, reset }: { error: Error & { digest?: 
           </button>
           <button
             type="button"
-            onClick={() => (typeof window !== 'undefined' ? window.location.reload() : undefined)}
+            onClick={() =>
+              typeof window !== 'undefined'
+                ? window.location.reload()
+                : undefined
+            }
             className="inline-flex rounded-xl bg-black px-4 py-2 text-sm font-medium text-white"
           >
             Reload
@@ -28,4 +38,3 @@ export default function RootError({ error, reset }: { error: Error & { digest?: 
     </div>
   )
 }
-

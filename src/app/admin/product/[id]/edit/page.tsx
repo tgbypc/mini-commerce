@@ -8,12 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import Image from 'next/image'
 import Link from 'next/link'
 import { toast } from 'react-hot-toast'
-import {
-  ArrowLeftCircle,
-  Copy,
-  Loader2,
-  UploadCloud,
-} from 'lucide-react'
+import { ArrowLeftCircle, Copy, Loader2, UploadCloud } from 'lucide-react'
 import { useI18n } from '@/context/I18nContext'
 import { getProductById } from '@/lib/products'
 import type { Product } from '@/types/product'
@@ -34,11 +29,19 @@ const schema = z.object({
   category: z.enum(CATEGORIES),
   brand: z.string().max(50).optional().or(z.literal('')),
   thumbnail: z.string().url('Must be a valid URL').optional().or(z.literal('')),
-  images: z.string().transform((s) => s.trim()).optional().or(z.literal('')),
+  images: z
+    .string()
+    .transform((s) => s.trim())
+    .optional()
+    .or(z.literal('')),
   description: z.string().optional().or(z.literal('')),
   description_en: z.string().optional().or(z.literal('')),
   description_nb: z.string().optional().or(z.literal('')),
-  tags: z.string().transform((s) => s.trim()).optional().or(z.literal('')),
+  tags: z
+    .string()
+    .transform((s) => s.trim())
+    .optional()
+    .or(z.literal('')),
 })
 
 type FormValues = z.infer<typeof schema>
@@ -315,11 +318,15 @@ export default function EditProductPage() {
               </Label>
               <input
                 {...register('title_en')}
-                className={`${inputClass} ${activeLocale !== 'en' ? 'hidden' : ''}`}
+                className={`${inputClass} ${
+                  activeLocale !== 'en' ? 'hidden' : ''
+                }`}
               />
               <input
                 {...register('title_nb')}
-                className={`${inputClass} ${activeLocale !== 'nb' ? 'hidden' : ''}`}
+                className={`${inputClass} ${
+                  activeLocale !== 'nb' ? 'hidden' : ''
+                }`}
               />
             </div>
 
@@ -379,13 +386,26 @@ export default function EditProductPage() {
           <div className="grid gap-4 md:grid-cols-2">
             <div>
               <Label>{t('admin.price')}</Label>
-              <input type="number" step="0.01" {...register('price')} className={inputClass} />
-              {errors.price && <ErrorMessage>{errors.price.message}</ErrorMessage>}
+              <input
+                type="number"
+                step="0.01"
+                {...register('price')}
+                className={inputClass}
+              />
+              {errors.price && (
+                <ErrorMessage>{errors.price.message}</ErrorMessage>
+              )}
             </div>
             <div>
               <Label>{t('admin.stock')}</Label>
-              <input type="number" {...register('stock')} className={inputClass} />
-              {errors.stock && <ErrorMessage>{errors.stock.message}</ErrorMessage>}
+              <input
+                type="number"
+                {...register('stock')}
+                className={inputClass}
+              />
+              {errors.stock && (
+                <ErrorMessage>{errors.stock.message}</ErrorMessage>
+              )}
             </div>
           </div>
 
@@ -406,7 +426,9 @@ export default function EditProductPage() {
             <div>
               <Label>{t('admin.brand')}</Label>
               <input {...register('brand')} className={inputClass} />
-              {errors.brand && <ErrorMessage>{errors.brand.message}</ErrorMessage>}
+              {errors.brand && (
+                <ErrorMessage>{errors.brand.message}</ErrorMessage>
+              )}
             </div>
           </div>
         </FormSection>
@@ -428,7 +450,9 @@ export default function EditProductPage() {
               <div>
                 <Label>Images (comma separated URLs)</Label>
                 <input {...register('images')} className={inputClass} />
-                {errors.images && <ErrorMessage>{errors.images.message}</ErrorMessage>}
+                {errors.images && (
+                  <ErrorMessage>{errors.images.message}</ErrorMessage>
+                )}
               </div>
 
               <div>
@@ -437,9 +461,9 @@ export default function EditProductPage() {
               </div>
             </div>
 
-        <div className="space-y-3 rounded-3xl admin-card admin-card--static p-4">
-          <Label>Upload image</Label>
-          <div className="rounded-2xl admin-card-soft p-4 text-sm text-[rgb(var(--admin-muted-rgb))]">
+            <div className="space-y-3 rounded-3xl admin-card admin-card--static p-4">
+              <Label>Upload image</Label>
+              <div className="rounded-2xl admin-card-soft p-4 text-sm text-[rgb(var(--admin-muted-rgb))]">
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -450,8 +474,11 @@ export default function EditProductPage() {
                     if (!file) return
                     setUploading(true)
                     try {
-                      const token = await user?.getIdToken().catch(() => undefined)
-                      if (!token) throw new Error('Failed to obtain admin token')
+                      const token = await user
+                        ?.getIdToken()
+                        .catch(() => undefined)
+                      if (!token)
+                        throw new Error('Failed to obtain admin token')
                       const formData = new FormData()
                       formData.append('file', file)
                       const res = await fetch('/api/admin/upload', {
@@ -484,7 +511,10 @@ export default function EditProductPage() {
                   className="inline-flex items-center gap-2 rounded-xl border admin-border bg-[rgba(var(--admin-surface-soft-rgb),0.92)] px-3 py-2 text-sm font-semibold text-[var(--foreground)] transition hover:border-blue-400/35 hover:bg-blue-500/12 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {uploading ? (
-                    <Loader2 className="size-4 animate-spin" strokeWidth={1.75} />
+                    <Loader2
+                      className="size-4 animate-spin"
+                      strokeWidth={1.75}
+                    />
                   ) : (
                     <UploadCloud className="size-4" strokeWidth={1.75} />
                   )}
@@ -543,7 +573,9 @@ function FormSection({
     <section className="rounded-3xl admin-card admin-card--static p-6 shadow-[0_18px_40px_-35px_rgba(59,130,246,0.22)]">
       <div className="max-w-2xl">
         <h2 className="text-lg font-semibold">{title}</h2>
-        <p className="text-sm text-[rgb(var(--admin-muted-rgb))]">{description}</p>
+        <p className="text-sm text-[rgb(var(--admin-muted-rgb))]">
+          {description}
+        </p>
       </div>
       <div className="mt-5 space-y-4">{children}</div>
     </section>
@@ -560,9 +592,5 @@ function Label({ children }: { children: ReactNode }) {
 
 function ErrorMessage({ children }: { children?: string }) {
   if (!children) return null
-  return (
-    <p className="mt-1 text-xs font-medium text-rose-600">
-      {children}
-    </p>
-  )
+  return <p className="mt-1 text-xs font-medium text-rose-600">{children}</p>
 }

@@ -41,14 +41,20 @@ export const metadata: Metadata = {
   },
 }
 
-async function fetchInitialProducts(): Promise<{ items: ListItem[]; nextCursor: string | null }> {
+async function fetchInitialProducts(): Promise<{
+  items: ListItem[]
+  nextCursor: string | null
+}> {
   try {
     const baseUrl = getBaseUrl()
     const internalHeaders = getInternalFetchHeaders()
-    const res = await fetch(`${baseUrl}/api/products?limit=20&sort=createdAt-desc&locale=${DEFAULT_LOCALE}`, {
-      next: { revalidate, tags: ['products'] },
-      headers: internalHeaders,
-    })
+    const res = await fetch(
+      `${baseUrl}/api/products?limit=20&sort=createdAt-desc&locale=${DEFAULT_LOCALE}`,
+      {
+        next: { revalidate, tags: ['products'] },
+        headers: internalHeaders,
+      }
+    )
     if (!res.ok) throw new Error(`status_${res.status}`)
     const payload = (await res.json()) as ProductsResponse
     return {
@@ -82,7 +88,11 @@ export default async function HomePage() {
       <Script id="ld-home" type="application/ld+json">
         {JSON.stringify(jsonLd)}
       </Script>
-      <HomeClient initialItems={items} initialNextCursor={nextCursor} initialLocale={DEFAULT_LOCALE} />
+      <HomeClient
+        initialItems={items}
+        initialNextCursor={nextCursor}
+        initialLocale={DEFAULT_LOCALE}
+      />
     </>
   )
 }

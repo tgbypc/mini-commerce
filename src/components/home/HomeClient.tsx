@@ -29,13 +29,19 @@ type HomeClientProps = {
   initialLocale: string
 }
 
-export default function HomeClient({ initialItems, initialNextCursor, initialLocale }: HomeClientProps) {
+export default function HomeClient({
+  initialItems,
+  initialNextCursor,
+  initialLocale,
+}: HomeClientProps) {
   const { t, locale } = useI18n()
   const [items, setItems] = useState<ListItem[]>(initialItems)
   const [loading, setLoading] = useState(initialItems.length === 0)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
-  const [sort, setSort] = useState<'createdAt-desc' | 'price-asc' | 'price-desc' | 'title-asc' | 'title-desc'>('createdAt-desc')
+  const [sort, setSort] = useState<
+    'createdAt-desc' | 'price-asc' | 'price-desc' | 'title-asc' | 'title-desc'
+  >('createdAt-desc')
   const [nextCursor, setNextCursor] = useState<string | null>(initialNextCursor)
   const inFlight = useRef(false)
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -59,15 +65,24 @@ export default function HomeClient({ initialItems, initialNextCursor, initialLoc
     return value === key ? fallback : value
   }
 
-  const searchPlaceholder = resolveMessage('home.searchPlaceholder', 'Search products')
+  const searchPlaceholder = resolveMessage(
+    'home.searchPlaceholder',
+    'Search products'
+  )
   const searchHint = resolveMessage(
     'home.searchHint',
     'Discover products by name, brand or category. Use filters or try a popular search below.'
   )
   const searchCtaLabel = resolveMessage('home.searchCta', 'Search')
-  const quickFiltersLabel = resolveMessage('home.quickFilters', 'Quick filters:')
+  const quickFiltersLabel = resolveMessage(
+    'home.quickFilters',
+    'Quick filters:'
+  )
   const clearLabel = resolveMessage('home.clear', 'Clear')
-  const browseCategoriesLabel = resolveMessage('home.browseByCategory', 'Browse by category')
+  const browseCategoriesLabel = resolveMessage(
+    'home.browseByCategory',
+    'Browse by category'
+  )
 
   async function fetchPage(opts: FetchOptions = {}) {
     if (inFlight.current) return
@@ -76,9 +91,11 @@ export default function HomeClient({ initialItems, initialNextCursor, initialLoc
       if (opts.reset) setLoading(true)
       const params = new URLSearchParams()
       params.set('limit', '20')
-      if (selectedCats.length > 0) params.set('categories', selectedCats.join(','))
+      if (selectedCats.length > 0)
+        params.set('categories', selectedCats.join(','))
       params.set('locale', locale)
-      const querySource = typeof opts.overrideSearch === 'string' ? opts.overrideSearch : search
+      const querySource =
+        typeof opts.overrideSearch === 'string' ? opts.overrideSearch : search
       const q = querySource.trim()
       if (q) params.set('q', q)
       if (sort) params.set('sort', sort)
@@ -88,7 +105,10 @@ export default function HomeClient({ initialItems, initialNextCursor, initialLoc
         cache: 'no-store',
       })
       if (!res.ok) throw new Error(`Failed to load products: ${res.status}`)
-      const data = (await res.json()) as { items: ListItem[]; nextCursor?: string | null }
+      const data = (await res.json()) as {
+        items: ListItem[]
+        nextCursor?: string | null
+      }
       let added = 0
       setItems((prev) => {
         const start = opts.reset ? [] : prev
@@ -104,7 +124,7 @@ export default function HomeClient({ initialItems, initialNextCursor, initialLoc
         }
         return merged
       })
-      setNextCursor(added > 0 ? (data.nextCursor ?? null) : null)
+      setNextCursor(added > 0 ? data.nextCursor ?? null : null)
       setError(null)
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to load products'
@@ -128,11 +148,18 @@ export default function HomeClient({ initialItems, initialNextCursor, initialLoc
   }
 
   function toggleCategory(slug: string) {
-    setSelectedCats((prev) => (prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug]))
+    setSelectedCats((prev) =>
+      prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug]
+    )
   }
 
   const quickCategories = categories.slice(0, 6)
-  const activeCategoryLabels = selectedCats.map((slug) => t(`cat.${slug}`) || CATEGORY_LABELS[slug as typeof CATEGORIES[number]] || slug)
+  const activeCategoryLabels = selectedCats.map(
+    (slug) =>
+      t(`cat.${slug}`) ||
+      CATEGORY_LABELS[slug as (typeof CATEGORIES)[number]] ||
+      slug
+  )
 
   useEffect(() => {
     if (initialItems.length === 0) {
@@ -178,7 +205,10 @@ export default function HomeClient({ initialItems, initialNextCursor, initialLoc
       <div className="mx-auto w-full max-w-[960px]">
         <div className="px-0 py-6 md:px-4">
           <div className="relative overflow-hidden surface-card bg-white/95 backdrop-blur">
-            <div className="absolute inset-y-0 right-[-30%] w-2/3 rounded-full bg-gradient-to-br from-[#e7edf4] via-white to-[#f5f5f5] blur-3xl" aria-hidden />
+            <div
+              className="absolute inset-y-0 right-[-30%] w-2/3 rounded-full bg-gradient-to-br from-[#e7edf4] via-white to-[#f5f5f5] blur-3xl"
+              aria-hidden
+            />
             <div className="relative z-[1] grid gap-6 p-6 md:p-10">
               <div className="space-y-2">
                 <span className="inline-flex items-center rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-zinc-600">
@@ -187,13 +217,25 @@ export default function HomeClient({ initialItems, initialNextCursor, initialLoc
                 <h1 className="text-2xl font-semibold text-[#0d141c] tracking-tight md:text-3xl">
                   {searchPlaceholder}
                 </h1>
-                <p className="max-w-xl text-sm text-zinc-600 md:text-base">{searchHint}</p>
+                <p className="max-w-xl text-sm text-zinc-600 md:text-base">
+                  {searchHint}
+                </p>
               </div>
 
-              <form onSubmit={handleSearchSubmit} role="search" className="w-full">
+              <form
+                onSubmit={handleSearchSubmit}
+                role="search"
+                className="w-full"
+              >
                 <div className="relative flex items-center rounded-2xl border border-[#5b5bd6]/30 bg-white shadow-sm transition focus-within:border-[#5b5bd6] focus-within:shadow-[0_16px_32px_rgba(91,91,214,0.16)]">
                   <span className="pointer-events-none pl-4 text-zinc-500">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 256 256">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="22"
+                      height="22"
+                      fill="currentColor"
+                      viewBox="0 0 256 256"
+                    >
                       <path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z" />
                     </svg>
                   </span>
@@ -210,9 +252,24 @@ export default function HomeClient({ initialItems, initialNextCursor, initialLoc
                       className="mr-2 inline-flex h-8 w-8 items-center justify-center rounded-full border border-zinc-200 text-zinc-500 transition hover:border-zinc-300 hover:text-zinc-700"
                       aria-label={clearLabel}
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path d="M18 6 6 18" strokeWidth="1.5" strokeLinecap="round" />
-                        <path d="m6 6 12 12" strokeWidth="1.5" strokeLinecap="round" />
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                      >
+                        <path
+                          d="M18 6 6 18"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                        />
+                        <path
+                          d="m6 6 12 12"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                        />
                       </svg>
                     </button>
                   )}
@@ -223,9 +280,14 @@ export default function HomeClient({ initialItems, initialNextCursor, initialLoc
               </form>
 
               <div className="flex flex-wrap items-center gap-2 text-sm text-zinc-500">
-                <span className="font-medium text-[#0d141c]">{quickFiltersLabel}</span>
+                <span className="font-medium text-[#0d141c]">
+                  {quickFiltersLabel}
+                </span>
                 {quickCategories.map((slug) => {
-                  const label = t(`cat.${slug}`) || CATEGORY_LABELS[slug as typeof CATEGORIES[number]] || slug
+                  const label =
+                    t(`cat.${slug}`) ||
+                    CATEGORY_LABELS[slug as (typeof CATEGORIES)[number]] ||
+                    slug
                   const active = selectedCats.includes(slug)
                   return (
                     <button
@@ -258,9 +320,14 @@ export default function HomeClient({ initialItems, initialNextCursor, initialLoc
 
         {activeCategoryLabels.length > 0 && (
           <div className="mb-6 flex flex-wrap items-center gap-2 text-sm text-zinc-500">
-            <span className="font-medium text-[#0d141c]">{browseCategoriesLabel}</span>
+            <span className="font-medium text-[#0d141c]">
+              {browseCategoriesLabel}
+            </span>
             {activeCategoryLabels.map((label) => (
-              <span key={label} className="inline-flex items-center rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs font-semibold text-[#0d141c]">
+              <span
+                key={label}
+                className="inline-flex items-center rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs font-semibold text-[#0d141c]"
+              >
                 {label}
               </span>
             ))}
@@ -270,10 +337,17 @@ export default function HomeClient({ initialItems, initialNextCursor, initialLoc
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2 text-sm text-zinc-500">
           <div>
             {t('home.activeFilters')}{' '}
-            <span className="font-semibold text-[#0d141c]">{selectedCats.length || search ? `${selectedCats.length + (search ? 1 : 0)}` : t('home.all')}</span>
+            <span className="font-semibold text-[#0d141c]">
+              {selectedCats.length || search
+                ? `${selectedCats.length + (search ? 1 : 0)}`
+                : t('home.all')}
+            </span>
           </div>
           <div className="flex items-center gap-2">
-            <label htmlFor="home-sort" className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
+            <label
+              htmlFor="home-sort"
+              className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500"
+            >
               {t('home.sortLabel')}
             </label>
             <select
@@ -300,7 +374,10 @@ export default function HomeClient({ initialItems, initialNextCursor, initialLoc
         {loading ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {Array.from({ length: 8 }).map((_, idx) => (
-              <div key={idx} className="h-72 rounded-3xl border border-zinc-200 bg-white/80 shadow animate-pulse" />
+              <div
+                key={idx}
+                className="h-72 rounded-3xl border border-zinc-200 bg-white/80 shadow animate-pulse"
+              />
             ))}
           </div>
         ) : items.length === 0 ? (
@@ -332,12 +409,18 @@ export default function HomeClient({ initialItems, initialNextCursor, initialLoc
                 </div>
                 <div className="flex flex-1 flex-col gap-2 px-4 py-4">
                   <span className="text-xs font-semibold uppercase tracking-[0.22em] text-zinc-500">
-                    {item.category ? t(`cat.${item.category}`) ?? item.category : t('store.bestSellers.unknownCategory')}
+                    {item.category
+                      ? t(`cat.${item.category}`) ?? item.category
+                      : t('store.bestSellers.unknownCategory')}
                   </span>
-                  <h3 className="line-clamp-2 text-sm font-semibold text-[#0d141c]">{item.title}</h3>
+                  <h3 className="line-clamp-2 text-sm font-semibold text-[#0d141c]">
+                    {item.title}
+                  </h3>
                   <div className="mt-auto flex items-center justify-between text-sm font-semibold text-[#0d141c]">
                     <span>{currencyFormatter.format(item.price)}</span>
-                    <span className="text-xs font-medium text-zinc-500">{t('store.bestSellers.cta')}</span>
+                    <span className="text-xs font-medium text-zinc-500">
+                      {t('store.bestSellers.cta')}
+                    </span>
                   </div>
                 </div>
               </Link>

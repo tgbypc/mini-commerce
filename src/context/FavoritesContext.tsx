@@ -1,7 +1,14 @@
 'use client'
 
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
-import { collection, deleteDoc, doc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore'
+import {
+  collection,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  serverTimestamp,
+  setDoc,
+} from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { useAuth } from './AuthContext'
 
@@ -18,12 +25,24 @@ type FavoritesContextType = {
   ids: Set<string>
   count: number
   isFavorite: (productId: string | number) => boolean
-  add: (item: { productId: string | number; title?: string; thumbnail?: string; price?: number }) => Promise<void>
+  add: (item: {
+    productId: string | number
+    title?: string
+    thumbnail?: string
+    price?: number
+  }) => Promise<void>
   remove: (productId: string | number) => Promise<void>
-  toggle: (item: { productId: string | number; title?: string; thumbnail?: string; price?: number }) => Promise<void>
+  toggle: (item: {
+    productId: string | number
+    title?: string
+    thumbnail?: string
+    price?: number
+  }) => Promise<void>
 }
 
-const FavoritesContext = createContext<FavoritesContextType | undefined>(undefined)
+const FavoritesContext = createContext<FavoritesContextType | undefined>(
+  undefined
+)
 
 export function FavoritesProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth()
@@ -59,21 +78,33 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
     return () => unsub()
   }, [user])
 
-  const ids = useMemo(() => new Set(items.map((i) => String(i.productId))), [items])
+  const ids = useMemo(
+    () => new Set(items.map((i) => String(i.productId))),
+    [items]
+  )
   const count = items.length
   const isFavorite = (pid: string | number) => ids.has(String(pid))
 
-  async function add(item: { productId: string | number; title?: string; thumbnail?: string; price?: number }) {
+  async function add(item: {
+    productId: string | number
+    title?: string
+    thumbnail?: string
+    price?: number
+  }) {
     if (!user) return
     const id = String(item.productId)
     const ref = doc(db, 'users', user.uid, 'favorites', id)
-    await setDoc(ref, {
-      productId: id,
-      title: item.title ?? null,
-      thumbnail: item.thumbnail ?? null,
-      price: typeof item.price === 'number' ? item.price : null,
-      addedAt: serverTimestamp(),
-    }, { merge: true })
+    await setDoc(
+      ref,
+      {
+        productId: id,
+        title: item.title ?? null,
+        thumbnail: item.thumbnail ?? null,
+        price: typeof item.price === 'number' ? item.price : null,
+        addedAt: serverTimestamp(),
+      },
+      { merge: true }
+    )
   }
 
   async function remove(productId: string | number) {
@@ -83,7 +114,12 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
     await deleteDoc(ref)
   }
 
-  async function toggle(item: { productId: string | number; title?: string; thumbnail?: string; price?: number }) {
+  async function toggle(item: {
+    productId: string | number
+    title?: string
+    thumbnail?: string
+    price?: number
+  }) {
     if (isFavorite(item.productId)) {
       await remove(item.productId)
     } else {
@@ -91,12 +127,25 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const value: FavoritesContextType = { items, ids, count, isFavorite, add, remove, toggle }
-  return <FavoritesContext.Provider value={value}>{children}</FavoritesContext.Provider>
+  const value: FavoritesContextType = {
+    items,
+    ids,
+    count,
+    isFavorite,
+    add,
+    remove,
+    toggle,
+  }
+  return (
+    <FavoritesContext.Provider value={value}>
+      {children}
+    </FavoritesContext.Provider>
+  )
 }
 
 export function useFavorites() {
   const ctx = useContext(FavoritesContext)
-  if (!ctx) throw new Error('useFavorites must be used within FavoritesProvider')
+  if (!ctx)
+    throw new Error('useFavorites must be used within FavoritesProvider')
   return ctx
 }

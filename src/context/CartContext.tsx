@@ -1,6 +1,14 @@
 'use client'
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, useRef } from 'react'
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+} from 'react'
 import { useAuth } from '@/context/AuthContext'
 
 type CartItem = {
@@ -93,21 +101,16 @@ const CartContext = createContext<CartContextType | undefined>(undefined)
 
 function normalizeCartItem(value: unknown): CartItem {
   const obj =
-    value && typeof value === 'object'
-      ? (value as Record<string, unknown>)
-      : {}
+    value && typeof value === 'object' ? (value as Record<string, unknown>) : {}
   const productId = String(obj.productId ?? obj.id ?? '')
   const title =
-    typeof obj.title === 'string'
-      ? obj.title
-      : String(obj.title ?? '')
+    typeof obj.title === 'string' ? obj.title : String(obj.title ?? '')
   const priceValue =
     typeof obj.price === 'number' ? obj.price : Number(obj.price ?? 0)
   const price = Number.isFinite(priceValue) ? Number(priceValue) : 0
   const thumbnail =
     typeof obj.thumbnail === 'string' ? obj.thumbnail : undefined
-  const qtyValue =
-    typeof obj.qty === 'number' ? obj.qty : Number(obj.qty ?? 1)
+  const qtyValue = typeof obj.qty === 'number' ? obj.qty : Number(obj.qty ?? 1)
   const qty = Math.max(1, Number.isFinite(qtyValue) ? Math.floor(qtyValue) : 1)
 
   return { productId, title, price, thumbnail, qty }
@@ -115,15 +118,15 @@ function normalizeCartItem(value: unknown): CartItem {
 
 function parseCartItemsInput(value: unknown): CartItem[] {
   if (!Array.isArray(value)) return []
-  return value
-    .map(normalizeCartItem)
-    .filter((item) => item.productId)
+  return value.map(normalizeCartItem).filter((item) => item.productId)
 }
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(reducer, { items: [] })
   const { user } = useAuth()
-  const lastAddRef = useRef<{ id: string; qty: number; ts: number } | null>(null)
+  const lastAddRef = useRef<{ id: string; qty: number; ts: number } | null>(
+    null
+  )
 
   const loadFromStorage = useCallback(() => {
     try {
@@ -156,17 +159,23 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         // Helper: read LS cart directly
         const readLS = (): CartItem[] => {
           try {
-            const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('mc_cart')
+            const raw =
+              localStorage.getItem(STORAGE_KEY) ||
+              localStorage.getItem('mc_cart')
             if (!raw) return []
             const parsed = JSON.parse(raw) as unknown
             if (!parsed || typeof parsed !== 'object') return []
             const items = (parsed as { items?: unknown }).items
             return parseCartItemsInput(items)
-          } catch { return [] }
+          } catch {
+            return []
+          }
         }
 
         // 1) Fetch server cart
-        const res = await fetch('/api/user/cart', { headers: { Authorization: `Bearer ${token}` } })
+        const res = await fetch('/api/user/cart', {
+          headers: { Authorization: `Bearer ${token}` },
+        })
         const data = (await res.json()) as unknown
         const serverItems: CartItem[] = (() => {
           if (!data || typeof data !== 'object') return []
@@ -179,7 +188,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         if (serverItems.length > 0) {
           // Prefer server as source of truth
           dispatch({ type: 'LOAD', state: { items: serverItems } })
-          try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ items: serverItems })) } catch {}
+          try {
+            localStorage.setItem(
+              STORAGE_KEY,
+              JSON.stringify({ items: serverItems })
+            )
+          } catch {}
           return
         }
 
@@ -241,7 +255,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     // Guard against accidental double-invocation (e.g., rapid double click)
     const now = Date.now()
     const last = lastAddRef.current
-    if (last && last.id === productId && last.qty === safeQty && now - last.ts < 300) {
+    if (
+      last &&
+      last.id === productId &&
+      last.qty === safeQty &&
+      now - last.ts < 300
+    ) {
       return
     }
     lastAddRef.current = { id: productId, qty: safeQty, ts: now }
@@ -262,7 +281,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             'Content-Type': 'application/json',
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
-          body: JSON.stringify({ productId, qty: safeQty, title, price: safePrice, thumbnail }),
+          body: JSON.stringify({
+            productId,
+            qty: safeQty,
+            title,
+            price: safePrice,
+            thumbnail,
+          }),
         }).catch(() => {})
       }
     } catch {}

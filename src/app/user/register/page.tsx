@@ -2,7 +2,12 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { GoogleAuthProvider, createUserWithEmailAndPassword, signInWithPopup, updateProfile } from 'firebase/auth'
+import {
+  GoogleAuthProvider,
+  createUserWithEmailAndPassword,
+  signInWithPopup,
+  updateProfile,
+} from 'firebase/auth'
 import { auth } from '@/lib/firebase'
 import { toast } from 'react-hot-toast'
 import { useI18n } from '@/context/I18nContext'
@@ -33,7 +38,11 @@ export default function RegisterPage() {
         return
       }
 
-      const cred = await createUserWithEmailAndPassword(auth, normalizedEmail, normalizedPassword)
+      const cred = await createUserWithEmailAndPassword(
+        auth,
+        normalizedEmail,
+        normalizedPassword
+      )
       if (name.trim()) {
         try {
           await updateProfile(cred.user, { displayName: name.trim() })
@@ -50,15 +59,21 @@ export default function RegisterPage() {
           },
         })
         if (!res.ok) {
-          const data = (await res.json().catch(() => ({}))) as { error?: string }
-          const message = data.error || 'Verification email could not be sent. Please try again later.'
+          const data = (await res.json().catch(() => ({}))) as {
+            error?: string
+          }
+          const message =
+            data.error ||
+            'Verification email could not be sent. Please try again later.'
           toast.error(message)
         } else {
           toast.success('Verification email sent. Please check your inbox.')
         }
       } catch (verificationError) {
         console.error('Verification email failed', verificationError)
-        toast.error('Could not send verification email. Please resend from your profile later.')
+        toast.error(
+          'Could not send verification email. Please resend from your profile later.'
+        )
       }
       router.push('/user/profile')
     } catch (error) {
@@ -113,15 +128,24 @@ export default function RegisterPage() {
         </div>
         <div className="space-y-4 text-sm text-zinc-500 dark:text-zinc-300/80">
           <div className="flex items-start gap-3">
-            <span className="mt-1 size-2 rounded-full bg-fuchsia-400" aria-hidden />
+            <span
+              className="mt-1 size-2 rounded-full bg-fuchsia-400"
+              aria-hidden
+            />
             <span>{t('auth.register.benefits.one')}</span>
           </div>
           <div className="flex items-start gap-3">
-            <span className="mt-1 size-2 rounded-full bg-fuchsia-400" aria-hidden />
+            <span
+              className="mt-1 size-2 rounded-full bg-fuchsia-400"
+              aria-hidden
+            />
             <span>{t('auth.register.benefits.two')}</span>
           </div>
           <div className="flex items-start gap-3">
-            <span className="mt-1 size-2 rounded-full bg-fuchsia-400" aria-hidden />
+            <span
+              className="mt-1 size-2 rounded-full bg-fuchsia-400"
+              aria-hidden
+            />
             <span>{t('auth.register.benefits.three')}</span>
           </div>
         </div>
@@ -163,9 +187,9 @@ export default function RegisterPage() {
           </div>
           <div className="grid gap-5 sm:grid-cols-2 sm:auto-rows-fr">
             <div className="space-y-2">
-            <label className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-600 dark:text-zinc-300 whitespace-nowrap">
-              {t('auth.labels.password')}
-            </label>
+              <label className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-600 dark:text-zinc-300 whitespace-nowrap">
+                {t('auth.labels.password')}
+              </label>
               <input
                 type="password"
                 value={password}
@@ -212,19 +236,42 @@ export default function RegisterPage() {
             disabled={socialLoading}
             className="inline-flex w-full items-center justify-center gap-3 rounded-2xl border border-zinc-200 bg-white px-6 py-3 text-sm font-semibold text-[#0d141c] shadow-[0_18px_42px_-30px_rgba(15,23,42,0.45)] transition hover:-translate-y-0.5 hover:border-zinc-300 hover:bg-white/95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:border-white/10 dark:bg-[rgba(24,28,38,0.9)] dark:text-white dark:shadow-[0_24px_52px_-32px_rgba(2,6,16,0.6)] dark:hover:border-white/20 dark:hover:bg-[rgba(30,34,46,0.95)] dark:focus-visible:ring-indigo-400/30 dark:focus-visible:ring-offset-[rgba(13,18,28,0.8)]"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <path d="M21.6 12.227c0-.68-.06-1.333-.173-1.96H12v3.708h5.382c-.232 1.25-.937 2.31-1.992 3.022v2.513h3.226c1.89-1.739 2.984-4.3 2.984-7.283Z" fill="#4285F4" />
-              <path d="M12 22c2.7 0 4.968-.894 6.624-2.41l-3.226-2.513c-.894.6-2.037.955-3.398.955-2.615 0-4.828-1.765-5.619-4.128H3.06v2.593C4.704 19.983 8.034 22 12 22Z" fill="#34A853" />
-              <path d="M6.381 13.904a5.983 5.983 0 0 1 0-3.808V7.503H3.06a9.998 9.998 0 0 0 0 8.994l3.321-2.593Z" fill="#FBBC05" />
-              <path d="M12 6.08c1.47 0 2.788.505 3.826 1.5l2.872-2.873C16.963 2.931 14.695 2 12 2 8.034 2 4.704 4.017 3.06 7.503l3.321 2.593C7.172 7.845 9.385 6.08 12 6.08Z" fill="#EA4335" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+            >
+              <path
+                d="M21.6 12.227c0-.68-.06-1.333-.173-1.96H12v3.708h5.382c-.232 1.25-.937 2.31-1.992 3.022v2.513h3.226c1.89-1.739 2.984-4.3 2.984-7.283Z"
+                fill="#4285F4"
+              />
+              <path
+                d="M12 22c2.7 0 4.968-.894 6.624-2.41l-3.226-2.513c-.894.6-2.037.955-3.398.955-2.615 0-4.828-1.765-5.619-4.128H3.06v2.593C4.704 19.983 8.034 22 12 22Z"
+                fill="#34A853"
+              />
+              <path
+                d="M6.381 13.904a5.983 5.983 0 0 1 0-3.808V7.503H3.06a9.998 9.998 0 0 0 0 8.994l3.321-2.593Z"
+                fill="#FBBC05"
+              />
+              <path
+                d="M12 6.08c1.47 0 2.788.505 3.826 1.5l2.872-2.873C16.963 2.931 14.695 2 12 2 8.034 2 4.704 4.017 3.06 7.503l3.321 2.593C7.172 7.845 9.385 6.08 12 6.08Z"
+                fill="#EA4335"
+              />
             </svg>
-            {socialLoading ? t('auth.register.googleLoading') : t('auth.register.googleCta')}
+            {socialLoading
+              ? t('auth.register.googleLoading')
+              : t('auth.register.googleCta')}
           </button>
         </div>
 
         <p className="mt-6 text-sm text-zinc-500 dark:text-zinc-300/80">
           {t('auth.register.footer')}{' '}
-          <a href="/user/login" className="font-medium text-indigo-500 transition hover:text-indigo-600 dark:text-indigo-300 dark:hover:text-indigo-200">
+          <a
+            href="/user/login"
+            className="font-medium text-indigo-500 transition hover:text-indigo-600 dark:text-indigo-300 dark:hover:text-indigo-200"
+          >
             {t('auth.register.switchLink')}
           </a>
         </p>

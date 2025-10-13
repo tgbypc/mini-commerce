@@ -15,11 +15,14 @@ export default function ErrorState({
       <p className="mt-1 text-sm text-rose-600">{message}</p>
       {retry && (
         <div className="pt-3">
-          <button onClick={retry} className="rounded-xl border px-4 py-2 text-sm font-medium hover:bg-zinc-50">
+          <button
+            onClick={retry}
+            className="rounded-xl border px-4 py-2 text-sm font-medium hover:bg-zinc-50"
+          >
             Try again
           </button>
         </div>
       )}
     </div>
-  )}
-
+  )
+}

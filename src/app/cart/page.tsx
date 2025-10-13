@@ -58,7 +58,10 @@ export default function CartPage() {
         locale?: 'en' | 'nb'
       }
       const payload: CheckoutBody = {
-        items: state.items.map((i) => ({ productId: i.productId, quantity: i.qty })),
+        items: state.items.map((i) => ({
+          productId: i.productId,
+          quantity: i.qty,
+        })),
       }
       if (user?.uid) payload.uid = user.uid
       if (user?.email) payload.email = user.email
@@ -109,7 +112,9 @@ export default function CartPage() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 md:px-8">
       <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">{t('cart.title')}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
+          {t('cart.title')}
+        </h1>
         <p className="text-sm text-zinc-600">{subtitle}</p>
       </div>
 
@@ -117,7 +122,9 @@ export default function CartPage() {
         <div className="space-y-4">
           {state.items.map((it) => {
             const imageSrc = (it.thumbnail ?? '').trim() || '/placeholder.png'
-            const unitPrice = Number.isFinite(it.price) ? it.price : Number(it.price ?? 0)
+            const unitPrice = Number.isFinite(it.price)
+              ? it.price
+              : Number(it.price ?? 0)
             const lineTotal = unitPrice * it.qty
             const title = (it.title ?? '').trim() || t('cart.productFallback')
             const imageAlt = t('cart.imageAlt').replace('{product}', title)
@@ -148,7 +155,9 @@ export default function CartPage() {
                         <span>
                           {t('cart.unitPrice')}: {currency.format(unitPrice)}
                         </span>
-                        <span aria-hidden className="hidden sm:inline">•</span>
+                        <span aria-hidden className="hidden sm:inline">
+                          •
+                        </span>
                         <span>
                           {t('cart.lineTotal')}: {currency.format(lineTotal)}
                         </span>
@@ -164,7 +173,9 @@ export default function CartPage() {
                         >
                           -
                         </button>
-                        <span className="min-w-[3rem] text-center font-medium text-zinc-900">{it.qty}</span>
+                        <span className="min-w-[3rem] text-center font-medium text-zinc-900">
+                          {it.qty}
+                        </span>
                         <button
                           type="button"
                           className="h-10 w-10 text-lg font-medium text-zinc-600 transition hover:text-black"
@@ -188,11 +199,17 @@ export default function CartPage() {
                           stroke="currentColor"
                           strokeWidth="1.5"
                         >
-                          <path d="m4 7 1.24 12.15A2 2 0 0 0 7.22 21h9.56a2 2 0 0 0 1.98-1.85L20 7" strokeLinecap="round" />
+                          <path
+                            d="m4 7 1.24 12.15A2 2 0 0 0 7.22 21h9.56a2 2 0 0 0 1.98-1.85L20 7"
+                            strokeLinecap="round"
+                          />
                           <path d="M10 11v6" strokeLinecap="round" />
                           <path d="M14 11v6" strokeLinecap="round" />
                           <path d="M3 7h18" strokeLinecap="round" />
-                          <path d="M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3" strokeLinecap="round" />
+                          <path
+                            d="M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"
+                            strokeLinecap="round"
+                          />
                         </svg>
                         <span>{t('cart.remove')}</span>
                       </button>
@@ -205,7 +222,9 @@ export default function CartPage() {
         </div>
 
         <aside className="h-fit rounded-3xl border border-zinc-200 bg-white/90 p-6 shadow-sm backdrop-blur lg:sticky lg:top-24">
-          <h2 className="text-lg font-semibold text-zinc-900">{t('cart.summary.title')}</h2>
+          <h2 className="text-lg font-semibold text-zinc-900">
+            {t('cart.summary.title')}
+          </h2>
           <div className="mt-4 space-y-3 text-sm">
             <div className="flex items-center justify-between text-zinc-600">
               <span>{summaryProductsLabel}</span>
@@ -223,7 +242,9 @@ export default function CartPage() {
               <span>{t('cart.summary.subtotal')}</span>
               <span>{currency.format(total)}</span>
             </div>
-            <p className="mt-2 text-xs text-zinc-500">{t('cart.summary.taxNote')}</p>
+            <p className="mt-2 text-xs text-zinc-500">
+              {t('cart.summary.taxNote')}
+            </p>
           </div>
           <button
             onClick={checkout}

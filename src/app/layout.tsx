@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import './globals.css'
+import './global.css'
 import { Inter, Roboto_Mono } from 'next/font/google'
 import { Toaster } from 'react-hot-toast'
 import { CartProvider } from '@/context/CartContext'

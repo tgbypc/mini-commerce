@@ -2,7 +2,13 @@
 
 import Link from 'next/link'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { ArrowUpRight, Boxes, ClipboardList, Sparkles, TrendingUp } from 'lucide-react'
+import {
+  ArrowUpRight,
+  Boxes,
+  ClipboardList,
+  Sparkles,
+  TrendingUp,
+} from 'lucide-react'
 import { getAllProducts } from '@/lib/products'
 import type { Product } from '@/types/product'
 import { useAuth } from '@/context/AuthContext'
@@ -122,7 +128,8 @@ function formatDate(input: Order['createdAt']) {
         const nanos =
           typeof (input as { nanoseconds?: number }).nanoseconds === 'number'
             ? (input as { nanoseconds: number }).nanoseconds
-            : typeof (input as { _nanoseconds?: number })._nanoseconds === 'number'
+            : typeof (input as { _nanoseconds?: number })._nanoseconds ===
+              'number'
             ? (input as { _nanoseconds: number })._nanoseconds
             : 0
         if (typeof seconds === 'number') {
@@ -197,14 +204,13 @@ export default function AdminHome() {
     }
   }, [user])
 
-  const productStats = useMemo(
-    () => computeProductStats(products),
-    [products]
-  )
+  const productStats = useMemo(() => computeProductStats(products), [products])
   const orderStats = useMemo(() => computeOrderStats(orders), [orders])
   const recentOrders = useMemo(() => orders.slice(0, 6), [orders])
   const primaryCurrency = useMemo(
-    () => orders.find((order) => typeof order.currency === 'string')?.currency || 'USD',
+    () =>
+      orders.find((order) => typeof order.currency === 'string')?.currency ||
+      'USD',
     [orders]
   )
 
@@ -254,14 +260,18 @@ export default function AdminHome() {
               <p className="mt-2 text-2xl font-semibold">
                 {loadingOrders ? '—' : orderStats.openOrders}
               </p>
-              <p className="mt-1 text-xs text-[rgb(var(--admin-muted-rgb))]">Need fulfillment</p>
+              <p className="mt-1 text-xs text-[rgb(var(--admin-muted-rgb))]">
+                Need fulfillment
+              </p>
             </div>
             <div className="admin-metric-card space-y-2">
               <p className="text-xs uppercase tracking-[0.28em] text-blue-600/60">
                 Revenue
               </p>
               <p className="mt-2 text-2xl font-semibold">
-                {loadingOrders ? '—' : fmtCurrency(orderStats.revenue, primaryCurrency || 'USD')}
+                {loadingOrders
+                  ? '—'
+                  : fmtCurrency(orderStats.revenue, primaryCurrency || 'USD')}
               </p>
               <p className="mt-1 text-xs text-[rgb(var(--admin-muted-rgb))]">
                 Lifetime from Stripe
@@ -276,13 +286,22 @@ export default function AdminHome() {
               Quick actions
             </p>
             <div className="mt-4 space-y-3">
-              <ActionLink href="/admin/product" icon={<Boxes className="size-4" strokeWidth={1.75} />}>
+              <ActionLink
+                href="/admin/product"
+                icon={<Boxes className="size-4" strokeWidth={1.75} />}
+              >
                 Review catalog
               </ActionLink>
-              <ActionLink href="/admin/orders" icon={<ClipboardList className="size-4" strokeWidth={1.75} />}>
+              <ActionLink
+                href="/admin/orders"
+                icon={<ClipboardList className="size-4" strokeWidth={1.75} />}
+              >
                 Fulfill orders
               </ActionLink>
-              <ActionLink href="/admin/product/new" icon={<TrendingUp className="size-4" strokeWidth={1.75} />}>
+              <ActionLink
+                href="/admin/product/new"
+                icon={<TrendingUp className="size-4" strokeWidth={1.75} />}
+              >
                 Launch campaign
               </ActionLink>
             </div>
@@ -292,7 +311,9 @@ export default function AdminHome() {
               Inventory watchlist
             </p>
             {loadingProducts ? (
-              <p className="mt-4 text-sm text-[rgb(var(--admin-muted-rgb))]">Loading…</p>
+              <p className="mt-4 text-sm text-[rgb(var(--admin-muted-rgb))]">
+                Loading…
+              </p>
             ) : productStats.lowStock === 0 && productStats.outOfStock === 0 ? (
               <p className="mt-4 text-sm text-[rgb(var(--admin-muted-rgb))]">
                 All products look healthy 🎉
@@ -351,13 +372,19 @@ export default function AdminHome() {
             <tbody className="admin-table-body">
               {loadingOrders ? (
                 <tr>
-                  <td colSpan={5} className="py-6 text-center text-[rgb(var(--admin-muted-rgb))]">
+                  <td
+                    colSpan={5}
+                    className="py-6 text-center text-[rgb(var(--admin-muted-rgb))]"
+                  >
                     Loading orders…
                   </td>
                 </tr>
               ) : recentOrders.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-6 text-center text-[rgb(var(--admin-muted-rgb))]">
+                  <td
+                    colSpan={5}
+                    className="py-6 text-center text-[rgb(var(--admin-muted-rgb))]"
+                  >
                     No orders yet. Your first sale will appear here.
                   </td>
                 </tr>
@@ -373,8 +400,9 @@ export default function AdminHome() {
                     <td>
                       <span
                         className={
-                          DASHBOARD_STATUS_STYLES[(order.status || 'paid').toLowerCase()] ??
-                          'admin-chip admin-chip--paid'
+                          DASHBOARD_STATUS_STYLES[
+                            (order.status || 'paid').toLowerCase()
+                          ] ?? 'admin-chip admin-chip--paid'
                         }
                       >
                         {(order.status || 'paid').toUpperCase()}
@@ -384,8 +412,9 @@ export default function AdminHome() {
                       {fmtCurrency(
                         typeof order.amountTotal === 'number'
                           ? order.amountTotal
-                          : Number(order.amountTotal) || 0
-                      , order.currency || primaryCurrency || 'USD')}
+                          : Number(order.amountTotal) || 0,
+                        order.currency || primaryCurrency || 'USD'
+                      )}
                     </td>
                     <td className="text-right text-[rgb(var(--admin-muted-rgb))]">
                       {formatDate(order.createdAt)}
@@ -411,14 +440,9 @@ function ActionLink({
   children: ReactNode
 }) {
   return (
-    <Link
-      href={href}
-      className="admin-quick-link text-sm font-semibold"
-    >
+    <Link href={href} className="admin-quick-link text-sm font-semibold">
       <span className="flex items-center gap-3">
-        <span className="admin-quick-link-icon">
-          {icon}
-        </span>
+        <span className="admin-quick-link-icon">{icon}</span>
         <span>{children}</span>
       </span>
       <ArrowUpRight className="admin-quick-link-chevron" strokeWidth={1.75} />

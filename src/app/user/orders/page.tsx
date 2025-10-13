@@ -48,7 +48,8 @@ function resolveDate(createdAt: OrderDoc['createdAt']) {
     const nanos =
       typeof (createdAt as { nanoseconds?: number }).nanoseconds === 'number'
         ? (createdAt as { nanoseconds?: number }).nanoseconds
-        : typeof (createdAt as { _nanoseconds?: number })._nanoseconds === 'number'
+        : typeof (createdAt as { _nanoseconds?: number })._nanoseconds ===
+          'number'
         ? (createdAt as { _nanoseconds?: number })._nanoseconds
         : 0
     if (typeof seconds === 'number') {
@@ -69,15 +70,14 @@ export default function OrdersPage() {
   const localeTag = locale === 'nb' ? 'nb-NO' : 'en-US'
 
   const formatCurrency = useMemo(
-    () =>
-      (value: number, currency: string | null | undefined) => {
-        const safeCurrency = (currency || 'USD').toUpperCase()
-        const amount = Number.isFinite(value) ? value : 0
-        return new Intl.NumberFormat(localeTag, {
-          style: 'currency',
-          currency: safeCurrency,
-        }).format(amount)
-      },
+    () => (value: number, currency: string | null | undefined) => {
+      const safeCurrency = (currency || 'USD').toUpperCase()
+      const amount = Number.isFinite(value) ? value : 0
+      return new Intl.NumberFormat(localeTag, {
+        style: 'currency',
+        currency: safeCurrency,
+      }).format(amount)
+    },
     [localeTag]
   )
 
@@ -126,7 +126,9 @@ export default function OrdersPage() {
       try {
         setLoading(true)
         const token = await user.getIdToken()
-        const res = await fetch('/api/user/orders', { headers: { Authorization: `Bearer ${token}` } })
+        const res = await fetch('/api/user/orders', {
+          headers: { Authorization: `Bearer ${token}` },
+        })
         if (!res.ok) throw new Error('Failed to fetch orders')
         const data = (await res.json()) as OrderDoc[]
         setOrders(data)
@@ -144,8 +146,12 @@ export default function OrdersPage() {
     return (
       <div className="min-h-[60vh] bg-[#f6f7fb] px-4 py-10">
         <div className="mx-auto w-full max-w-4xl rounded-3xl border border-zinc-200 bg-white/90 px-6 py-10 text-center shadow-[0_18px_36px_rgba(15,23,42,0.08)]">
-          <h1 className="text-2xl font-semibold text-[#0d141c]">{t('orders.title')}</h1>
-          <p className="mt-2 text-sm text-zinc-600">{t('orders.loginPrompt')}</p>
+          <h1 className="text-2xl font-semibold text-[#0d141c]">
+            {t('orders.title')}
+          </h1>
+          <p className="mt-2 text-sm text-zinc-600">
+            {t('orders.loginPrompt')}
+          </p>
           <Link
             href="/user/login"
             className="mt-6 inline-flex items-center justify-center rounded-full bg-[var(--color-primary-dark)] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[var(--color-primary)]"
@@ -173,7 +179,9 @@ export default function OrdersPage() {
       <div className="bg-[#f6f7fb] px-4 py-10">
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
           <div className="rounded-3xl border border-zinc-200 bg-white/90 px-6 py-8 text-center shadow-[0_18px_36px_rgba(15,23,42,0.08)]">
-            <h1 className="text-2xl font-semibold text-[#0d141c]">{t('orders.title')}</h1>
+            <h1 className="text-2xl font-semibold text-[#0d141c]">
+              {t('orders.title')}
+            </h1>
             <p className="mt-2 text-sm text-zinc-600">{t('orders.empty')}</p>
             <Link
               href="/"
@@ -188,14 +196,20 @@ export default function OrdersPage() {
   }
 
   const totalSpent = orders.reduce((sum, o) => {
-    const amount = typeof o.amountTotal === 'number' ? o.amountTotal : Number(o.amountTotal ?? 0)
+    const amount =
+      typeof o.amountTotal === 'number'
+        ? o.amountTotal
+        : Number(o.amountTotal ?? 0)
     return sum + (Number.isFinite(amount) ? amount : 0)
   }, 0)
   const averageSpent = orders.length > 0 ? totalSpent / orders.length : 0
   const primaryCurrency = (orders[0]?.currency ?? 'USD').toUpperCase()
 
   const summarySubtitle = t('orders.summary.subtitle')
-  const countLabel = t('orders.summary.count').replace('{count}', String(orders.length))
+  const countLabel = t('orders.summary.count').replace(
+    '{count}',
+    String(orders.length)
+  )
   const totalLabelText = t('orders.summary.totalLabel')
   const totalValue = t('orders.summary.totalValue').replace(
     '{amount}',
@@ -207,31 +221,50 @@ export default function OrdersPage() {
     formatCurrency(averageSpent || 0, primaryCurrency)
   )
 
-  const capitalize = (value: string) => (value ? value.charAt(0).toUpperCase() + value.slice(1) : value)
+  const capitalize = (value: string) =>
+    value ? value.charAt(0).toUpperCase() + value.slice(1) : value
 
   return (
     <div className="bg-[#f6f7fb] px-4 py-10">
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
         <div className="relative overflow-hidden rounded-3xl border border-zinc-200 bg-white/95 px-6 py-8 shadow-[0_24px_48px_rgba(15,23,42,0.08)] md:px-10">
-          <div className="absolute left-6 top-6 size-20 rounded-full bg-gradient-to-br from-[#dbeafe] to-[#f5f3ff] blur-3xl" aria-hidden />
-          <div className="absolute -right-12 bottom-0 h-36 w-36 rounded-full bg-gradient-to-br from-[#f1f5f9] to-white blur-2xl" aria-hidden />
+          <div
+            className="absolute left-6 top-6 size-20 rounded-full bg-gradient-to-br from-[#dbeafe] to-[#f5f3ff] blur-3xl"
+            aria-hidden
+          />
+          <div
+            className="absolute -right-12 bottom-0 h-36 w-36 rounded-full bg-gradient-to-br from-[#f1f5f9] to-white blur-2xl"
+            aria-hidden
+          />
           <div className="relative z-[1] flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
             <div className="space-y-2">
-              <h1 className="text-2xl font-semibold text-[#0d141c]">{t('orders.title')}</h1>
-              <p className="max-w-xl text-sm text-zinc-600">{summarySubtitle}</p>
+              <h1 className="text-2xl font-semibold text-[#0d141c]">
+                {t('orders.title')}
+              </h1>
+              <p className="max-w-xl text-sm text-zinc-600">
+                {summarySubtitle}
+              </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-[#0d141c] shadow-sm">
-                <div className="text-xs font-semibold uppercase tracking-[0.25em] text-zinc-500">{t('orders.orderCard.label')}</div>
+                <div className="text-xs font-semibold uppercase tracking-[0.25em] text-zinc-500">
+                  {t('orders.orderCard.label')}
+                </div>
                 <div className="mt-1 text-base font-semibold">{countLabel}</div>
               </div>
               <div className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-[#0d141c] shadow-sm">
-                <div className="text-xs font-semibold uppercase tracking-[0.25em] text-zinc-500">{totalLabelText}</div>
+                <div className="text-xs font-semibold uppercase tracking-[0.25em] text-zinc-500">
+                  {totalLabelText}
+                </div>
                 <div className="mt-1 text-base font-semibold">{totalValue}</div>
               </div>
               <div className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-[#0d141c] shadow-sm">
-                <div className="text-xs font-semibold uppercase tracking-[0.25em] text-zinc-500">{averageLabelText}</div>
-                <div className="mt-1 text-base font-semibold">{averageValue}</div>
+                <div className="text-xs font-semibold uppercase tracking-[0.25em] text-zinc-500">
+                  {averageLabelText}
+                </div>
+                <div className="mt-1 text-base font-semibold">
+                  {averageValue}
+                </div>
               </div>
             </div>
           </div>
@@ -255,14 +288,23 @@ export default function OrdersPage() {
             const status = String(o.status || 'paid').toLowerCase()
             const paymentStatus = String(o.paymentStatus || '').toLowerCase()
 
-            const statusLabel = statusLabels[status as keyof typeof statusLabels] ?? capitalize(status)
+            const statusLabel =
+              statusLabels[status as keyof typeof statusLabels] ??
+              capitalize(status)
             const paymentLabel = paymentStatus
-              ? paymentLabels[paymentStatus as keyof typeof paymentLabels] ?? capitalize(paymentStatus)
+              ? paymentLabels[paymentStatus as keyof typeof paymentLabels] ??
+                capitalize(paymentStatus)
               : null
             const orderLabel = `${t('orders.orderCard.label')} #${o.id}`
             const totalLabelCard = t('orders.orderCard.total')
-            const itemsLabel = t('orders.orderCard.items').replace('{count}', String(count))
-            const sessionLabel = t('orders.orderCard.session').replace('{id}', o.sessionId || 'N/A')
+            const itemsLabel = t('orders.orderCard.items').replace(
+              '{count}',
+              String(count)
+            )
+            const sessionLabel = t('orders.orderCard.session').replace(
+              '{id}',
+              o.sessionId || 'N/A'
+            )
             const detailLabel = t('orders.orderCard.details')
             const placedLabel = when
               ? t('orders.orderCard.placedOn').replace('{date}', when)
@@ -271,18 +313,34 @@ export default function OrdersPage() {
             const steps = [
               { key: 'paid', icon: '💳', label: statusLabels.paid },
               { key: 'fulfilled', icon: '📦', label: statusLabels.fulfilled },
-              { key: 'shipped', icon: '🚚', label: statusLabels.shipped ?? statusLabels.fulfilled },
-              { key: 'delivered', icon: '🏡', label: statusLabels.delivered ?? statusLabels.complete },
+              {
+                key: 'shipped',
+                icon: '🚚',
+                label: statusLabels.shipped ?? statusLabels.fulfilled,
+              },
+              {
+                key: 'delivered',
+                icon: '🏡',
+                label: statusLabels.delivered ?? statusLabels.complete,
+              },
             ] as const
             const activeIdx = Math.max(
               0,
-              steps.findIndex((step) => step.key === (status as typeof steps[number]['key']))
+              steps.findIndex(
+                (step) => step.key === (status as (typeof steps)[number]['key'])
+              )
             )
             const totalSegments = Math.max(steps.length - 1, 1)
-            const progressPercent = Math.min(100, Math.max(0, (activeIdx / totalSegments) * 100))
+            const progressPercent = Math.min(
+              100,
+              Math.max(0, (activeIdx / totalSegments) * 100)
+            )
 
             const previewItems = (o.items ?? []).slice(0, 2)
-            const extraCount = Math.max(0, (o.items?.length ?? 0) - previewItems.length)
+            const extraCount = Math.max(
+              0,
+              (o.items?.length ?? 0) - previewItems.length
+            )
 
             return (
               <div
@@ -291,22 +349,50 @@ export default function OrdersPage() {
               >
                 <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                   <div className="space-y-1">
-                    <div className="text-xs font-semibold uppercase tracking-[0.25em] text-zinc-500 break-all md:break-normal">{orderLabel}</div>
-                    {placedLabel && <div className="text-sm text-zinc-600">{placedLabel}</div>}
+                    <div className="text-xs font-semibold uppercase tracking-[0.25em] text-zinc-500 break-all md:break-normal">
+                      {orderLabel}
+                    </div>
+                    {placedLabel && (
+                      <div className="text-sm text-zinc-600">{placedLabel}</div>
+                    )}
                     <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                      >
                         <path d="M5 12h14" strokeLinecap="round" />
-                        <path d="m12 5 7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+                        <path
+                          d="m12 5 7 7-7 7"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
                       </svg>
                       {statusLabel}
                     </div>
                   </div>
                   <div className="space-y-2 text-left md:text-right">
-                    <div className="text-xs font-semibold uppercase tracking-[0.25em] text-zinc-500">{totalLabelCard}</div>
-                    <div className="mt-1 text-lg font-semibold text-[#0d141c]">{formatCurrency(totalMajor, currency)}</div>
+                    <div className="text-xs font-semibold uppercase tracking-[0.25em] text-zinc-500">
+                      {totalLabelCard}
+                    </div>
+                    <div className="mt-1 text-lg font-semibold text-[#0d141c]">
+                      {formatCurrency(totalMajor, currency)}
+                    </div>
                     {paymentLabel && (
                       <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs font-medium text-zinc-600">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="12"
+                          height="12"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                        >
                           <rect x="2" y="5" width="20" height="14" rx="2" />
                           <path d="M2 10h20" />
                         </svg>
@@ -331,7 +417,15 @@ export default function OrdersPage() {
                   </div>
                   <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-zinc-500">
                     <span className="inline-flex items-center gap-2">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                      >
                         <path d="M8 2v3" strokeLinecap="round" />
                         <path d="M16 2v3" strokeLinecap="round" />
                         <rect x="4" y="5" width="16" height="15" rx="2" />
@@ -340,7 +434,15 @@ export default function OrdersPage() {
                       {itemsLabel}
                     </span>
                     <span className="inline-flex max-w-full items-center gap-2 break-all">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                      >
                         <path d="M20 4H4v16l5-3 3 3 3-3 5 3z" />
                       </svg>
                       {sessionLabel}
@@ -351,8 +453,13 @@ export default function OrdersPage() {
                 {previewItems.length > 0 && (
                   <div className="mt-5 flex flex-wrap items-center gap-2">
                     {previewItems.map((item, idx) => {
-                      const label = item.description || item.title || t('orderDetail.items.fallback')
-                      const quantityLabel = t('orderDetail.items.quantity').replace('{count}', String(item.quantity ?? 0))
+                      const label =
+                        item.description ||
+                        item.title ||
+                        t('orderDetail.items.fallback')
+                      const quantityLabel = t(
+                        'orderDetail.items.quantity'
+                      ).replace('{count}', String(item.quantity ?? 0))
                       const thumbnail = item.thumbnail
                       return (
                         <span
@@ -400,8 +507,20 @@ export default function OrdersPage() {
                     className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-zinc-200 px-4 py-1.5 text-sm font-medium text-[#0d141c] transition hover:bg-[#f6f7fb] sm:w-auto"
                   >
                     <span>{detailLabel}</span>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                      <path d="m9 6 6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                    >
+                      <path
+                        d="m9 6 6 6-6 6"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
                     </svg>
                   </Link>
                 </div>

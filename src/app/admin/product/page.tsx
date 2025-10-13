@@ -217,9 +217,9 @@ export default function AdminProducts() {
       if (!res.ok) {
         const message =
           (typeof data === 'object' &&
-            data &&
-            'error' in data &&
-            typeof (data as { error: unknown }).error === 'string'
+          data &&
+          'error' in data &&
+          typeof (data as { error: unknown }).error === 'string'
             ? (data as { error: string }).error
             : 'Stripe sync failed') || 'Stripe sync failed'
         throw new Error(message)
@@ -278,10 +278,9 @@ export default function AdminProducts() {
         { id: toastId }
       )
     } catch (e) {
-      toast.error(
-        e instanceof Error ? e.message : 'Backfill request failed',
-        { id: toastId }
-      )
+      toast.error(e instanceof Error ? e.message : 'Backfill request failed', {
+        id: toastId,
+      })
     } finally {
       setBackfilling(false)
     }
@@ -313,10 +312,9 @@ export default function AdminProducts() {
         { id: toastId }
       )
     } catch (e) {
-      toast.error(
-        e instanceof Error ? e.message : 'Backfill request failed',
-        { id: toastId }
-      )
+      toast.error(e instanceof Error ? e.message : 'Backfill request failed', {
+        id: toastId,
+      })
     } finally {
       setBackfillingNb(false)
     }
@@ -345,10 +343,9 @@ export default function AdminProducts() {
         { id: toastId }
       )
     } catch (e) {
-      toast.error(
-        e instanceof Error ? e.message : 'Backfill request failed',
-        { id: toastId }
-      )
+      toast.error(e instanceof Error ? e.message : 'Backfill request failed', {
+        id: toastId,
+      })
     } finally {
       setBackfillingLC(false)
     }
@@ -370,8 +367,8 @@ export default function AdminProducts() {
               {t('admin.products')}
             </h2>
             <p className="mt-2 max-w-2xl text-sm text-[rgb(var(--admin-muted-rgb))]">
-              Manage product data, localization, Stripe sync, and inventory health
-              from a single responsive workspace.
+              Manage product data, localization, Stripe sync, and inventory
+              health from a single responsive workspace.
             </p>
           </div>
 
@@ -498,19 +495,26 @@ export default function AdminProducts() {
             </p>
             <div className="mt-3 space-y-2 text-sm text-[rgb(var(--admin-muted-rgb))]">
               <p>
-                <span className="text-[var(--foreground)]">{items.length}</span> total products
+                <span className="text-[var(--foreground)]">{items.length}</span>{' '}
+                total products
               </p>
               <p>
-                <span className="text-[var(--foreground)]">{lowStockCount}</span> items below 5
-                units
+                <span className="text-[var(--foreground)]">
+                  {lowStockCount}
+                </span>{' '}
+                items below 5 units
               </p>
               <p>
-                <span className="text-[var(--foreground)]">{missingEnCount}</span> missing EN
-                localization
+                <span className="text-[var(--foreground)]">
+                  {missingEnCount}
+                </span>{' '}
+                missing EN localization
               </p>
               <p>
-                <span className="text-[var(--foreground)]">{missingNbCount}</span> missing NB
-                localization
+                <span className="text-[var(--foreground)]">
+                  {missingNbCount}
+                </span>{' '}
+                missing NB localization
               </p>
             </div>
           </div>
@@ -544,7 +548,8 @@ export default function AdminProducts() {
               const id = String(product.id ?? '')
               const translation = i18nMap[id]
               const stock =
-                typeof product.stock === 'number' && Number.isFinite(product.stock)
+                typeof product.stock === 'number' &&
+                Number.isFinite(product.stock)
                   ? product.stock
                   : 0
               const primaryImage =
@@ -590,7 +595,8 @@ export default function AdminProducts() {
                           {product.title}
                         </h3>
                         <p className="truncate text-xs uppercase tracking-[0.22em] text-[rgb(var(--admin-muted-rgb))]">
-                          {product.brand || '—'} • {product.category || 'uncategorized'}
+                          {product.brand || '—'} •{' '}
+                          {product.category || 'uncategorized'}
                         </p>
                       </div>
                       <span className="admin-chip admin-chip--accent shrink-0 px-3 py-1 text-[0.7rem]">
@@ -602,17 +608,25 @@ export default function AdminProducts() {
                       <span
                         className={clsx(
                           'admin-chip px-2 py-1 font-semibold',
-                          stock > 0 ? 'admin-chip--success' : 'admin-chip--danger'
+                          stock > 0
+                            ? 'admin-chip--success'
+                            : 'admin-chip--danger'
                         )}
                       >
                         {stock > 0 ? (
                           <>
-                            <CheckCircle2 className="size-3" strokeWidth={1.75} />
+                            <CheckCircle2
+                              className="size-3"
+                              strokeWidth={1.75}
+                            />
                             {stock} in stock
                           </>
                         ) : (
                           <>
-                            <ShieldAlert className="size-3" strokeWidth={1.75} />
+                            <ShieldAlert
+                              className="size-3"
+                              strokeWidth={1.75}
+                            />
                             Out of stock
                           </>
                         )}

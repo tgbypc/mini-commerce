@@ -26,4 +26,3 @@ export async function queueEmail({ to, subject, html, text, cc, bcc }: QueueArgs
   const ref = await adminDb.collection('mail').add(payload)
   return { id: ref.id }
 }
-

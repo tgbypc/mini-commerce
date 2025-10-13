@@ -130,14 +130,14 @@ export default function ProductDetailClient({ id }: { id: string }) {
     quantity: t('product.detail.quantity'),
     inStock: t('product.detail.inStock'),
     outOfStock: t('product.detail.outOfStock'),
-    stockLeft: (count: number) => t('product.detail.stockLeft').replace('{count}', String(count)),
+    stockLeft: (count: number) =>
+      t('product.detail.stockLeft').replace('{count}', String(count)),
     addToCart: t('product.detail.addToCart'),
     addToCartDisabled: t('product.detail.addToCartDisabled'),
     collection: t('product.detail.collectionFallback'),
     favAdd: t('product.detail.actions.addToFavorites'),
     favIn: t('product.detail.actions.inFavorites'),
   }
-
 
   const handleAdd = async () => {
     try {
@@ -229,7 +229,9 @@ export default function ProductDetailClient({ id }: { id: string }) {
               }`}
             >
               <span>❤</span>
-              <span>{isFavorite(product.id) ? detailText.favIn : detailText.favAdd}</span>
+              <span>
+                {isFavorite(product.id) ? detailText.favIn : detailText.favAdd}
+              </span>
             </button>
           </div>
           <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -249,7 +251,8 @@ export default function ProductDetailClient({ id }: { id: string }) {
             )}
             {product.category && (
               <span className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-[#f4f4f5] px-3 py-1 text-zinc-600">
-                <span className="h-2 w-2 rounded-full bg-[var(--color-primary-dark)]" /> {product.category}
+                <span className="h-2 w-2 rounded-full bg-[var(--color-primary-dark)]" />{' '}
+                {product.category}
               </span>
             )}
           </div>
@@ -271,15 +274,30 @@ export default function ProductDetailClient({ id }: { id: string }) {
                 onChange={(e) => setQty(Number(e.target.value))}
                 disabled={!inStock}
               >
-                {Array.from({ length: Math.max(maxQty, 1) }, (_, i) => i + 1).map((n) => (
+                {Array.from(
+                  { length: Math.max(maxQty, 1) },
+                  (_, i) => i + 1
+                ).map((n) => (
                   <option key={n} value={n}>
                     {n}
                   </option>
                 ))}
               </select>
               <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-zinc-500">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <path d="m7 9 5 5 5-5" strokeLinecap="round" strokeLinejoin="round" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                >
+                  <path
+                    d="m7 9 5 5 5-5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
                 </svg>
               </span>
             </div>
@@ -299,7 +317,9 @@ export default function ProductDetailClient({ id }: { id: string }) {
         </div>
 
         <div className="space-y-2 border-t border-dashed border-zinc-200 pt-4 text-sm text-zinc-600">
-          <div className="font-medium text-[#0d141c]">{detailsLabels.heading}</div>
+          <div className="font-medium text-[#0d141c]">
+            {detailsLabels.heading}
+          </div>
           <ul className="grid gap-2 sm:grid-cols-2">
             {product.category && (
               <li>

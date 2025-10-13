@@ -26,4 +26,3 @@ export default function Spinner({ size = 24 }: { size?: number }) {
     </svg>
   )
 }
-

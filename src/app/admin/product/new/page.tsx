@@ -8,12 +8,7 @@ import { useForm, type Resolver } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'react-hot-toast'
-import {
-  ArrowLeftCircle,
-  Copy,
-  Loader2,
-  UploadCloud,
-} from 'lucide-react'
+import { ArrowLeftCircle, Copy, Loader2, UploadCloud } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useI18n } from '@/context/I18nContext'
 import { CATEGORIES } from '@/lib/constants/categories'
@@ -123,7 +118,10 @@ export default function AdminNewProductPage() {
     nb: 'title_nb',
   }
 
-  const descriptionFieldByLocale: Record<'en' | 'nb', 'description_en' | 'description_nb'> = {
+  const descriptionFieldByLocale: Record<
+    'en' | 'nb',
+    'description_en' | 'description_nb'
+  > = {
     en: 'description_en',
     nb: 'description_nb',
   }
@@ -222,10 +220,9 @@ export default function AdminNewProductPage() {
       await refreshCatalog()
       router.push('/admin/product')
     } catch (e) {
-      toast.error(
-        e instanceof Error ? e.message : 'Failed to create product',
-        { id: toastId }
-      )
+      toast.error(e instanceof Error ? e.message : 'Failed to create product', {
+        id: toastId,
+      })
     } finally {
       setSubmitting(false)
     }
@@ -306,12 +303,16 @@ export default function AdminNewProductPage() {
               <Label>Title ({activeLocale.toUpperCase()})</Label>
               <input
                 {...register('title_en')}
-                className={`${inputClass} ${activeLocale !== 'en' ? 'hidden' : ''}`}
+                className={`${inputClass} ${
+                  activeLocale !== 'en' ? 'hidden' : ''
+                }`}
                 placeholder="English title"
               />
               <input
                 {...register('title_nb')}
-                className={`${inputClass} ${activeLocale !== 'nb' ? 'hidden' : ''}`}
+                className={`${inputClass} ${
+                  activeLocale !== 'nb' ? 'hidden' : ''
+                }`}
                 placeholder="Norsk tittel"
               />
             </div>
@@ -477,15 +478,14 @@ export default function AdminNewProductPage() {
                   accept="image/*"
                   className="sr-only"
                   onChange={async (event) => {
-                    const file =
-                      event.target.files && event.target.files[0]
+                    const file = event.target.files && event.target.files[0]
                     if (!file) return
                     setSelectedFileName(file.name)
                     setUploading(true)
                     try {
-                      const token = await user?.getIdToken().catch(
-                        () => undefined
-                      )
+                      const token = await user
+                        ?.getIdToken()
+                        .catch(() => undefined)
                       if (!token) {
                         throw new Error('Failed to verify admin identity')
                       }
@@ -591,7 +591,9 @@ function FormSection({
     <section className="rounded-3xl admin-surface admin-surface--static p-6 shadow-[0_18px_40px_-35px_rgba(59,130,246,0.22)]">
       <div className="max-w-2xl">
         <h2 className="text-lg font-semibold">{title}</h2>
-        <p className="text-sm text-[rgb(var(--admin-muted-rgb))]">{description}</p>
+        <p className="text-sm text-[rgb(var(--admin-muted-rgb))]">
+          {description}
+        </p>
       </div>
       <div className="mt-5 space-y-4">{children}</div>
     </section>
@@ -608,9 +610,5 @@ function Label({ children }: { children: ReactNode }) {
 
 function ErrorMessage({ children }: { children?: string }) {
   if (!children) return null
-  return (
-    <p className="mt-1 text-xs font-medium text-rose-600">
-      {children}
-    </p>
-  )
+  return <p className="mt-1 text-xs font-medium text-rose-600">{children}</p>
 }

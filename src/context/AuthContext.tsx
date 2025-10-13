@@ -1,6 +1,12 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
 import {
   User,
   onAuthStateChanged,
@@ -30,7 +36,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Admin emails (comma-separated) from env for quick bootstrapping
   const adminEmailSet = useMemo(() => {
     const raw = process.env.NEXT_PUBLIC_ADMIN_EMAILS || ''
-    const parts = raw.split(',').map((s) => s.trim().toLowerCase()).filter(Boolean)
+    const parts = raw
+      .split(',')
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean)
     return new Set(parts)
   }, [])
 
@@ -68,7 +77,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               let r = (data?.role as Role) ?? 'user'
               if (listedAdmin && r !== 'admin') {
                 // Promote and persist
-                await setDoc(ref, { role: 'admin', updatedAt: serverTimestamp() }, { merge: true })
+                await setDoc(
+                  ref,
+                  { role: 'admin', updatedAt: serverTimestamp() },
+                  { merge: true }
+                )
                 r = 'admin'
               }
               setRole(r)

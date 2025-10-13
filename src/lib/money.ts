@@ -11,4 +11,3 @@ export function fmtCurrency(amount: number | null | undefined, currency = 'USD',
     return `${cur} ${val.toFixed(2)}`
   }
 }
-

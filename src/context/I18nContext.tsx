@@ -14,7 +14,11 @@ function get(obj: unknown, path: string): string | undefined {
   const parts = path.split('.')
   let cur: unknown = obj
   for (const p of parts) {
-    if (cur && typeof cur === 'object' && p in (cur as Record<string, unknown>)) {
+    if (
+      cur &&
+      typeof cur === 'object' &&
+      p in (cur as Record<string, unknown>)
+    ) {
       cur = (cur as Record<string, unknown>)[p]
     } else {
       return undefined
@@ -39,7 +43,10 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
       const saved = localStorage.getItem(STORAGE_KEY) as Locale | null
       if (saved === 'en' || saved === 'nb') setLocale(saved)
       else {
-        const nav = typeof navigator !== 'undefined' ? navigator.language.toLowerCase() : ''
+        const nav =
+          typeof navigator !== 'undefined'
+            ? navigator.language.toLowerCase()
+            : ''
         if (nav.startsWith('nb') || nav.startsWith('no')) setLocale('nb')
         else setLocale('en')
       }
@@ -54,7 +61,9 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
       locale,
       setLocale: (l) => {
         setLocale(l)
-        try { localStorage.setItem(STORAGE_KEY, l) } catch {}
+        try {
+          localStorage.setItem(STORAGE_KEY, l)
+        } catch {}
       },
       t: (key: string) => get(messages, key) ?? key,
     }

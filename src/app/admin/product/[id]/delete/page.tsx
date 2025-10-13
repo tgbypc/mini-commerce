@@ -69,7 +69,12 @@ export default function DeleteProductPage() {
           return
         }
         const body = (await res.json()) as { product?: unknown }
-        if (!body || typeof body !== 'object' || body === null || !('product' in body)) {
+        if (
+          !body ||
+          typeof body !== 'object' ||
+          body === null ||
+          !('product' in body)
+        ) {
           throw new Error('Invalid response payload')
         }
         const raw = (body as { product?: Record<string, unknown> }).product
@@ -236,7 +241,10 @@ export default function DeleteProductPage() {
             <p className="text-xs uppercase tracking-[0.32em] text-rose-500/70">
               You are about to remove
             </p>
-            <h2 className="truncate text-lg font-semibold" title={product.title}>
+            <h2
+              className="truncate text-lg font-semibold"
+              title={product.title}
+            >
               {product.title}
             </h2>
             <p className="text-sm text-rose-600/80">

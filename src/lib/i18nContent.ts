@@ -31,4 +31,3 @@ export function pickI18nString(
 
   return ''
 }
-

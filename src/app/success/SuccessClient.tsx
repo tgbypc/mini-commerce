@@ -182,22 +182,30 @@ export default function SuccessClient() {
         {/* Details table */}
         <div className="grid grid-cols-1 gap-0 divide-y sm:grid-cols-3 sm:divide-y-0">
           <div className="p-4 sm:col-span-1 bg-zinc-50 rounded-t-2xl sm:rounded-tr-none sm:rounded-l-2xl">
-            <div className="text-sm font-medium text-zinc-700">Order Number</div>
+            <div className="text-sm font-medium text-zinc-700">
+              Order Number
+            </div>
             <div className="mt-1 text-sm text-zinc-900">#{orderId}</div>
           </div>
           <div className="p-4 sm:col-span-1 bg-zinc-50">
-            <div className="text-sm font-medium text-zinc-700">Estimated Delivery Date</div>
+            <div className="text-sm font-medium text-zinc-700">
+              Estimated Delivery Date
+            </div>
             <div className="mt-1 text-sm text-zinc-900">{eta}</div>
           </div>
           <div className="p-4 sm:col-span-1 bg-zinc-50 rounded-b-2xl sm:rounded-bl-none sm:rounded-r-2xl">
-            <div className="text-sm font-medium text-zinc-700">Payment Method</div>
+            <div className="text-sm font-medium text-zinc-700">
+              Payment Method
+            </div>
             <div className="mt-1 text-sm text-zinc-900">{payMethod}</div>
           </div>
         </div>
 
         {/* Items */}
         <div className="p-6">
-          <h2 className="text-sm font-medium text-zinc-700 mb-3">Order Items</h2>
+          <h2 className="text-sm font-medium text-zinc-700 mb-3">
+            Order Items
+          </h2>
           {items.length ? (
             <ul className="divide-y rounded-xl border bg-zinc-50">
               {items.map((it, i) => (

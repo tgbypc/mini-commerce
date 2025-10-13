@@ -43,10 +43,13 @@ async function fetchFeaturedProducts(): Promise<ProductPreview[]> {
   try {
     const baseUrl = getBaseUrl()
     const internalHeaders = getInternalFetchHeaders()
-    const res = await fetch(`${baseUrl}/api/products?limit=8&sort=createdAt-desc&locale=${DEFAULT_LOCALE}`, {
-      next: { revalidate, tags: ['products'] },
-      headers: internalHeaders,
-    })
+    const res = await fetch(
+      `${baseUrl}/api/products?limit=8&sort=createdAt-desc&locale=${DEFAULT_LOCALE}`,
+      {
+        next: { revalidate, tags: ['products'] },
+        headers: internalHeaders,
+      }
+    )
     if (!res.ok) throw new Error(`status_${res.status}`)
     const payload = (await res.json()) as ProductsResponse
     return Array.isArray(payload.items) ? payload.items : []
