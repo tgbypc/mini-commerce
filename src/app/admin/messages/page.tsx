@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'react-hot-toast'
 import {
+  ChevronDown,
   Filter,
   Inbox,
   Loader2,
@@ -168,59 +169,91 @@ export default function AdminMessagesPage() {
 
   return (
     <div className="space-y-6">
-      <header className="admin-hero-card admin-card border admin-border bg-[rgba(var(--admin-surface-rgb),0.85)]">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-xs uppercase tracking-[0.26em] text-[rgb(var(--admin-muted-rgb))]">
+      <header className="admin-hero-card admin-card border admin-border overflow-hidden bg-gradient-to-br from-[rgba(17,24,39,0.82)] via-[rgba(30,41,59,0.86)] to-[rgba(15,23,42,0.9)]">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="max-w-xl min-w-0 space-y-3">
+            <span className="inline-flex items-center gap-2 rounded-full border border-[rgba(148,163,184,0.25)] bg-[rgba(30,41,59,0.75)] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-[rgba(var(--admin-muted-rgb),0.85)] sm:tracking-[0.34em]">
               Inbox
-            </p>
-            <h1 className="text-2xl font-semibold tracking-tight text-[var(--foreground)]">
-              Contact Messages
-            </h1>
-            <p className="text-sm text-[rgb(var(--admin-muted-rgb))]">
-              Review submissions from the public contact form.
-            </p>
+            </span>
+            <div>
+              <h1 className="text-3xl font-semibold tracking-tight text-[var(--foreground)] sm:text-[32px]">
+                Contact Messages
+              </h1>
+              <p className="mt-2 text-sm leading-relaxed text-[rgba(203,213,225,0.85)] sm:text-base">
+                Review submissions from the public contact form and take action on
+                new requests as they arrive.
+              </p>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="relative inline-flex items-center rounded-xl border admin-border bg-[rgba(var(--admin-surface-soft-rgb),0.9)] px-3 py-2 text-xs text-[rgb(var(--admin-muted-rgb))]">
-              <Filter className="mr-2 size-4" strokeWidth={1.75} />
-              {filteredLabel}
+          <div className="grid w-full max-w-lg gap-3 sm:grid-cols-2 sm:items-center lg:max-w-sm">
+            <div className="flex items-center justify-between gap-3 rounded-2xl border border-blue-400/30 bg-[rgba(37,99,235,0.14)] px-4 py-3 text-xs text-[var(--foreground)] shadow-[0_16px_32px_-24px_rgba(37,99,235,0.55)] sm:justify-start">
+              <Filter className="size-4 text-blue-200" strokeWidth={1.75} />
+              <div className="flex min-w-0 flex-col">
+                <span className="text-xs uppercase tracking-[0.28em] text-[rgba(191,219,254,0.7)]">
+                  Filter
+                </span>
+                <span className="text-sm font-semibold tracking-tight text-[var(--foreground)]">
+                  {filteredLabel}
+                </span>
+              </div>
             </div>
             <button
               type="button"
               onClick={handleRefresh}
               disabled={refreshing}
-              className="inline-flex items-center gap-2 rounded-xl border border-blue-400/20 bg-blue-500/10 px-3 py-2 text-sm font-medium text-blue-600 transition hover:border-blue-400/40 hover:bg-blue-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-blue-400/35 bg-blue-500/20 px-4 py-3 text-sm font-medium text-blue-100 transition hover:-translate-y-0.5 hover:border-blue-400/45 hover:bg-blue-500/28 disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <RefreshCcw className="size-4" strokeWidth={1.75} />
-              Refresh
+              {refreshing ? 'Refreshing…' : 'Refresh'}
             </button>
           </div>
         </div>
       </header>
 
-      <section className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="inline-flex items-center gap-2 rounded-xl border admin-border bg-[rgba(var(--admin-surface-soft-rgb),0.9)] px-3 py-2 text-sm text-[rgb(var(--admin-muted-rgb))]">
-            <Inbox className="size-4" strokeWidth={1.75} />
-            {messages.length}{' '}
-            {messages.length === 1 ? 'message' : 'messages'} loaded
+      <section className="space-y-5">
+        <div className="grid gap-3 md:grid-cols-[minmax(0,280px)_minmax(0,1fr)] lg:grid-cols-[minmax(0,320px)_320px]">
+          <div className="flex items-center justify-between gap-3 rounded-2xl border admin-border bg-[rgba(var(--admin-surface-soft-rgb),0.92)] px-4 py-3 text-sm text-[rgb(var(--admin-muted-rgb))]">
+            <div className="flex items-center gap-3">
+              <span className="flex size-9 items-center justify-center rounded-xl border admin-border bg-blue-500/10 text-blue-300">
+                <Inbox className="size-4.5" strokeWidth={1.75} />
+              </span>
+              <div className="min-w-0 leading-tight">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[rgba(var(--admin-muted-rgb),0.7)] sm:tracking-[0.32em]">
+                  Messages loaded
+                </p>
+                <p className="text-base font-semibold text-[var(--foreground)]">
+                  {messages.length}{' '}
+                  {messages.length === 1 ? 'message' : 'messages'}
+                </p>
+              </div>
+            </div>
+            <span className="hidden text-xs font-semibold uppercase tracking-[0.28em] text-[rgba(var(--admin-muted-rgb),0.65)] md:inline">
+              Live
+            </span>
           </div>
-          <label className="flex items-center gap-2 text-sm text-[rgb(var(--admin-muted-rgb))]">
-            <span>Status</span>
-            <select
-              value={statusFilter}
-              onChange={(e) =>
-                setStatusFilter(e.target.value as (typeof STATUS_OPTIONS)[number]['value'])
-              }
-              className="rounded-lg border admin-border bg-[rgba(var(--admin-surface-soft-rgb),0.9)] px-3 py-2 text-sm text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-blue-500/40"
-            >
-              {STATUS_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+          <label className="w-full">
+            <span className="block text-[10px] font-semibold uppercase tracking-[0.22em] text-[rgba(var(--admin-muted-rgb),0.75)] sm:tracking-[0.32em]">
+              Filter by status
+            </span>
+            <div className="relative mt-2 flex items-center gap-2 rounded-2xl border admin-border bg-[rgba(var(--admin-surface-soft-rgb),0.92)] px-3 py-2 text-sm text-[var(--foreground)] transition focus-within:border-blue-400/45 focus-within:shadow-[0_18px_36px_-24px_rgba(59,130,246,0.5)]">
+              <Filter className="size-4 text-blue-300" strokeWidth={1.75} />
+              <select
+                value={statusFilter}
+                onChange={(e) =>
+                  setStatusFilter(
+                    e.target.value as (typeof STATUS_OPTIONS)[number]['value']
+                  )
+                }
+                className="w-full appearance-none bg-transparent pr-6 text-sm font-medium text-[var(--foreground)] focus:outline-none"
+              >
+                {STATUS_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 size-4 text-[rgba(var(--admin-muted-rgb),0.75)]" />
+            </div>
           </label>
         </div>
 
@@ -244,7 +277,7 @@ export default function AdminMessagesPage() {
             </p>
           </div>
         ) : (
-          <div className="grid gap-4">
+          <div className="grid gap-4 md:grid-cols-2 md:gap-5">
             {messages.map((msg) => {
               const statusKey = (msg.status || '').toLowerCase()
               const statusMeta = STATUS_STYLES[statusKey] ?? {
@@ -256,39 +289,55 @@ export default function AdminMessagesPage() {
               return (
                 <article
                   key={msg.id}
-                  className="admin-card border admin-border bg-[rgba(var(--admin-surface-rgb),0.85)] p-6 transition hover:border-blue-400/35 hover:shadow-[0_18px_36px_-30px_rgba(37,99,235,0.45)]"
+                  className="admin-card border admin-border bg-[rgba(var(--admin-surface-rgb),0.9)] p-5 sm:p-6 transition hover:-translate-y-1 hover:border-blue-400/35 hover:shadow-[0_22px_44px_-28px_rgba(37,99,235,0.5)]"
                 >
-                  <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div className="flex items-start gap-3">
-                      <span className="flex size-10 items-center justify-center rounded-2xl border admin-border bg-blue-500/10 text-blue-600">
-                        <Mail className="size-4" strokeWidth={1.75} />
+                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                    <div className="flex min-w-0 items-start gap-3">
+                      <span className="flex size-11 items-center justify-center rounded-2xl border border-blue-400/35 bg-gradient-to-br from-blue-500/25 to-indigo-500/20 text-blue-100 shadow-[0_16px_32px_-26px_rgba(37,99,235,0.6)]">
+                        <Mail className="size-4.5" strokeWidth={1.65} />
                       </span>
-                      <div>
-                        <h2 className="text-lg font-semibold text-[var(--foreground)]">
-                          {msg.name || 'Anonymous'}
-                        </h2>
-                        <div className="flex flex-wrap items-center gap-2 text-sm text-[rgb(var(--admin-muted-rgb))]">
+                      <div className="min-w-0 space-y-2">
+                        <div className="flex flex-col gap-1">
+                          <h2 className="break-words text-lg font-semibold text-[var(--foreground)]">
+                            {msg.name || 'Anonymous'}
+                          </h2>
                           {msg.email ? (
                             <a
                               href={`mailto:${msg.email}`}
-                              className="font-medium text-blue-600 transition hover:text-blue-700"
+                              className="inline-flex items-center gap-1 break-all text-sm font-medium text-blue-200 underline-offset-4 transition hover:text-blue-100"
                             >
                               {msg.email}
                             </a>
                           ) : (
-                            <span>No email</span>
+                            <span className="text-sm text-[rgba(var(--admin-muted-rgb),0.85)]">
+                              No email provided
+                            </span>
                           )}
-                          <span aria-hidden>•</span>
-                          <span>{topicLabel}</span>
-                          <span aria-hidden>•</span>
-                          <span>{formatDate(msg.createdAt)}</span>
                         </div>
+                        <dl className="grid gap-y-1 text-xs uppercase tracking-[0.18em] text-[rgba(var(--admin-muted-rgb),0.72)] sm:grid-cols-2 sm:gap-x-6 sm:tracking-[0.28em]">
+                          <div>
+                            <dt className="sr-only">Topic</dt>
+                            <dd className="break-words text-[var(--foreground)] tracking-[0.18em] sm:tracking-[0.24em]">
+                              {topicLabel}
+                            </dd>
+                          </div>
+                          <div>
+                            <dt className="sr-only">Received</dt>
+                            <dd className="text-[rgba(var(--admin-muted-rgb),0.85)]">
+                              {formatDate(msg.createdAt)}
+                            </dd>
+                          </div>
+                        </dl>
                       </div>
                     </div>
-                    <span className={statusMeta.className}>{statusMeta.label}</span>
+                    <span className={`${statusMeta.className} text-[0.62rem]`}>
+                      {statusMeta.label}
+                    </span>
                   </div>
-                  <div className="mt-4 rounded-2xl border admin-border bg-[rgba(var(--admin-surface-soft-rgb),0.9)] p-4 text-sm text-[var(--foreground)]">
-                    <p className="whitespace-pre-line">{msg.message || '—'}</p>
+                  <div className="mt-4 space-y-3 rounded-2xl border admin-border bg-[rgba(var(--admin-surface-soft-rgb),0.94)] p-4 text-sm text-[var(--foreground)]">
+                    <p className="break-words whitespace-pre-line leading-relaxed">
+                      {msg.message || '—'}
+                    </p>
                   </div>
                 </article>
               )

@@ -527,12 +527,15 @@ export default function StoreClient({
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
-              <Link href="/cart" className="btn-muted">
+              <Link
+                href="/cart"
+                className="inline-flex items-center rounded-full border border-white/40 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:border-white/60 hover:bg-white/20 dark:border-white/30 dark:bg-white/10 dark:hover:border-white/80 dark:hover:bg-white/40 dark:hover:text-[#0d141c]"
+              >
                 {t('store.cta.primaryCta')}
               </Link>
               <Link
                 href="/user/profile"
-                className="btn-muted border border-white/40 bg-transparent px-5 py-2.5"
+                className="inline-flex items-center rounded-full border border-white/40 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:border-white/60 hover:bg-white/20 dark:border-white/30 dark:bg-white/10 dark:hover:border-white/80 dark:hover:bg-white/40 dark:hover:text-[#0d141c]"
               >
                 {t('store.cta.secondaryCta')}
               </Link>

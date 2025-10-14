@@ -2,7 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'react-hot-toast'
-import { ArrowUpRight, Loader2, PackageSearch, RefreshCcw } from 'lucide-react'
+import {
+  ArrowUpRight,
+  ChevronDown,
+  Filter,
+  Loader2,
+  PackageSearch,
+  RefreshCcw,
+} from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 
 type OrderItem = {
@@ -51,7 +58,7 @@ const STATUS_STYLES: Record<
   },
   fulfilled: {
     label: 'Fulfilled',
-    className: 'admin-chip admin-chip--progress',
+    className: 'admin-chip admin-chip--fulfilled',
   },
   shipped: {
     label: 'Shipped',
@@ -244,11 +251,8 @@ export default function AdminOrdersPage() {
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
-            <div className="flex items-center gap-2 rounded-2xl border admin-border bg-[rgb(var(--admin-surface-soft-rgb)/0.9)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-blue-600/70 shadow-[0_12px_30px_-18px_rgba(59,130,246,0.3)]">
-              <PackageSearch
-                className="size-4 text-blue-500"
-                strokeWidth={1.75}
-              />
+            <div className="flex w-full flex-wrap items-center justify-between gap-2 rounded-2xl border border-blue-400/30 bg-[rgb(var(--admin-surface-soft-rgb)/0.92)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-blue-100 shadow-[0_18px_38px_-24px_rgba(59,130,246,0.45)] sm:w-auto sm:flex-nowrap sm:justify-start">
+              <PackageSearch className="size-4 text-blue-200" strokeWidth={1.75} />
               <span>{orders.length} orders</span>
               <span className="mx-2 h-4 w-px bg-[rgba(var(--admin-border-rgb),0.15)]" />
               <span>{pendingOrders} pending</span>
@@ -259,7 +263,7 @@ export default function AdminOrdersPage() {
               type="button"
               onClick={handleRefresh}
               disabled={refreshing}
-              className="inline-flex items-center gap-2 rounded-xl border border-blue-400/25 bg-blue-500/12 px-4 py-2 text-sm font-semibold text-blue-700 transition hover:border-blue-400/40 hover:bg-blue-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-blue-400/25 bg-blue-500/12 px-4 py-2 text-sm font-semibold text-blue-100 transition hover:-translate-y-0.5 hover:border-blue-400/40 hover:bg-blue-500/20 disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
             >
               {refreshing ? (
                 <Loader2 className="size-4 animate-spin" strokeWidth={1.75} />
@@ -272,27 +276,34 @@ export default function AdminOrdersPage() {
         </header>
 
         <div className="admin-section flex flex-col gap-5">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-2 text-xs uppercase tracking-[0.24em] text-[rgb(var(--admin-muted-rgb))]">
-              <span>Status filter</span>
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.32em] text-[rgba(var(--admin-muted-rgb),0.8)]">
+              Status filter
             </div>
-            <select
-              value={statusFilter || ''}
-              onChange={(event) => {
-                const value = event.target.value
-                setStatusFilter(
-                  value === '' ? '' : isStatus(value) ? value : ''
-                )
-              }}
-              className="w-full rounded-xl border admin-border bg-[rgb(var(--admin-surface-soft-rgb)/0.9)] px-4 py-2 text-sm text-[var(--foreground)] focus:border-blue-400/45 focus:outline-none focus:ring-0 sm:w-60"
-            >
-              <option value="">All statuses</option>
-              {STATUSES.map((status) => (
-                <option key={status} value={status}>
-                  {STATUS_STYLES[status].label}
-                </option>
-              ))}
-            </select>
+            <label className="w-full sm:max-w-xs lg:w-72">
+              <span className="sr-only">Filter orders by status</span>
+              <div className="relative flex items-center gap-2 rounded-2xl border admin-border bg-[rgb(var(--admin-surface-soft-rgb)/0.92)] px-3 py-2 text-sm text-[var(--foreground)] transition focus-within:border-blue-400/45 focus-within:shadow-[0_18px_36px_-24px_rgba(59,130,246,0.5)]">
+                <Filter className="size-4 text-blue-300" strokeWidth={1.75} />
+                <select
+                  value={statusFilter || ''}
+                  onChange={(event) => {
+                    const value = event.target.value
+                    setStatusFilter(
+                      value === '' ? '' : isStatus(value) ? value : ''
+                    )
+                  }}
+                  className="w-full appearance-none bg-transparent pr-6 text-sm font-medium text-[var(--foreground)] focus:outline-none"
+                >
+                  <option value="">All statuses</option>
+                  {STATUSES.map((status) => (
+                    <option key={status} value={status}>
+                      {STATUS_STYLES[status].label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-3 size-4 text-[rgba(var(--admin-muted-rgb),0.75)]" />
+              </div>
+            </label>
           </div>
 
           {loading ? (
@@ -319,79 +330,172 @@ export default function AdminOrdersPage() {
               completed, it will appear here automatically.
             </div>
           ) : (
-            <div className="admin-table-shell">
-              <table className="admin-table min-w-full text-sm">
-                <thead className="admin-table-head text-left text-xs uppercase">
-                  <tr>
-                    <th>Order</th>
-                    <th>Customer</th>
-                    <th>Status</th>
-                    <th className="text-right">Amount</th>
-                    <th className="text-right">Placed</th>
-                    <th className="text-right">Update</th>
-                  </tr>
-                </thead>
-                <tbody className="admin-table-body">
-                  {orders.map((order) => {
-                    const status = order.status ?? 'paid'
-                    const style = STATUS_STYLES[status] ?? STATUS_STYLES.paid
-                    return (
-                      <tr key={order.id} className="admin-table-row">
-                        <td className="font-semibold">
-                          #{order.id.slice(-6).toUpperCase()}
-                        </td>
-                        <td className="text-sm text-[rgb(var(--admin-muted-rgb))]">
-                          {order.email || order.userId || '—'}
-                        </td>
-                        <td>
-                          <span className={style.className}>{style.label}</span>
-                        </td>
-                        <td className="text-right font-semibold">
-                          {formatCurrency(
-                            order.amountTotal,
-                            order.currency || 'USD'
-                          )}
-                        </td>
-                        <td className="text-right text-sm text-[rgb(var(--admin-muted-rgb))]">
-                          {formatDate(order.createdAt)}
-                        </td>
-                        <td className="text-right">
-                          <div className="inline-flex items-center gap-2">
-                            <select
-                              value={order.status || 'paid'}
-                              onChange={(event) =>
-                                updateStatus(
-                                  order.id,
-                                  event.target.value as Order['status']
-                                )
-                              }
-                              disabled={saving === order.id}
-                              className="rounded-xl border admin-border bg-[rgb(var(--admin-surface-soft-rgb)/0.9)] px-3 py-1.5 text-xs text-[var(--foreground)] focus:border-blue-400/45 focus:outline-none focus:ring-0"
-                            >
-                              {STATUSES.map((s) => (
-                                <option key={s} value={s}>
-                                  {STATUS_STYLES[s].label}
-                                </option>
-                              ))}
-                            </select>
-                            <button
-                              type="button"
-                              className="inline-flex items-center justify-center rounded-xl border admin-border bg-[rgb(var(--admin-surface-soft-rgb)/0.92)] p-2 text-[var(--foreground)] transition hover:border-blue-400/35 hover:bg-blue-500/12"
-                              title="View customer record"
-                            >
-                              <ArrowUpRight
-                                className="size-4"
-                                strokeWidth={1.75}
-                              />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <>
+              <div className="hidden md:block">
+                <div className="admin-table-shell">
+                  <div className="admin-table-scroll">
+                    <table className="admin-table min-w-[720px] text-sm">
+                      <thead className="admin-table-head text-left text-xs uppercase">
+                        <tr>
+                          <th>Order</th>
+                          <th>Customer</th>
+                          <th>Status</th>
+                          <th className="text-right">Amount</th>
+                          <th className="text-right">Placed</th>
+                          <th className="text-right">Update</th>
+                        </tr>
+                      </thead>
+                      <tbody className="admin-table-body">
+                        {orders.map((order) => {
+                          const status = order.status ?? 'paid'
+                          const style =
+                            STATUS_STYLES[status] ?? STATUS_STYLES.paid
+                          return (
+                            <tr key={order.id} className="admin-table-row">
+                              <td className="font-semibold">
+                                #{order.id.slice(-6).toUpperCase()}
+                              </td>
+                              <td className="text-sm text-[rgb(var(--admin-muted-rgb))]">
+                                {order.email || order.userId || '—'}
+                              </td>
+                              <td>
+                                <span className={style.className}>
+                                  {style.label}
+                                </span>
+                              </td>
+                              <td className="text-right font-semibold">
+                                {formatCurrency(
+                                  order.amountTotal,
+                                  order.currency || 'USD'
+                                )}
+                              </td>
+                              <td className="text-right text-sm text-[rgb(var(--admin-muted-rgb))]">
+                                {formatDate(order.createdAt)}
+                              </td>
+                              <td className="text-right">
+                                <div className="inline-flex items-center gap-2">
+                                  <select
+                                    value={order.status || 'paid'}
+                                    onChange={(event) =>
+                                      updateStatus(
+                                        order.id,
+                                        event.target.value as Order['status']
+                                      )
+                                    }
+                                    disabled={saving === order.id}
+                                    className="rounded-xl border admin-border bg-[rgb(var(--admin-surface-soft-rgb)/0.9)] px-3 py-1.5 text-xs text-[var(--foreground)] focus:border-blue-400/45 focus:outline-none focus:ring-0"
+                                  >
+                                    {STATUSES.map((s) => (
+                                      <option key={s} value={s}>
+                                        {STATUS_STYLES[s].label}
+                                      </option>
+                                    ))}
+                                  </select>
+                                  <button
+                                    type="button"
+                                    className="inline-flex items-center justify-center rounded-xl border admin-border bg-[rgb(var(--admin-surface-soft-rgb)/0.92)] p-2 text-[var(--foreground)] transition hover:border-blue-400/35 hover:bg-blue-500/12"
+                                    title="View customer record"
+                                  >
+                                    <ArrowUpRight
+                                      className="size-4"
+                                      strokeWidth={1.75}
+                                    />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+              <div className="grid gap-3 md:hidden">
+                {orders.map((order) => {
+                  const status = order.status ?? 'paid'
+                  const style = STATUS_STYLES[status] ?? STATUS_STYLES.paid
+                  return (
+                    <article
+                      key={order.id}
+                      className="rounded-2xl border admin-border bg-[rgba(var(--admin-surface-soft-rgb),0.96)] p-4 text-sm shadow-[0_18px_38px_-26px_rgba(15,23,42,0.55)]"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[rgba(var(--admin-muted-rgb),0.72)]">
+                            Order
+                          </p>
+                          <p className="text-lg font-semibold text-[var(--foreground)]">
+                            #{order.id.slice(-6).toUpperCase()}
+                          </p>
+                          <p className="mt-1 text-[rgb(var(--admin-muted-rgb))]">
+                            {order.email || order.userId || '—'}
+                          </p>
+                        </div>
+                        <span className={`${style.className} text-[0.62rem]`}>
+                          {style.label.toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="mt-4 grid grid-cols-2 gap-3 text-[rgb(var(--admin-muted-rgb))]">
+                        <div>
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[rgba(var(--admin-muted-rgb),0.72)]">
+                            Amount
+                          </p>
+                          <p className="text-base font-semibold text-[var(--foreground)]">
+                            {formatCurrency(
+                              order.amountTotal,
+                              order.currency || 'USD'
+                            )}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[rgba(var(--admin-muted-rgb),0.72)]">
+                            Placed
+                          </p>
+                          <p className="text-base font-semibold text-[var(--foreground)]">
+                            {formatDate(order.createdAt)}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="mt-4 flex flex-col gap-2">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[rgba(var(--admin-muted-rgb),0.72)]">
+                          Update status
+                        </p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <select
+                            value={order.status || 'paid'}
+                            onChange={(event) =>
+                              updateStatus(
+                                order.id,
+                                event.target.value as Order['status']
+                              )
+                            }
+                            disabled={saving === order.id}
+                            className="flex-1 rounded-xl border admin-border bg-[rgb(var(--admin-surface-soft-rgb)/0.92)] px-3 py-1.5 text-xs text-[var(--foreground)] focus:border-blue-400/45 focus:outline-none focus:ring-0"
+                          >
+                            {STATUSES.map((s) => (
+                              <option key={s} value={s}>
+                                {STATUS_STYLES[s].label}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            type="button"
+                            className="inline-flex items-center justify-center rounded-xl border admin-border bg-[rgb(var(--admin-surface-soft-rgb)/0.92)] p-2 text-[var(--foreground)] transition hover:border-blue-400/35 hover:bg-blue-500/12"
+                            title="View customer record"
+                          >
+                            <ArrowUpRight
+                              className="size-4"
+                              strokeWidth={1.75}
+                            />
+                          </button>
+                        </div>
+                      </div>
+                    </article>
+                  )
+                })}
+              </div>
+            </>
           )}
         </div>
       </div>

@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import type { LucideIcon } from 'lucide-react'
 import {
@@ -19,7 +19,7 @@ import { signOut } from 'firebase/auth'
 import { useAuth } from '@/context/AuthContext'
 import { auth } from '@/lib/firebase'
 import AdminOnly from '@/components/AdminOnly'
-import ThemeToggle from '@/components/ThemeToggle'
+import { useTheme } from '@/context/ThemeContext'
 
 type NavItem = {
   href: string
@@ -115,7 +115,30 @@ export default function AdminLayout({
 }) {
   const pathname = usePathname()
   const { user } = useAuth()
+  const { theme, setTheme } = useTheme()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const initialThemeRef = useRef<typeof theme | null>(null)
+
+  useEffect(() => {
+    if (initialThemeRef.current === null) {
+      initialThemeRef.current = theme
+    }
+  }, [theme])
+
+  useEffect(() => {
+    if (theme !== 'dark') {
+      setTheme('dark')
+    }
+  }, [theme, setTheme])
+
+  useEffect(() => {
+    return () => {
+      const previous = initialThemeRef.current
+      if (previous && previous !== 'dark') {
+        setTheme(previous)
+      }
+    }
+  }, [setTheme])
 
   const activeItem = useMemo(() => {
     return (
@@ -227,13 +250,9 @@ export default function AdminLayout({
                 />
               ))}
             </nav>
-            <div className="mt-4 flex items-center justify-between rounded-2xl border admin-border bg-[rgba(var(--admin-surface-soft-rgb),0.92)] px-3 py-2 text-xs uppercase tracking-[0.24em] text-[rgb(var(--admin-muted-rgb))]">
-              <span>Theme</span>
-              <ThemeToggle />
-            </div>
             <Link
               href="/"
-              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-blue-400/30 bg-blue-500/15 px-3 py-2 text-sm font-semibold text-blue-600 transition hover:border-blue-400/60 hover:bg-blue-500/25"
+              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-blue-400/30 bg-blue-500/15 px-3 py-2 text-sm font-semibold text-blue-100 transition hover:-translate-y-0.5 hover:border-blue-400/60 hover:bg-blue-500/25"
               onClick={() => setSidebarOpen(false)}
             >
               View site
@@ -242,7 +261,7 @@ export default function AdminLayout({
             <button
               type="button"
               onClick={handleSignOut}
-              className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-blue-400/20 bg-blue-500/10 px-3 py-2 text-sm font-medium text-blue-600 transition hover:border-blue-400/40 hover:bg-blue-500/20"
+              className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-blue-400/20 bg-blue-500/10 px-3 py-2 text-sm font-medium text-blue-100 transition hover:-translate-y-0.5 hover:border-blue-400/40 hover:bg-blue-500/20"
             >
               <LogOut className="size-4" strokeWidth={1.75} />
               Sign out
@@ -279,21 +298,20 @@ export default function AdminLayout({
                   </h1>
                 </div>
               </div>
-              <div className="hidden items-center gap-3 sm:flex">
-                <ThemeToggle />
+              <div className="hidden items-center gap-4 sm:flex">
                 <Link
                   href="/"
-                  className="inline-flex items-center gap-2 rounded-xl border border-blue-400/25 bg-blue-500/12 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.28em] text-blue-600 transition hover:border-blue-400/45 hover:bg-blue-500/18"
+                  className="inline-flex items-center gap-2 rounded-xl border border-blue-400/35 bg-blue-500/15 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.26em] text-blue-100 transition hover:-translate-y-0.5 hover:border-blue-400/55 hover:bg-blue-500/25"
                 >
                   View site
                   <ArrowUpRight className="size-3.5" strokeWidth={1.75} />
                 </Link>
-                <div className="flex items-center gap-3 rounded-2xl border admin-border bg-[rgba(var(--admin-surface-soft-rgb),0.92)] px-4 py-2 text-sm text-[var(--foreground)]">
-                  <div className="flex size-8 items-center justify-center rounded-xl border border-blue-400/20 bg-blue-500/12 text-blue-600">
+                <div className="flex items-center gap-3 rounded-2xl border border-blue-400/25 bg-[rgba(var(--admin-surface-soft-rgb),0.92)] px-4 py-2 text-sm text-[var(--foreground)] shadow-[0_18px_36px_-28px_rgba(37,99,235,0.55)]">
+                  <div className="flex size-9 items-center justify-center rounded-xl border border-blue-400/40 bg-blue-500/20 text-blue-100">
                     <ShoppingBag className="size-4" strokeWidth={1.75} />
                   </div>
                   <div className="min-w-0">
-                    <p className="truncate text-xs uppercase tracking-[0.24em] text-blue-500/70">
+                    <p className="truncate text-[11px] font-semibold uppercase tracking-[0.28em] text-blue-200">
                       Logged in
                     </p>
                     <p className="truncate text-sm font-medium text-[var(--foreground)]">

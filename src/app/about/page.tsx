@@ -177,13 +177,13 @@ export default function AboutPage() {
             <div className="flex flex-wrap items-center gap-3">
               <Link
                 href="/store"
-                className="inline-flex items-center rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-[#0d141c] transition hover:bg-white/90"
+                className="inline-flex items-center rounded-full border border-white/40 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:border-white/60 hover:bg-white/20 dark:border-white/30 dark:bg-white/10 dark:hover:border-white/80 dark:hover:bg-white/40 dark:hover:text-[#0d141c]"
               >
                 {t('about.cta.primaryCta')}
               </Link>
               <Link
                 href="/contact"
-                className="inline-flex items-center rounded-full border border-white/50 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
+                className="inline-flex items-center rounded-full border border-white/40 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:border-white/60 hover:bg-white/20 dark:border-white/30 dark:bg-white/10 dark:hover:border-white/80 dark:hover:bg-white/40 dark:hover:text-[#0d141c]"
               >
                 {t('about.cta.secondaryCta')}
               </Link>
