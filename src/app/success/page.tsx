@@ -9,6 +9,7 @@ import { db } from '@/lib/firebase'
 import { collection, getDocs, limit, query, where } from 'firebase/firestore'
 import type { DocumentData, QueryDocumentSnapshot } from 'firebase/firestore'
 import { useCart } from '@/context/CartContext'
+import { formatOrderReference } from '@/lib/orderReference'
 
 type SummaryItem = { name: string; qty: number }
 
@@ -95,10 +96,7 @@ export default function SuccessPage() {
     if (!orderDocId) {
       return t('success.summary.pendingReference')
     }
-    const normalized = orderDocId.replace(/[^0-9A-Za-z]/g, '')
-    const source = normalized.length > 0 ? normalized : orderDocId
-    const suffix = source.slice(-6).toUpperCase()
-    return `#${suffix}`
+    return formatOrderReference(orderDocId) ?? orderDocId
   }, [orderDocId, t])
 
   useEffect(() => {
@@ -283,6 +281,8 @@ export default function SuccessPage() {
     '{email}',
     customerEmail ?? t('success.next.emailFallback')
   )
+  const primaryButtonClasses =
+    'inline-flex items-center justify-center rounded-xl bg-[var(--color-primary-dark)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--color-primary)]'
 
   return (
     <div className="bg-[#f6f7fb] px-4 py-14">
@@ -456,19 +456,19 @@ export default function SuccessPage() {
           <div className="flex flex-col gap-3 border-t border-zinc-100 px-6 py-6 md:flex-row md:justify-end">
             <Link
               href={orderDocId ? `/user/orders/${orderDocId}` : '/user/orders'}
-              className="inline-flex items-center justify-center rounded-xl border border-zinc-200 px-4 py-2 text-sm font-medium text-[#0d141c] transition hover:bg-[#f6f7fb]"
+              className={primaryButtonClasses}
             >
               {t('success.actions.view')}
             </Link>
             <Link
               href="/user/profile"
-              className="inline-flex items-center justify-center rounded-xl border border-zinc-200 px-4 py-2 text-sm font-medium text-[#0d141c] transition hover:bg-[#f6f7fb]"
+              className={primaryButtonClasses}
             >
               {t('success.actions.profile')}
             </Link>
             <Link
               href="/"
-              className="inline-flex items-center justify-center rounded-xl bg-[var(--color-primary-dark)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--color-primary)]"
+              className={primaryButtonClasses}
             >
               {t('success.actions.continue')}
             </Link>

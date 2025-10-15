@@ -3,25 +3,37 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { useI18n } from '@/context/I18nContext'
 
 export default function VerifyEmailPage() {
+  const { t } = useI18n()
   const searchParams = useSearchParams()
   const token = searchParams.get('token') || ''
   const [status, setStatus] = useState<
     'idle' | 'verifying' | 'success' | 'error' | 'expired'
   >('idle')
-  const [message, setMessage] = useState('')
+  const [messageKey, setMessageKey] = useState<
+    | 'verifyEmail.success.description'
+    | 'verifyEmail.errors.missing'
+    | 'verifyEmail.errors.failed'
+    | 'verifyEmail.errors.expired'
+    | null
+  >(null)
+  const [messageOverride, setMessageOverride] = useState<string | null>(null)
 
   useEffect(() => {
     if (!token) {
       setStatus('error')
-      setMessage('Doğrulama bağlantısı eksik veya hatalı.')
+      setMessageOverride(null)
+      setMessageKey('verifyEmail.errors.missing')
       return
     }
 
     let cancelled = false
     ;(async () => {
       setStatus('verifying')
+      setMessageKey(null)
+      setMessageOverride(null)
       try {
         const res = await fetch('/api/auth/email-verification/confirm', {
           method: 'POST',
@@ -31,21 +43,26 @@ export default function VerifyEmailPage() {
         const data = (await res.json()) as { error?: string }
         if (cancelled) return
         if (!res.ok) {
-          setStatus(res.status === 410 ? 'expired' : 'error')
-          setMessage(data.error || 'Doğrulama işlemi başarısız oldu.')
+          if (res.status === 410) {
+            setStatus('expired')
+            setMessageKey('verifyEmail.errors.expired')
+            setMessageOverride(null)
+          } else {
+            setStatus('error')
+            setMessageKey('verifyEmail.errors.failed')
+            setMessageOverride(data.error ?? null)
+          }
           return
         }
         setStatus('success')
-        setMessage(
-          'E-posta adresiniz başarıyla doğrulandı. Artık hesabınıza güvenle devam edebilirsiniz.'
-        )
+        setMessageKey('verifyEmail.success.description')
+        setMessageOverride(null)
       } catch (err) {
         if (cancelled) return
         console.error(err)
         setStatus('error')
-        setMessage(
-          'Doğrulama sırasında bir hata oluştu. Lütfen daha sonra tekrar deneyin.'
-        )
+        setMessageKey('verifyEmail.errors.failed')
+        setMessageOverride(null)
       }
     })()
 
@@ -54,15 +71,19 @@ export default function VerifyEmailPage() {
     }
   }, [token])
 
+  const message =
+    messageOverride ?? (messageKey ? t(messageKey) : undefined) ?? ''
+  const showResultCard = status !== 'verifying' && status !== 'idle'
+
   return (
     <div className="mx-auto max-w-md p-6">
-      <h1 className="text-2xl font-semibold mb-4">E-posta Doğrulama</h1>
+      <h1 className="text-2xl font-semibold mb-4">{t('verifyEmail.title')}</h1>
       {status === 'verifying' && (
         <p className="text-sm text-zinc-600">
-          Bağlantınız doğrulanıyor, lütfen bekleyin…
+          {t('verifyEmail.verifying')}
         </p>
       )}
-      {status !== 'verifying' && (
+      {showResultCard && (
         <div className="rounded-2xl border bg-white p-5 shadow-sm">
           <p className="text-sm text-zinc-700">{message}</p>
           <div className="mt-4 flex items-center gap-3 text-sm">
@@ -70,18 +91,17 @@ export default function VerifyEmailPage() {
               href="/user/profile"
               className="rounded bg-black px-3 py-2 text-white"
             >
-              Profilime dön
+              {t('verifyEmail.actions.profile')}
             </Link>
             <Link href="/" className="rounded border px-3 py-2">
-              Ana sayfaya git
+              {t('verifyEmail.actions.home')}
             </Link>
           </div>
         </div>
       )}
       {status === 'success' && (
         <p className="mt-4 text-xs text-zinc-500">
-          Profil sayfasında “Email verified” rozetini göremiyorsanız sayfayı
-          yenileyin.
+          {t('verifyEmail.successNote')}
         </p>
       )}
     </div>

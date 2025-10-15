@@ -66,6 +66,25 @@ const nb = {
       googleError: 'Google-innlogging feilet. Prøv igjen.',
     },
   },
+  verifyEmail: {
+    title: 'E-postbekreftelse',
+    verifying: 'Vi bekrefter lenken din, vennligst vent…',
+    success: {
+      description:
+        'E-postadressen din er bekreftet. Du kan trygt fortsette å bruke kontoen.',
+    },
+    actions: {
+      profile: 'Tilbake til profilen min',
+      home: 'Gå til forsiden',
+    },
+    successNote:
+      'Last inn siden på nytt hvis du ikke ser merket «Email verified» på profilen din.',
+    errors: {
+      missing: 'Bekreftelseslenken mangler eller er ugyldig.',
+      failed: 'Vi kunne ikke bekrefte e-posten din. Prøv igjen senere.',
+      expired: 'Denne bekreftelseslenken har utløpt. Be om en ny e-post.',
+    },
+  },
   home: {
     searchPlaceholder: 'Søk etter produkter',
     searchHint: 'Oppdag produkter via navn, merke eller kategori. Bruk filtrene eller prøv et populært søk.',
@@ -193,7 +212,8 @@ const nb = {
       label: 'Bestilling',
       total: 'Totalt',
       items: '{count} vare(r)',
-      session: 'Sesjon: {id}',
+      reference: 'Referanse {id}',
+      referenceFallback: 'Referanse genereres…',
       details: 'Se detaljer',
       placedOn: 'Bestilt {date}',
       status: {
@@ -221,7 +241,8 @@ const nb = {
   orderDetail: {
     title: 'Bestillingsoversikt',
     placedOn: 'Bestilt {date}',
-    session: 'Sesjon',
+    referenceLabel: 'Bestillingsnummer {id}',
+    referenceFallback: 'Referanse genereres…',
     back: 'Tilbake til bestillinger',
     status: {
       heading: 'Status',

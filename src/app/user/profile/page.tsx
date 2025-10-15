@@ -405,6 +405,8 @@ export default function ProfilePage() {
         String(verifyCooldown)
       )
     : t('profile.verification.resend')
+  const primaryButtonClass =
+    'inline-flex items-center justify-center rounded-full bg-[var(--color-primary-dark)] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[var(--color-primary)]'
   const locale = typeof window !== 'undefined' ? navigator.language : 'en-US'
   const isLoading = loading || authLoading
   const initials = (user?.displayName || user?.email || 'U')
@@ -648,7 +650,7 @@ export default function ProfilePage() {
               <button
                 type="submit"
                 disabled={saving}
-                className="inline-flex items-center justify-center rounded-full bg-[var(--color-primary-dark)] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[var(--color-primary)] disabled:cursor-not-allowed disabled:opacity-60"
+                className={`${primaryButtonClass} disabled:cursor-not-allowed disabled:opacity-60`}
               >
                 {saving ? t('profile.saving') : t('profile.accountCard.save')}
               </button>
@@ -668,7 +670,7 @@ export default function ProfilePage() {
                 </div>
                 <Link
                   href="/favorites"
-                  className="inline-flex items-center rounded-full border border-zinc-200 px-4 py-2 text-sm font-semibold text-[#0d141c] transition hover:bg-[#f6f7fb]"
+                  className={primaryButtonClass}
                 >
                   {t('profile.favorites.view')}
                 </Link>
@@ -676,30 +678,21 @@ export default function ProfilePage() {
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
                 <Link
                   href="/user/orders"
-                  className="group flex items-center justify-between rounded-2xl border border-zinc-200 bg-[#f6f7fb] px-4 py-3 text-sm font-semibold text-[#0d141c] transition hover:border-[#0d141c]/40 hover:bg-white"
+                  className={`${primaryButtonClass} gap-2`}
                 >
-                  <span>{t('nav.orders')}</span>
-                  <span className="text-xs text-zinc-500 transition group-hover:text-[#0d141c]">
-                    {'>'}
-                  </span>
+                  {t('nav.orders')}
                 </Link>
                 <Link
                   href="/cart"
-                  className="group flex items-center justify-between rounded-2xl border border-zinc-200 bg-[#f6f7fb] px-4 py-3 text-sm font-semibold text-[#0d141c] transition hover:border-[#0d141c]/40 hover:bg-white"
+                  className={`${primaryButtonClass} gap-2`}
                 >
-                  <span>{t('nav.cart')}</span>
-                  <span className="text-xs text-zinc-500 transition group-hover:text-[#0d141c]">
-                    {'>'}
-                  </span>
+                  {t('nav.cart')}
                 </Link>
                 <Link
                   href="/store"
-                  className="group flex items-center justify-between rounded-2xl border border-zinc-200 bg-[#f6f7fb] px-4 py-3 text-sm font-semibold text-[#0d141c] transition hover:border-[#0d141c]/40 hover:bg-white sm:col-span-2"
+                  className={`${primaryButtonClass} gap-2 sm:col-span-2`}
                 >
-                  <span>{t('nav.store')}</span>
-                  <span className="text-xs text-zinc-500 transition group-hover:text-[#0d141c]">
-                    {'>'}
-                  </span>
+                  {t('nav.store')}
                 </Link>
               </div>
             </div>
@@ -796,7 +789,7 @@ export default function ProfilePage() {
                 }
                 setShowAddressForm((prev) => !prev)
               }}
-              className="inline-flex items-center justify-center rounded-full border border-zinc-200 px-4 py-2 text-sm font-semibold text-[#0d141c] transition hover:bg-[#f6f7fb]"
+              className={primaryButtonClass}
             >
               {showAddressForm || addrForm.id
                 ? t('profile.addresses.form.cancel')
@@ -849,12 +842,12 @@ export default function ProfilePage() {
                           country: a.country || 'NO',
                           isDefault: !!a.isDefault,
                         })
-                        setShowAddressForm(true)
-                      }}
-                      className="inline-flex items-center rounded-full border border-zinc-200 px-3 py-1 text-xs font-semibold text-[#0d141c] transition hover:bg-white"
-                    >
-                      {t('profile.addresses.actions.edit')}
-                    </button>
+                    setShowAddressForm(true)
+                  }}
+                  className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100 hover:text-emerald-800 dark:border-emerald-400 dark:bg-emerald-500/15 dark:text-emerald-200 dark:hover:bg-emerald-400/25 dark:hover:text-white"
+                >
+                  {t('profile.addresses.actions.edit')}
+                </button>
                     <button
                       type="button"
                       onClick={() => deleteAddress(a.id)}

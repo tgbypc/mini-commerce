@@ -7,6 +7,7 @@ import { Timestamp } from 'firebase/firestore'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import { useI18n } from '@/context/I18nContext'
+import { formatOrderReference } from '@/lib/orderReference'
 
 type OrderItem = {
   description?: string
@@ -295,15 +296,23 @@ export default function OrdersPage() {
               ? paymentLabels[paymentStatus as keyof typeof paymentLabels] ??
                 capitalize(paymentStatus)
               : null
-            const orderLabel = `${t('orders.orderCard.label')} #${o.id}`
+            const rawOrderId = o.id || o.sessionId || ''
+            const formattedReference =
+              formatOrderReference(rawOrderId) ?? null
+            const orderLabel = `${t('orders.orderCard.label')} ${
+              formattedReference ??
+              t('orders.orderCard.referenceFallback')
+            }`
+            const referenceLabel = formattedReference
+              ? t('orders.orderCard.reference').replace(
+                  '{id}',
+                  formattedReference
+                )
+              : t('orders.orderCard.referenceFallback')
             const totalLabelCard = t('orders.orderCard.total')
             const itemsLabel = t('orders.orderCard.items').replace(
               '{count}',
               String(count)
-            )
-            const sessionLabel = t('orders.orderCard.session').replace(
-              '{id}',
-              o.sessionId || 'N/A'
             )
             const detailLabel = t('orders.orderCard.details')
             const placedLabel = when
@@ -445,7 +454,7 @@ export default function OrdersPage() {
                       >
                         <path d="M20 4H4v16l5-3 3 3 3-3 5 3z" />
                       </svg>
-                      {sessionLabel}
+                      {referenceLabel}
                     </span>
                   </div>
                 </div>

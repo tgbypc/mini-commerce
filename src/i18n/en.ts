@@ -66,6 +66,25 @@ const en = {
       googleError: 'Google sign-in failed. Please try again.',
     },
   },
+  verifyEmail: {
+    title: 'Email verification',
+    verifying: 'We are validating your link, please wait…',
+    success: {
+      description:
+        'Your email address has been verified successfully. You can continue using your account securely.',
+    },
+    actions: {
+      profile: 'Back to my profile',
+      home: 'Go to homepage',
+    },
+    successNote:
+      'If you do not see the “Email verified” badge on your profile, refresh the page.',
+    errors: {
+      missing: 'The verification link is missing or invalid.',
+      failed: 'We could not verify your email. Please try again later.',
+      expired: 'This verification link has expired. Request a new email.',
+    },
+  },
   success: {
     title: 'Order confirmed!',
     subtitle: 'Thank you for your purchase. We emailed a receipt and will keep you updated.',
@@ -193,7 +212,8 @@ const en = {
       label: 'Order',
       total: 'Total',
       items: '{count} item(s)',
-      session: 'Session: {id}',
+      reference: 'Reference {id}',
+      referenceFallback: 'Generating…',
       details: 'View details',
       placedOn: 'Placed {date}',
       status: {
@@ -221,7 +241,8 @@ const en = {
   orderDetail: {
     title: 'Order summary',
     placedOn: 'Placed on {date}',
-    session: 'Session',
+    referenceLabel: 'Order number {id}',
+    referenceFallback: 'Reference pending',
     back: 'Back to orders',
     status: {
       heading: 'Status',

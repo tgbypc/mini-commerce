@@ -7,6 +7,7 @@ import { useParams } from 'next/navigation'
 import { fmtCurrency } from '@/lib/money'
 import { useAuth } from '@/context/AuthContext'
 import { useI18n } from '@/context/I18nContext'
+import { formatOrderReference } from '@/lib/orderReference'
 
 function resolveDate(value: OrderDetail['createdAt']) {
   if (typeof value === 'string') return new Date(value)
@@ -180,6 +181,13 @@ export default function OrderDetailPage() {
     )
   }
 
+  const rawOrderId = order.id || order.sessionId || ''
+  const orderReference = formatOrderReference(rawOrderId)
+  const referenceText = orderReference
+    ? t('orderDetail.referenceLabel').replace('{id}', orderReference)
+    : t('orderDetail.referenceFallback')
+  const referenceBadge = orderReference ?? t('orderDetail.referenceFallback')
+
   const currency = (order.currency ?? 'USD').toUpperCase()
   const steps: Array<{
     key: NonNullable<OrderDetail['status']>
@@ -238,7 +246,7 @@ export default function OrderDetailPage() {
           <div className="relative z-[1] flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="space-y-2">
               <div className="inline-flex items-center rounded-full border border-zinc-200 bg-[#f4f4f5] px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-zinc-600">
-                #{order.id}
+                {referenceBadge}
               </div>
               <h1 className="text-2xl font-semibold text-[#0d141c]">
                 {t('orderDetail.title')}
@@ -253,30 +261,11 @@ export default function OrderDetailPage() {
               <span className="inline-flex items-center rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs font-semibold text-[#0d141c]">
                 {totalDisplay}
               </span>
-              {order.sessionId && (
-                <span className="text-xs text-zinc-500">
-                  {t('orderDetail.session')}: {order.sessionId}
-                </span>
-              )}
+              <span className="text-xs text-zinc-500">{referenceText}</span>
               <Link
                 href="/user/orders"
-                className="inline-flex items-center gap-2 rounded-full border border-zinc-200 px-4 py-1.5 text-sm font-medium text-[#0d141c] transition hover:bg-[#f4f4f5]"
+                className="inline-flex items-center justify-center rounded-full bg-[var(--color-primary-dark)] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[var(--color-primary)]"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                >
-                  <path
-                    d="m15 6-6 6 6 6"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
                 {t('orderDetail.back')}
               </Link>
             </div>

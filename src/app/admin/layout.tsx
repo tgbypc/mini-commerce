@@ -291,9 +291,6 @@ export default function AdminLayout({
                 </div>
               </div>
               <div className="hidden items-center gap-4 sm:flex">
-                <div className="hidden items-center gap-2 rounded-2xl border border-[rgba(var(--admin-border-rgb),0.26)] bg-[rgba(var(--admin-surface-soft-rgb),0.9)] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.28em] text-[rgba(var(--admin-muted-rgb),0.82)] xl:flex">
-                  {theme === 'dark' ? 'Dark mode' : 'Light mode'}
-                </div>
                 <ThemeToggle className="admin-theme-toggle" />
                 <Link
                   href="/"
