@@ -169,30 +169,32 @@ export default function AdminMessagesPage() {
 
   return (
     <div className="space-y-6">
-      <header className="admin-hero-card admin-card border admin-border overflow-hidden bg-gradient-to-br from-[rgba(17,24,39,0.82)] via-[rgba(30,41,59,0.86)] to-[rgba(15,23,42,0.9)]">
+      <header className="admin-panel-card admin-panel-card--hero admin-inbox-hero">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-xl min-w-0 space-y-3">
-            <span className="inline-flex items-center gap-2 rounded-full border border-[rgba(148,163,184,0.25)] bg-[rgba(30,41,59,0.75)] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-[rgba(var(--admin-muted-rgb),0.85)] sm:tracking-[0.34em]">
+            <span className="admin-inbox-badge">
               Inbox
             </span>
             <div>
               <h1 className="text-3xl font-semibold tracking-tight text-[var(--foreground)] sm:text-[32px]">
                 Contact Messages
               </h1>
-              <p className="mt-2 text-sm leading-relaxed text-[rgba(203,213,225,0.85)] sm:text-base">
+              <p className="mt-2 text-sm leading-relaxed text-[rgb(var(--admin-muted-rgb))] sm:text-base">
                 Review submissions from the public contact form and take action on
                 new requests as they arrive.
               </p>
             </div>
           </div>
           <div className="grid w-full max-w-lg gap-3 sm:grid-cols-2 sm:items-center lg:max-w-sm">
-            <div className="flex items-center justify-between gap-3 rounded-2xl border border-blue-400/30 bg-[rgba(37,99,235,0.14)] px-4 py-3 text-xs text-[var(--foreground)] shadow-[0_16px_32px_-24px_rgba(37,99,235,0.55)] sm:justify-start">
-              <Filter className="size-4 text-blue-200" strokeWidth={1.75} />
-              <div className="flex min-w-0 flex-col">
-                <span className="text-xs uppercase tracking-[0.28em] text-[rgba(191,219,254,0.7)]">
+            <div className="admin-inbox-summary sm:justify-start">
+              <span className="admin-inbox-summary__icon">
+                <Filter className="size-4" strokeWidth={1.75} />
+              </span>
+              <div className="admin-inbox-summary__meta">
+                <span className="admin-inbox-summary__label">
                   Filter
                 </span>
-                <span className="text-sm font-semibold tracking-tight text-[var(--foreground)]">
+                <span className="admin-inbox-summary__value">
                   {filteredLabel}
                 </span>
               </div>
@@ -201,7 +203,7 @@ export default function AdminMessagesPage() {
               type="button"
               onClick={handleRefresh}
               disabled={refreshing}
-              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-blue-400/35 bg-blue-500/20 px-4 py-3 text-sm font-medium text-blue-100 transition hover:-translate-y-0.5 hover:border-blue-400/45 hover:bg-blue-500/28 disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
+              className="admin-button admin-button--surface w-full justify-center gap-2 text-sm uppercase tracking-[0.24em] disabled:cursor-not-allowed disabled:opacity-60 sm:w-full"
             >
               <RefreshCcw className="size-4" strokeWidth={1.75} />
               {refreshing ? 'Refreshing…' : 'Refresh'}
@@ -212,22 +214,22 @@ export default function AdminMessagesPage() {
 
       <section className="space-y-5">
         <div className="grid gap-3 md:grid-cols-[minmax(0,280px)_minmax(0,1fr)] lg:grid-cols-[minmax(0,320px)_320px]">
-          <div className="flex items-center justify-between gap-3 rounded-2xl border admin-border bg-[rgba(var(--admin-surface-soft-rgb),0.92)] px-4 py-3 text-sm text-[rgb(var(--admin-muted-rgb))]">
+          <div className="admin-inbox-summary">
             <div className="flex items-center gap-3">
-              <span className="flex size-9 items-center justify-center rounded-xl border admin-border bg-blue-500/10 text-blue-300">
+              <span className="admin-inbox-summary__icon">
                 <Inbox className="size-4.5" strokeWidth={1.75} />
               </span>
-              <div className="min-w-0 leading-tight">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[rgba(var(--admin-muted-rgb),0.7)] sm:tracking-[0.32em]">
+              <div className="admin-inbox-summary__meta">
+                <p className="admin-inbox-summary__label sm:tracking-[0.32em]">
                   Messages loaded
                 </p>
-                <p className="text-base font-semibold text-[var(--foreground)]">
+                <p className="admin-inbox-summary__value">
                   {messages.length}{' '}
                   {messages.length === 1 ? 'message' : 'messages'}
                 </p>
               </div>
             </div>
-            <span className="hidden text-xs font-semibold uppercase tracking-[0.28em] text-[rgba(var(--admin-muted-rgb),0.65)] md:inline">
+            <span className="hidden text-xs font-semibold uppercase tracking-[0.28em] text-[rgba(var(--admin-muted-rgb),0.68)] md:inline">
               Live
             </span>
           </div>
@@ -235,8 +237,8 @@ export default function AdminMessagesPage() {
             <span className="block text-[10px] font-semibold uppercase tracking-[0.22em] text-[rgba(var(--admin-muted-rgb),0.75)] sm:tracking-[0.32em]">
               Filter by status
             </span>
-            <div className="relative mt-2 flex items-center gap-2 rounded-2xl border admin-border bg-[rgba(var(--admin-surface-soft-rgb),0.92)] px-3 py-2 text-sm text-[var(--foreground)] transition focus-within:border-blue-400/45 focus-within:shadow-[0_18px_36px_-24px_rgba(59,130,246,0.5)]">
-              <Filter className="size-4 text-blue-300" strokeWidth={1.75} />
+            <div className="admin-inbox-filter mt-2">
+              <Filter className="admin-inbox-filter__icon size-4" strokeWidth={1.75} />
               <select
                 value={statusFilter}
                 onChange={(e) =>
@@ -244,7 +246,7 @@ export default function AdminMessagesPage() {
                     e.target.value as (typeof STATUS_OPTIONS)[number]['value']
                   )
                 }
-                className="w-full appearance-none bg-transparent pr-6 text-sm font-medium text-[var(--foreground)] focus:outline-none"
+                className="pr-6 text-sm font-medium"
               >
                 {STATUS_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -252,7 +254,7 @@ export default function AdminMessagesPage() {
                   </option>
                 ))}
               </select>
-              <ChevronDown className="pointer-events-none absolute right-3 size-4 text-[rgba(var(--admin-muted-rgb),0.75)]" />
+              <ChevronDown className="admin-inbox-filter__chevron size-4" />
             </div>
           </label>
         </div>
@@ -289,14 +291,14 @@ export default function AdminMessagesPage() {
               return (
                 <article
                   key={msg.id}
-                  className="admin-card border admin-border bg-[rgba(var(--admin-surface-rgb),0.9)] p-5 sm:p-6 transition hover:-translate-y-1 hover:border-blue-400/35 hover:shadow-[0_22px_44px_-28px_rgba(37,99,235,0.5)]"
+                  className="admin-inbox-card"
                 >
-                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                    <div className="flex min-w-0 items-start gap-3">
-                      <span className="flex size-11 items-center justify-center rounded-2xl border border-blue-400/35 bg-gradient-to-br from-blue-500/25 to-indigo-500/20 text-blue-100 shadow-[0_16px_32px_-26px_rgba(37,99,235,0.6)]">
+                  <div className="admin-inbox-card__header">
+                    <div className="admin-inbox-card__identity">
+                      <span className="admin-inbox-card__icon">
                         <Mail className="size-4.5" strokeWidth={1.65} />
                       </span>
-                      <div className="min-w-0 space-y-2">
+                      <div className="admin-inbox-card__details space-y-2">
                         <div className="flex flex-col gap-1">
                           <h2 className="break-words text-lg font-semibold text-[var(--foreground)]">
                             {msg.name || 'Anonymous'}
@@ -304,7 +306,7 @@ export default function AdminMessagesPage() {
                           {msg.email ? (
                             <a
                               href={`mailto:${msg.email}`}
-                              className="inline-flex items-center gap-1 break-all text-sm font-medium text-blue-200 underline-offset-4 transition hover:text-blue-100"
+                              className="inline-flex items-center gap-1 break-all text-sm font-medium text-[rgb(var(--admin-accent-rgb))] underline-offset-4 transition hover:text-[rgba(var(--admin-accent-rgb),0.8)]"
                             >
                               {msg.email}
                             </a>
@@ -314,10 +316,10 @@ export default function AdminMessagesPage() {
                             </span>
                           )}
                         </div>
-                        <dl className="grid gap-y-1 text-xs uppercase tracking-[0.18em] text-[rgba(var(--admin-muted-rgb),0.72)] sm:grid-cols-2 sm:gap-x-6 sm:tracking-[0.28em]">
+                        <dl className="admin-inbox-card__meta">
                           <div>
                             <dt className="sr-only">Topic</dt>
-                            <dd className="break-words text-[var(--foreground)] tracking-[0.18em] sm:tracking-[0.24em]">
+                            <dd className="break-words text-[rgb(var(--admin-text-rgb))]">
                               {topicLabel}
                             </dd>
                           </div>
@@ -334,7 +336,7 @@ export default function AdminMessagesPage() {
                       {statusMeta.label}
                     </span>
                   </div>
-                  <div className="mt-4 space-y-3 rounded-2xl border admin-border bg-[rgba(var(--admin-surface-soft-rgb),0.94)] p-4 text-sm text-[var(--foreground)]">
+                  <div className="admin-inbox-card__message">
                     <p className="break-words whitespace-pre-line leading-relaxed">
                       {msg.message || '—'}
                     </p>

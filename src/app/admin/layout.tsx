@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import type { LucideIcon } from 'lucide-react'
 import {
@@ -20,6 +20,7 @@ import { useAuth } from '@/context/AuthContext'
 import { auth } from '@/lib/firebase'
 import AdminOnly from '@/components/AdminOnly'
 import { useTheme } from '@/context/ThemeContext'
+import ThemeToggle from '@/components/ThemeToggle'
 
 type NavItem = {
   href: string
@@ -115,30 +116,8 @@ export default function AdminLayout({
 }) {
   const pathname = usePathname()
   const { user } = useAuth()
-  const { theme, setTheme } = useTheme()
+  const { theme } = useTheme()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const initialThemeRef = useRef<typeof theme | null>(null)
-
-  useEffect(() => {
-    if (initialThemeRef.current === null) {
-      initialThemeRef.current = theme
-    }
-  }, [theme])
-
-  useEffect(() => {
-    if (theme !== 'dark') {
-      setTheme('dark')
-    }
-  }, [theme, setTheme])
-
-  useEffect(() => {
-    return () => {
-      const previous = initialThemeRef.current
-      if (previous && previous !== 'dark') {
-        setTheme(previous)
-      }
-    }
-  }, [setTheme])
 
   const activeItem = useMemo(() => {
     return (
@@ -250,9 +229,22 @@ export default function AdminLayout({
                 />
               ))}
             </nav>
+            <div className="mt-6 rounded-2xl border border-[rgba(var(--admin-border-rgb),0.24)] bg-[rgba(var(--admin-surface-soft-rgb),0.96)] p-4 text-sm text-[rgb(var(--admin-text-rgb))] sm:hidden">
+              <div className="flex items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[rgba(var(--admin-muted-rgb),0.7)]">
+                    Appearance
+                  </p>
+                  <p className="text-sm font-medium">
+                    {theme === 'dark' ? 'Dark mode' : 'Light mode'}
+                  </p>
+                </div>
+                <ThemeToggle className="admin-theme-toggle" />
+              </div>
+            </div>
             <Link
               href="/"
-              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-blue-400/30 bg-blue-500/15 px-3 py-2 text-sm font-semibold text-blue-100 transition hover:-translate-y-0.5 hover:border-blue-400/60 hover:bg-blue-500/25"
+              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[rgba(var(--admin-accent-rgb),0.32)] bg-[rgba(var(--admin-accent-rgb),0.12)] px-3 py-2 text-sm font-semibold text-[rgb(var(--admin-accent-rgb))] transition hover:-translate-y-0.5 hover:border-[rgba(var(--admin-accent-rgb),0.48)] hover:bg-[rgba(var(--admin-accent-rgb),0.18)]"
               onClick={() => setSidebarOpen(false)}
             >
               View site
@@ -261,7 +253,7 @@ export default function AdminLayout({
             <button
               type="button"
               onClick={handleSignOut}
-              className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-blue-400/20 bg-blue-500/10 px-3 py-2 text-sm font-medium text-blue-100 transition hover:-translate-y-0.5 hover:border-blue-400/40 hover:bg-blue-500/20"
+              className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[rgba(var(--admin-border-rgb),0.25)] bg-[rgba(var(--admin-surface-soft-rgb),0.92)] px-3 py-2 text-sm font-medium text-[rgb(var(--admin-text-rgb))] transition hover:-translate-y-0.5 hover:border-[rgba(var(--admin-border-rgb),0.35)] hover:bg-[rgba(var(--admin-surface-soft-rgb),0.98)]"
             >
               <LogOut className="size-4" strokeWidth={1.75} />
               Sign out
@@ -290,7 +282,7 @@ export default function AdminLayout({
                   <span className="sr-only">Toggle navigation</span>
                 </button>
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.38em] text-blue-500/70">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.38em] text-[rgba(var(--admin-accent-rgb),0.68)]">
                     Admin Panel
                   </p>
                   <h1 className="text-xl font-semibold tracking-tight text-[var(--foreground)] sm:text-2xl">
@@ -299,19 +291,23 @@ export default function AdminLayout({
                 </div>
               </div>
               <div className="hidden items-center gap-4 sm:flex">
+                <div className="hidden items-center gap-2 rounded-2xl border border-[rgba(var(--admin-border-rgb),0.26)] bg-[rgba(var(--admin-surface-soft-rgb),0.9)] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.28em] text-[rgba(var(--admin-muted-rgb),0.82)] xl:flex">
+                  {theme === 'dark' ? 'Dark mode' : 'Light mode'}
+                </div>
+                <ThemeToggle className="admin-theme-toggle" />
                 <Link
                   href="/"
-                  className="inline-flex items-center gap-2 rounded-xl border border-blue-400/35 bg-blue-500/15 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.26em] text-blue-100 transition hover:-translate-y-0.5 hover:border-blue-400/55 hover:bg-blue-500/25"
+                  className="inline-flex items-center gap-2 rounded-xl border border-[rgba(var(--admin-accent-rgb),0.28)] bg-[rgba(var(--admin-accent-rgb),0.12)] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.26em] text-[rgb(var(--admin-accent-rgb))] transition hover:-translate-y-0.5 hover:border-[rgba(var(--admin-accent-rgb),0.45)] hover:bg-[rgba(var(--admin-accent-rgb),0.18)]"
                 >
                   View site
                   <ArrowUpRight className="size-3.5" strokeWidth={1.75} />
                 </Link>
-                <div className="flex items-center gap-3 rounded-2xl border border-blue-400/25 bg-[rgba(var(--admin-surface-soft-rgb),0.92)] px-4 py-2 text-sm text-[var(--foreground)] shadow-[0_18px_36px_-28px_rgba(37,99,235,0.55)]">
-                  <div className="flex size-9 items-center justify-center rounded-xl border border-blue-400/40 bg-blue-500/20 text-blue-100">
+                <div className="flex items-center gap-3 rounded-2xl border border-[rgba(var(--admin-border-rgb),0.26)] bg-[rgba(var(--admin-surface-soft-rgb),0.92)] px-4 py-2 text-sm text-[var(--foreground)] shadow-[0_18px_36px_-28px_rgba(37,99,235,0.28)]">
+                  <div className="flex size-9 items-center justify-center rounded-xl border border-[rgba(var(--admin-accent-rgb),0.42)] bg-[rgba(var(--admin-accent-rgb),0.12)] text-[rgb(var(--admin-accent-rgb))]">
                     <ShoppingBag className="size-4" strokeWidth={1.75} />
                   </div>
                   <div className="min-w-0">
-                    <p className="truncate text-[11px] font-semibold uppercase tracking-[0.28em] text-blue-200">
+                    <p className="truncate text-[11px] font-semibold uppercase tracking-[0.28em] text-[rgba(var(--admin-accent-rgb),0.72)]">
                       Logged in
                     </p>
                     <p className="truncate text-sm font-medium text-[var(--foreground)]">

@@ -251,8 +251,8 @@ export default function AdminOrdersPage() {
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
-            <div className="flex w-full flex-wrap items-center justify-between gap-2 rounded-2xl border border-blue-400/30 bg-[rgb(var(--admin-surface-soft-rgb)/0.92)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-blue-100 shadow-[0_18px_38px_-24px_rgba(59,130,246,0.45)] sm:w-auto sm:flex-nowrap sm:justify-start">
-              <PackageSearch className="size-4 text-blue-200" strokeWidth={1.75} />
+            <div className="flex w-full flex-wrap items-center justify-between gap-2 rounded-2xl border border-[rgba(var(--admin-border-rgb),0.28)] bg-[rgba(var(--admin-surface-soft-rgb),0.92)] px-3 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-[rgb(var(--admin-text-rgb))] shadow-[0_18px_38px_-24px_rgba(var(--admin-shadow-rgb),0.28)] sm:w-auto sm:flex-nowrap sm:justify-start">
+              <PackageSearch className="size-4 text-[rgba(var(--admin-accent-rgb),0.78)]" strokeWidth={1.75} />
               <span>{orders.length} orders</span>
               <span className="mx-2 h-4 w-px bg-[rgba(var(--admin-border-rgb),0.15)]" />
               <span>{pendingOrders} pending</span>
@@ -263,7 +263,7 @@ export default function AdminOrdersPage() {
               type="button"
               onClick={handleRefresh}
               disabled={refreshing}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-blue-400/25 bg-blue-500/12 px-4 py-2 text-sm font-semibold text-blue-100 transition hover:-translate-y-0.5 hover:border-blue-400/40 hover:bg-blue-500/20 disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+              className="admin-button admin-button--surface w-full justify-center gap-2 text-sm uppercase tracking-[0.24em] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
             >
               {refreshing ? (
                 <Loader2 className="size-4 animate-spin" strokeWidth={1.75} />
@@ -283,7 +283,7 @@ export default function AdminOrdersPage() {
             <label className="w-full sm:max-w-xs lg:w-72">
               <span className="sr-only">Filter orders by status</span>
               <div className="relative flex items-center gap-2 rounded-2xl border admin-border bg-[rgb(var(--admin-surface-soft-rgb)/0.92)] px-3 py-2 text-sm text-[var(--foreground)] transition focus-within:border-blue-400/45 focus-within:shadow-[0_18px_36px_-24px_rgba(59,130,246,0.5)]">
-                <Filter className="size-4 text-blue-300" strokeWidth={1.75} />
+                <Filter className="size-4 text-[rgba(var(--admin-accent-rgb),0.7)]" strokeWidth={1.75} />
                 <select
                   value={statusFilter || ''}
                   onChange={(event) => {
