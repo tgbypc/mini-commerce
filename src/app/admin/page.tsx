@@ -73,10 +73,14 @@ function computeProductStats(products: Product[]): ProductStats {
 
 const DASHBOARD_STATUS_STYLES: Record<string, string> = {
   paid: 'inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200',
-  fulfilled: 'inline-flex items-center rounded-full bg-indigo-100 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-200',
-  shipped: 'inline-flex items-center rounded-full bg-sky-100 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-sky-700 dark:bg-sky-500/20 dark:text-sky-200',
-  delivered: 'inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-blue-700 dark:bg-blue-500/20 dark:text-blue-200',
-  canceled: 'inline-flex items-center rounded-full bg-rose-100 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-rose-700 dark:bg-rose-500/20 dark:text-rose-200',
+  fulfilled:
+    'inline-flex items-center rounded-full bg-indigo-100 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-200',
+  shipped:
+    'inline-flex items-center rounded-full bg-sky-100 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-sky-700 dark:bg-sky-500/20 dark:text-sky-200',
+  delivered:
+    'inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-blue-700 dark:bg-blue-500/20 dark:text-blue-200',
+  canceled:
+    'inline-flex items-center rounded-full bg-rose-100 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-rose-700 dark:bg-rose-500/20 dark:text-rose-200',
 }
 
 function computeOrderStats(orders: Order[]): OrderStats {
@@ -214,9 +218,7 @@ export default function AdminHome() {
     [orders]
   )
   const averageOrderValue =
-    orderStats.totalOrders > 0
-      ? orderStats.revenue / orderStats.totalOrders
-      : 0
+    orderStats.totalOrders > 0 ? orderStats.revenue / orderStats.totalOrders : 0
 
   const heroSurfaceClass =
     'rounded-4xl border border-zinc-200 bg-white/95 shadow-[0_32px_56px_-30px_rgba(15,23,42,0.28)] dark:border-zinc-700 dark:bg-[#111827]'
@@ -250,7 +252,9 @@ export default function AdminHome() {
                 Store performance snapshot
               </h2>
               <p className="max-w-2xl text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
-                Keep an eye on inventory, fulfilment and revenue trends from a single dashboard. The layout stays clear from desktop down to mobile.
+                Keep an eye on inventory, fulfilment and revenue trends from a
+                single dashboard. The layout stays clear from desktop down to
+                mobile.
               </p>
               <div className="flex flex-wrap items-center gap-3">
                 <Link href="/admin/product/new" className="btn-primary gap-2">
@@ -278,7 +282,10 @@ export default function AdminHome() {
               />
               <KpiCard
                 label="Total revenue"
-                value={fmtCurrency(orderStats.revenue, primaryCurrency || 'USD')}
+                value={fmtCurrency(
+                  orderStats.revenue,
+                  primaryCurrency || 'USD'
+                )}
                 description="Lifetime Stripe earnings"
                 loading={loadingOrders}
               />
@@ -378,7 +385,7 @@ export default function AdminHome() {
                       {productStats.outOfStock}
                     </span>
                     <span>
-                      <strong className="block text-[#0d141c] dark:text-white">
+                      <strong className="block text-rose-700 dark:text-rose-100">
                         Sold out
                       </strong>
                       Items are unavailable — notify suppliers or replace SKUs.
@@ -389,7 +396,9 @@ export default function AdminHome() {
             )}
           </div>
 
-          <div className={`${surfaceCardClass} flex flex-col gap-6 p-6 lg:col-span-2`}>
+          <div
+            className={`${surfaceCardClass} flex flex-col gap-6 p-6 lg:col-span-2`}
+          >
             <div className="space-y-2">
               <p className="text-xs font-semibold uppercase tracking-[0.25em] text-zinc-500 dark:text-zinc-400">
                 Store pulse
@@ -398,7 +407,8 @@ export default function AdminHome() {
                 Track performance at a glance
               </h3>
               <p className="text-sm text-zinc-600 dark:text-zinc-300">
-                Metrics refresh automatically as soon as Stripe and Firestore sync.
+                Metrics refresh automatically as soon as Stripe and Firestore
+                sync.
               </p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -413,10 +423,7 @@ export default function AdminHome() {
                 value={
                   loadingOrders
                     ? '—'
-                    : fmtCurrency(
-                        averageOrderValue,
-                        primaryCurrency || 'USD'
-                      )
+                    : fmtCurrency(averageOrderValue, primaryCurrency || 'USD')
                 }
               />
               <MiniStat
@@ -435,16 +442,17 @@ export default function AdminHome() {
               <MiniStat
                 label="Low inventory"
                 tone="warning"
-                value={
-                  loadingProducts ? '—' : productStats.lowStock.toString()
-                }
+                value={loadingProducts ? '—' : productStats.lowStock.toString()}
               />
               <MiniStat
                 label="Avg. product price"
                 value={
                   loadingProducts
                     ? '—'
-                    : fmtCurrency(productStats.avgPrice, primaryCurrency || 'USD')
+                    : fmtCurrency(
+                        productStats.avgPrice,
+                        primaryCurrency || 'USD'
+                      )
                 }
               />
             </div>
@@ -472,38 +480,47 @@ export default function AdminHome() {
           <div className="hidden overflow-x-auto md:block">
             <div className="mx-auto min-w-[640px] max-w-5xl">
               <table className="w-full divide-y divide-zinc-200 text-sm dark:divide-zinc-700">
-                <thead className="text-left text-xs uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">
+                <thead className="text-xs uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">
                   <tr>
-                    <th className="py-3">Order</th>
-                    <th className="py-3">Customer</th>
-                    <th className="py-3">Status</th>
-                    <th className="py-3 text-right">Total</th>
-                    <th className="py-3 text-right">Date</th>
+                    <th className="py-3 pr-4 text-left">Order</th>
+                    <th className="py-3 px-4 text-left">Customer</th>
+                    <th className="py-3 px-4 text-center">Status</th>
+                    <th className="py-3 px-4 text-right">Total</th>
+                    <th className="py-3 pl-4 text-right">Date</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
                   {loadingOrders ? (
                     <tr>
-                      <td colSpan={5} className="py-6 text-center text-zinc-500 dark:text-zinc-400">
+                      <td
+                        colSpan={5}
+                        className="py-6 text-center text-zinc-500 dark:text-zinc-400"
+                      >
                         Loading latest orders…
                       </td>
                     </tr>
                   ) : recentOrders.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="py-6 text-center text-zinc-500 dark:text-zinc-400">
+                      <td
+                        colSpan={5}
+                        className="py-6 text-center text-zinc-500 dark:text-zinc-400"
+                      >
                         No orders yet. Your first sale will show up right here.
                       </td>
                     </tr>
                   ) : (
                     recentOrders.map((order) => (
-                      <tr key={order.id} className="hover:bg-zinc-50 dark:hover:bg-[#162038]">
-                        <td className="py-4 font-semibold text-[#0d141c] dark:text-white">
+                      <tr
+                        key={order.id}
+                        className="hover:bg-zinc-50 dark:hover:bg-[#162038]"
+                      >
+                        <td className="py-4 pr-4 font-semibold text-[#0d141c] dark:text-white">
                           #{order.id.slice(-6).toUpperCase()}
                         </td>
-                        <td className="py-4 pr-8 text-zinc-500 dark:text-zinc-300">
+                        <td className="py-4 px-4 text-zinc-500 dark:text-zinc-300">
                           {order.email || '—'}
                         </td>
-                        <td className="py-4 pl-4">
+                        <td className="py-4 px-4 text-center">
                           <span
                             className={
                               DASHBOARD_STATUS_STYLES[
@@ -522,7 +539,7 @@ export default function AdminHome() {
                             order.currency || primaryCurrency || 'USD'
                           )}
                         </td>
-                        <td className="py-4 text-right text-zinc-500 dark:text-zinc-300">
+                        <td className="py-4 pl-4 text-right text-zinc-500 dark:text-zinc-300">
                           {formatDate(order.createdAt)}
                         </td>
                       </tr>
