@@ -7,6 +7,9 @@ export const dynamic = 'force-dynamic'
 
 const STATUSES = ['paid', 'fulfilled', 'shipped', 'delivered', 'canceled'] as const
 type Status = typeof STATUSES[number]
+type FirestoreOrderDoc = {
+  status?: string | null
+} & Record<string, unknown>
 
 export async function GET(req: Request) {
   const gate = await requireAdminFromRequest(req)
@@ -19,15 +22,18 @@ export async function GET(req: Request) {
       .orderBy('createdAt', 'desc')
       .limit(100)
     const snap = await baseQuery.get()
-    const items = snap.docs
-      .map((d) => ({ id: d.id, ...(d.data() as Record<string, unknown>) }))
-      .filter((item) => {
-        if (!status || !(STATUSES as readonly string[]).includes(status)) return true
-        return (
-          typeof item.status === 'string' &&
-          item.status.toLowerCase() === status
-        )
-      })
+    const itemsRaw = snap.docs.map((d) => ({
+      id: d.id,
+      ...(d.data() as FirestoreOrderDoc),
+    }))
+    const items =
+      status && (STATUSES as readonly string[]).includes(status)
+        ? itemsRaw.filter(
+            (item) =>
+              typeof item.status === 'string' &&
+              item.status.toLowerCase() === status
+          )
+        : itemsRaw
     return NextResponse.json({ items })
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Failed to load orders'
