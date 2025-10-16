@@ -1,4 +1,3 @@
-/// <reference types="vitest" />
 import '@testing-library/jest-dom'
 
 import type { Mock } from 'vitest'
@@ -13,6 +12,7 @@ declare module 'vitest' {
 declare module '@/lib/firebaseAdmin' {
   const FieldValue: {
     serverTimestamp: Mock<[] , firestore.FieldValue>
+    delete: Mock<[] , firestore.FieldValue>
   }
 }
 
