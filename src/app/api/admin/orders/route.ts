@@ -14,13 +14,19 @@ export async function GET(req: Request) {
   try {
     const url = new URL(req.url)
     const status = (url.searchParams.get('status') || '').trim().toLowerCase() as Status | ''
-    let q: FirebaseFirestore.Query = adminDb.collection('orders')
-    if (status && (STATUSES as readonly string[]).includes(status)) {
-      q = q.where('status', '==', status)
-    }
-    q = q.orderBy('createdAt', 'desc').limit(100)
+    let q: FirebaseFirestore.Query = adminDb
+      .collection('orders')
+      .orderBy('createdAt', 'desc')
+      .limit(100)
     const snap = await q.get()
-    const items = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Record<string, unknown>) }))
+    let items = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Record<string, unknown>) }))
+    if (status && (STATUSES as readonly string[]).includes(status)) {
+      items = items.filter(
+        (item) =>
+          typeof item.status === 'string' &&
+          item.status.toLowerCase() === status
+      )
+    }
     return NextResponse.json({ items })
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Failed to load orders'

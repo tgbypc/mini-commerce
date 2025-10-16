@@ -5,7 +5,7 @@ import { requireAdminFromRequest } from '@/lib/adminAuth'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-const STATUSES = ['new', 'read', 'archived'] as const
+const STATUSES = ['new', 'read', 'responded', 'archived'] as const
 
 export async function GET(req: Request) {
   const gate = await requireAdminFromRequest(req)

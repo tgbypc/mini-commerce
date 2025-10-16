@@ -72,11 +72,11 @@ function computeProductStats(products: Product[]): ProductStats {
 }
 
 const DASHBOARD_STATUS_STYLES: Record<string, string> = {
-  paid: 'admin-chip admin-chip--paid',
-  fulfilled: 'admin-chip admin-chip--fulfilled',
-  shipped: 'admin-chip admin-chip--shipped',
-  delivered: 'admin-chip admin-chip--delivered',
-  canceled: 'admin-chip admin-chip--canceled',
+  paid: 'inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200',
+  fulfilled: 'inline-flex items-center rounded-full bg-indigo-100 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-200',
+  shipped: 'inline-flex items-center rounded-full bg-sky-100 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-sky-700 dark:bg-sky-500/20 dark:text-sky-200',
+  delivered: 'inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-blue-700 dark:bg-blue-500/20 dark:text-blue-200',
+  canceled: 'inline-flex items-center rounded-full bg-rose-100 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-rose-700 dark:bg-rose-500/20 dark:text-rose-200',
 }
 
 function computeOrderStats(orders: Order[]): OrderStats {
@@ -218,290 +218,303 @@ export default function AdminHome() {
       ? orderStats.revenue / orderStats.totalOrders
       : 0
 
+  const heroSurfaceClass =
+    'rounded-4xl border border-zinc-200 bg-white/95 shadow-[0_32px_56px_-30px_rgba(15,23,42,0.28)] dark:border-zinc-700 dark:bg-[#111827]'
+  const surfaceCardClass =
+    'rounded-3xl border border-zinc-200 bg-white/95 shadow-[0_26px_52px_-32px_rgba(15,23,42,0.22)] dark:border-zinc-700 dark:bg-[#0f172a]'
+
   return (
-    <div className="space-y-8 text-[rgb(var(--admin-text-rgb))]">
-      <section className="admin-panel-card admin-panel-card--hero">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-3">
-            <p className="admin-eyebrow text-[rgba(var(--admin-accent-rgb),0.75)]">
-              Overview
-            </p>
-            <h2 className="text-3xl font-semibold tracking-tight sm:text-[2.15rem]">
-              Keep your store performance on track
-            </h2>
-            <p className="max-w-2xl text-sm leading-relaxed text-[rgb(var(--admin-muted-rgb))]">
-              Monitor inventory levels, fulfilment progress, and revenue trends without
-              leaving the dashboard. Designed to stay clear and readable across laptop,
-              tablet, and mobile screens.
-            </p>
+    <div className="relative overflow-hidden bg-[#f6f7fb] px-4 py-10 sm:px-6 lg:px-10 lg:py-16">
+      <span
+        className="pointer-events-none absolute -left-[18%] top-16 size-[320px] rounded-full bg-[rgba(124,58,237,0.15)] blur-3xl"
+        aria-hidden
+      />
+      <span
+        className="pointer-events-none absolute bottom-8 right-[-22%] size-[360px] rounded-full bg-[rgba(59,130,246,0.14)] blur-3xl"
+        aria-hidden
+      />
+      <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-10">
+        <section
+          className={`${heroSurfaceClass} relative overflow-hidden px-6 py-12 sm:px-10`}
+        >
+          <div
+            className="pointer-events-none absolute inset-y-0 right-[-18%] hidden w-[50%] rounded-full bg-gradient-to-br from-[#dbe7ff] via-transparent to-transparent blur-3xl sm:block"
+            aria-hidden
+          />
+          <div className="relative z-[1] flex flex-col gap-10 lg:grid lg:grid-cols-[1.2fr_1fr]">
+            <div className="space-y-6">
+              <span className="inline-flex items-center rounded-full border border-zinc-200 bg-[#f6f7fb] px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-zinc-500 dark:border-zinc-700 dark:bg-[#1f2937] dark:text-zinc-300">
+                Overview
+              </span>
+              <h2 className="text-3xl font-semibold text-[#0d141c] md:text-4xl dark:text-white">
+                Store performance snapshot
+              </h2>
+              <p className="max-w-2xl text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
+                Keep an eye on inventory, fulfilment and revenue trends from a single dashboard. The layout stays clear from desktop down to mobile.
+              </p>
+              <div className="flex flex-wrap items-center gap-3">
+                <Link href="/admin/product/new" className="btn-primary gap-2">
+                  <Sparkles className="size-4" strokeWidth={1.75} />
+                  Add product
+                </Link>
+                <Link href="/admin/orders" className="btn-outline gap-2">
+                  Review orders
+                  <ArrowUpRight className="size-4" strokeWidth={1.75} />
+                </Link>
+              </div>
+            </div>
+            <dl className="grid gap-4 sm:grid-cols-2">
+              <KpiCard
+                label="Catalog size"
+                value={productStats.total}
+                description="Products currently live"
+                loading={loadingProducts}
+              />
+              <KpiCard
+                label="Open orders"
+                value={orderStats.openOrders}
+                description="Awaiting fulfilment"
+                loading={loadingOrders}
+              />
+              <KpiCard
+                label="Total revenue"
+                value={fmtCurrency(orderStats.revenue, primaryCurrency || 'USD')}
+                description="Lifetime Stripe earnings"
+                loading={loadingOrders}
+              />
+              <KpiCard
+                label="Avg. order value"
+                value={fmtCurrency(averageOrderValue, primaryCurrency || 'USD')}
+                description="Revenue ÷ total orders"
+                loading={loadingOrders}
+              />
+            </dl>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <Link
-              href="/admin/product/new"
-              className="admin-button admin-button--primary"
-            >
-              <Sparkles className="size-4" strokeWidth={1.75} />
-              Add product
-            </Link>
-            <Link
-              href="/admin/orders"
-              className="admin-button admin-button--surface"
-            >
-              Review orders
+        </section>
+
+        <section className="grid gap-6 lg:grid-cols-2">
+          <div className={`${surfaceCardClass} flex flex-col gap-6 p-6`}>
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-zinc-500 dark:text-zinc-400">
+                Quick actions
+              </p>
+              <h3 className="text-lg font-semibold text-[#0d141c] dark:text-white">
+                Act on what matters now
+              </h3>
+              <p className="text-sm text-zinc-600 dark:text-zinc-300">
+                Jump into the workflows you use most and keep operations moving.
+              </p>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              <ActionLink
+                href="/admin/product"
+                icon={<Boxes className="size-4" strokeWidth={1.75} />}
+                description="Update product descriptions, pricing and availability."
+              >
+                Review catalog
+              </ActionLink>
+              <ActionLink
+                href="/admin/orders"
+                icon={<ClipboardList className="size-4" strokeWidth={1.75} />}
+                description="Check payment status and move orders forward."
+              >
+                Manage orders
+              </ActionLink>
+              <ActionLink
+                href="/admin/messages"
+                icon={<Sparkles className="size-4" strokeWidth={1.75} />}
+                description="Follow up on customer messages from a single inbox."
+              >
+                Open messages
+              </ActionLink>
+              <ActionLink
+                href="/admin/product/new"
+                icon={<TrendingUp className="size-4" strokeWidth={1.75} />}
+                description="Publish a new listing or schedule a campaign."
+              >
+                Launch campaign
+              </ActionLink>
+            </div>
+          </div>
+
+          <div className={`${surfaceCardClass} flex flex-col gap-6 p-6`}>
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-zinc-500 dark:text-zinc-400">
+                Inventory watchlist
+              </p>
+              <h3 className="text-lg font-semibold text-[#0d141c] dark:text-white">
+                Stay ahead of stock issues
+              </h3>
+              <p className="text-sm text-zinc-600 dark:text-zinc-300">
+                Surface low or depleted inventory before it impacts sales.
+              </p>
+            </div>
+            {loadingProducts ? (
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                Loading stock insights…
+              </p>
+            ) : productStats.lowStock === 0 && productStats.outOfStock === 0 ? (
+              <div className="rounded-2xl border border-zinc-200 bg-[#f8f9fc] px-4 py-5 text-sm text-[#0d141c] shadow-inner dark:border-zinc-700 dark:bg-[#101828] dark:text-zinc-100">
+                Inventory looks healthy 🎉
+              </div>
+            ) : (
+              <ul className="space-y-3">
+                {productStats.lowStock > 0 && (
+                  <li className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-200">
+                    <span className="mt-0.5 inline-flex size-7 items-center justify-center rounded-full bg-amber-100 text-xs font-semibold tracking-[0.2em] text-amber-700 dark:bg-amber-500/25 dark:text-amber-100">
+                      {productStats.lowStock}
+                    </span>
+                    <span>
+                      <strong className="block text-[#0d141c] dark:text-white">
+                        Low stock
+                      </strong>
+                      Products are below five units — plan a restock.
+                    </span>
+                  </li>
+                )}
+                {productStats.outOfStock > 0 && (
+                  <li className="flex items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-200">
+                    <span className="mt-0.5 inline-flex size-7 items-center justify-center rounded-full bg-rose-100 text-xs font-semibold tracking-[0.2em] text-rose-700 dark:bg-rose-500/25 dark:text-rose-100">
+                      {productStats.outOfStock}
+                    </span>
+                    <span>
+                      <strong className="block text-[#0d141c] dark:text-white">
+                        Sold out
+                      </strong>
+                      Items are unavailable — notify suppliers or replace SKUs.
+                    </span>
+                  </li>
+                )}
+              </ul>
+            )}
+          </div>
+
+          <div className={`${surfaceCardClass} flex flex-col gap-6 p-6 lg:col-span-2`}>
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-zinc-500 dark:text-zinc-400">
+                Store pulse
+              </p>
+              <h3 className="text-lg font-semibold text-[#0d141c] dark:text-white">
+                Track performance at a glance
+              </h3>
+              <p className="text-sm text-zinc-600 dark:text-zinc-300">
+                Metrics refresh automatically as soon as Stripe and Firestore sync.
+              </p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <MiniStat
+                label="Total orders"
+                value={
+                  loadingOrders ? '—' : orderStats.totalOrders.toLocaleString()
+                }
+              />
+              <MiniStat
+                label="Average order value"
+                value={
+                  loadingOrders
+                    ? '—'
+                    : fmtCurrency(
+                        averageOrderValue,
+                        primaryCurrency || 'USD'
+                      )
+                }
+              />
+              <MiniStat
+                label="Live products"
+                value={
+                  loadingProducts ? '—' : productStats.total.toLocaleString()
+                }
+              />
+              <MiniStat
+                label="Out of stock"
+                tone="danger"
+                value={
+                  loadingProducts ? '—' : productStats.outOfStock.toString()
+                }
+              />
+              <MiniStat
+                label="Low inventory"
+                tone="warning"
+                value={
+                  loadingProducts ? '—' : productStats.lowStock.toString()
+                }
+              />
+              <MiniStat
+                label="Avg. product price"
+                value={
+                  loadingProducts
+                    ? '—'
+                    : fmtCurrency(productStats.avgPrice, primaryCurrency || 'USD')
+                }
+              />
+            </div>
+          </div>
+        </section>
+
+        <section className={`${surfaceCardClass} flex flex-col gap-6 p-6`}>
+          <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-zinc-500 dark:text-zinc-400">
+                Latest orders
+              </p>
+              <h3 className="text-lg font-semibold text-[#0d141c] dark:text-white">
+                Recent activity from Stripe
+              </h3>
+              <p className="text-sm text-zinc-600 dark:text-zinc-300">
+                Payments and fulfilment statuses sync in near real time.
+              </p>
+            </div>
+            <Link href="/admin/orders" className="btn-outline gap-2">
+              View all orders
               <ArrowUpRight className="size-4" strokeWidth={1.75} />
             </Link>
           </div>
-        </div>
-
-        <dl className="admin-kpi-grid admin-kpi-grid--hero">
-          <KpiCard
-            label="Catalog size"
-            value={productStats.total}
-            description="Products currently live"
-            loading={loadingProducts}
-          />
-          <KpiCard
-            label="Open orders"
-            value={orderStats.openOrders}
-            description="Awaiting fulfilment"
-            loading={loadingOrders}
-          />
-          <KpiCard
-            label="Total revenue"
-            value={fmtCurrency(
-              orderStats.revenue,
-              primaryCurrency || 'USD'
-            )}
-            description="Lifetime Stripe earnings"
-            loading={loadingOrders}
-          />
-        </dl>
-      </section>
-
-      <section className="admin-panel-grid">
-        <div className="admin-panel-card">
-          <div className="space-y-2">
-            <p className="admin-eyebrow text-[rgba(var(--admin-accent-rgb),0.75)]">
-              Quick actions
-            </p>
-            <h3 className="text-lg font-semibold">Act on what matters now</h3>
-            <p className="text-sm text-[rgb(var(--admin-muted-rgb))]">
-              Jump straight into the workflows you use most and keep operations moving.
-            </p>
-          </div>
-          <div className="admin-action-list">
-            <ActionLink
-              href="/admin/product"
-              icon={<Boxes className="size-4" strokeWidth={1.75} />}
-              description="Update product copy, pricing, and availability."
-            >
-              Review catalog
-            </ActionLink>
-            <ActionLink
-              href="/admin/orders"
-              icon={<ClipboardList className="size-4" strokeWidth={1.75} />}
-              description="Check payment status and progress orders through fulfilment."
-            >
-              Manage orders
-            </ActionLink>
-            <ActionLink
-              href="/admin/product/new"
-              icon={<TrendingUp className="size-4" strokeWidth={1.75} />}
-              description="Publish a new listing or launch a marketing push."
-            >
-              Launch campaign
-            </ActionLink>
-          </div>
-        </div>
-
-        <div className="admin-panel-card">
-          <div className="space-y-2">
-            <p className="admin-eyebrow text-[rgba(var(--admin-accent-rgb),0.75)]">
-              Inventory watchlist
-            </p>
-            <h3 className="text-lg font-semibold">Stay ahead of stock issues</h3>
-            <p className="text-sm text-[rgb(var(--admin-muted-rgb))]">
-              Flag low or depleted inventory before it interrupts sales.
-            </p>
-          </div>
-          {loadingProducts ? (
-            <p className="text-sm text-[rgb(var(--admin-muted-rgb))]">
-              Loading stock insights…
-            </p>
-          ) : productStats.lowStock === 0 && productStats.outOfStock === 0 ? (
-            <div className="admin-empty-state admin-empty-state--quiet">
-              <p className="text-sm font-medium text-[rgb(var(--admin-text-rgb))]">
-                Inventory looks healthy 🎉
-              </p>
-              <p className="text-sm text-[rgb(var(--admin-muted-rgb))]">
-                We will surface alerts here as soon as any SKU drops below its safety threshold.
-              </p>
-            </div>
-          ) : (
-            <ul className="admin-inventory-issues">
-              {productStats.lowStock > 0 && (
-                <li className="admin-inventory-issue admin-inventory-issue--warning">
-                  <span className="admin-pill admin-pill--warning">
-                    {productStats.lowStock}
-                  </span>
-                  <div>
-                    <p className="font-semibold text-[rgb(var(--admin-text-rgb))]">
-                      Low stock
-                    </p>
-                    <p className="text-sm text-[rgb(var(--admin-muted-rgb))]">
-                      Products are below five units — consider scheduling a restock.
-                    </p>
-                  </div>
-                </li>
-              )}
-              {productStats.outOfStock > 0 && (
-                <li className="admin-inventory-issue admin-inventory-issue--danger">
-                  <span className="admin-pill admin-pill--danger">
-                    {productStats.outOfStock}
-                  </span>
-                  <div>
-                    <p className="font-semibold text-[rgb(var(--admin-text-rgb))]">
-                      Sold out
-                    </p>
-                    <p className="text-sm text-[rgb(var(--admin-muted-rgb))]">
-                      Items are unavailable — swap in alternatives or notify suppliers.
-                    </p>
-                  </div>
-                </li>
-              )}
-            </ul>
-          )}
-        </div>
-
-        <div className="admin-panel-card">
-          <div className="space-y-2">
-            <p className="admin-eyebrow text-[rgba(var(--admin-accent-rgb),0.75)]">
-              Store pulse
-            </p>
-            <h3 className="text-lg font-semibold">Track performance at a glance</h3>
-            <p className="text-sm text-[rgb(var(--admin-muted-rgb))]">
-              Metrics refresh as soon as Stripe syncs and Firestore data updates.
-            </p>
-          </div>
-          <div className="admin-mini-stat-grid">
-            <MiniStat
-              label="Total orders"
-              value={
-                loadingOrders ? '—' : orderStats.totalOrders.toLocaleString()
-              }
-            />
-            <MiniStat
-              label="Average order value"
-              value={
-                loadingOrders
-                  ? '—'
-                  : fmtCurrency(
-                      averageOrderValue,
-                      primaryCurrency || 'USD'
-                    )
-              }
-            />
-            <MiniStat
-              label="Live products"
-              value={
-                loadingProducts ? '—' : productStats.total.toLocaleString()
-              }
-            />
-            <MiniStat
-              label="Out of stock"
-              tone="danger"
-              value={
-                loadingProducts ? '—' : productStats.outOfStock.toString()
-              }
-            />
-            <MiniStat
-              label="Low inventory"
-              tone="warning"
-              value={
-                loadingProducts ? '—' : productStats.lowStock.toString()
-              }
-            />
-            <MiniStat
-              label="Avg. product price"
-              value={
-                loadingProducts
-                  ? '—'
-                  : fmtCurrency(productStats.avgPrice, primaryCurrency || 'USD')
-              }
-            />
-          </div>
-        </div>
-      </section>
-
-      <section className="admin-panel-card admin-panel-card--table">
-        <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-          <div>
-            <p className="admin-eyebrow text-[rgba(var(--admin-accent-rgb),0.75)]">
-              Latest orders
-            </p>
-            <h3 className="text-lg font-semibold">Recent activity from Stripe</h3>
-            <p className="text-sm text-[rgb(var(--admin-muted-rgb))]">
-              Review payments and fulfilment progress as soon as they sync.
-            </p>
-          </div>
-          <Link href="/admin/orders" className="admin-button admin-button--surface">
-            View all orders
-            <ArrowUpRight className="size-4" strokeWidth={1.75} />
-          </Link>
-        </div>
-        <div className="mt-6 admin-table-shell">
-          <div className="hidden sm:block">
-            <div className="admin-table-scroll">
-              <table className="admin-table min-w-[640px] text-sm">
-                <thead className="admin-table-head text-left text-xs uppercase">
+          <div className="hidden overflow-x-auto md:block">
+            <div className="mx-auto min-w-[640px] max-w-5xl">
+              <table className="w-full divide-y divide-zinc-200 text-sm dark:divide-zinc-700">
+                <thead className="text-left text-xs uppercase tracking-[0.2em] text-zinc-500 dark:text-zinc-400">
                   <tr>
-                    <th>Order</th>
-                    <th>Customer</th>
-                    <th>Status</th>
-                    <th className="text-right">Total</th>
-                    <th className="text-right">Date</th>
+                    <th className="py-3">Order</th>
+                    <th className="py-3">Customer</th>
+                    <th className="py-3">Status</th>
+                    <th className="py-3 text-right">Total</th>
+                    <th className="py-3 text-right">Date</th>
                   </tr>
                 </thead>
-                <tbody className="admin-table-body">
+                <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
                   {loadingOrders ? (
                     <tr>
-                      <td
-                        colSpan={5}
-                        className="py-6 text-center text-[rgb(var(--admin-muted-rgb))]"
-                      >
+                      <td colSpan={5} className="py-6 text-center text-zinc-500 dark:text-zinc-400">
                         Loading latest orders…
                       </td>
                     </tr>
                   ) : recentOrders.length === 0 ? (
                     <tr>
-                      <td
-                        colSpan={5}
-                        className="py-6 text-center text-[rgb(var(--admin-muted-rgb))]"
-                      >
+                      <td colSpan={5} className="py-6 text-center text-zinc-500 dark:text-zinc-400">
                         No orders yet. Your first sale will show up right here.
                       </td>
                     </tr>
                   ) : (
                     recentOrders.map((order) => (
-                      <tr key={order.id} className="admin-table-row">
-                        <td className="font-semibold">
+                      <tr key={order.id} className="hover:bg-zinc-50 dark:hover:bg-[#162038]">
+                        <td className="py-4 font-semibold text-[#0d141c] dark:text-white">
                           #{order.id.slice(-6).toUpperCase()}
                         </td>
-                        <td className="text-[rgb(var(--admin-muted-rgb))]">
+                        <td className="py-4 pr-8 text-zinc-500 dark:text-zinc-300">
                           {order.email || '—'}
                         </td>
-                        <td>
+                        <td className="py-4 pl-4">
                           <span
                             className={
                               DASHBOARD_STATUS_STYLES[
                                 (order.status || 'paid').toLowerCase()
-                              ] ?? 'admin-chip admin-chip--paid'
+                              ] ?? DASHBOARD_STATUS_STYLES.paid
                             }
                           >
                             {(order.status || 'paid').toUpperCase()}
                           </span>
                         </td>
-                        <td className="text-right font-semibold">
+                        <td className="py-4 text-right font-semibold text-[#0d141c] dark:text-white">
                           {fmtCurrency(
                             typeof order.amountTotal === 'number'
                               ? order.amountTotal
@@ -509,7 +522,7 @@ export default function AdminHome() {
                             order.currency || primaryCurrency || 'USD'
                           )}
                         </td>
-                        <td className="text-right text-[rgb(var(--admin-muted-rgb))]">
+                        <td className="py-4 text-right text-zinc-500 dark:text-zinc-300">
                           {formatDate(order.createdAt)}
                         </td>
                       </tr>
@@ -519,72 +532,72 @@ export default function AdminHome() {
               </table>
             </div>
           </div>
-          <div className="grid gap-3 p-4 sm:hidden">
+          <div className="grid gap-3 md:hidden">
             {loadingOrders ? (
-              <div className="rounded-2xl border admin-border bg-[rgba(var(--admin-surface-soft-rgb),0.92)] p-4 text-sm text-[rgb(var(--admin-muted-rgb))]">
+              <div className="rounded-2xl border border-zinc-200 bg-white px-4 py-4 text-sm text-zinc-500 shadow-sm dark:border-zinc-700 dark:bg-[#101828] dark:text-zinc-300">
                 Loading latest orders…
               </div>
             ) : recentOrders.length === 0 ? (
-              <div className="rounded-2xl border admin-border bg-[rgba(var(--admin-surface-soft-rgb),0.92)] p-4 text-sm text-[rgb(var(--admin-muted-rgb))]">
+              <div className="rounded-2xl border border-zinc-200 bg-white px-4 py-4 text-sm text-zinc-500 shadow-sm dark:border-zinc-700 dark:bg-[#101828] dark:text-zinc-300">
                 No orders yet. Your first sale will show up right here.
               </div>
             ) : (
-              recentOrders.map((order) => {
-                const statusClass =
-                  DASHBOARD_STATUS_STYLES[
-                    (order.status || 'paid').toLowerCase()
-                  ] ?? 'admin-chip admin-chip--paid'
-                return (
-                  <article
-                    key={order.id}
-                    className="rounded-2xl border admin-border bg-[rgba(var(--admin-surface-soft-rgb),0.96)] p-4 text-sm shadow-[0_18px_38px_-26px_rgba(15,23,42,0.55)]"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[rgba(var(--admin-muted-rgb),0.72)]">
-                          Order
-                        </p>
-                        <p className="text-lg font-semibold text-[var(--foreground)]">
-                          #{order.id.slice(-6).toUpperCase()}
-                        </p>
-                        <p className="mt-1 text-[rgb(var(--admin-muted-rgb))]">
-                          {order.email || '—'}
-                        </p>
-                      </div>
-                      <span className={`${statusClass} text-[0.62rem]`}>
-                        {(order.status || 'paid').toUpperCase()}
-                      </span>
+              recentOrders.map((order) => (
+                <article
+                  key={order.id}
+                  className="rounded-2xl border border-zinc-200 bg-white px-4 py-4 text-sm shadow-[0_18px_36px_-28px_rgba(15,23,42,0.18)] dark:border-zinc-700 dark:bg-[#101828] dark:text-zinc-100"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-zinc-500 dark:text-zinc-400">
+                        Order
+                      </p>
+                      <p className="text-lg font-semibold text-[#0d141c] dark:text-white">
+                        #{order.id.slice(-6).toUpperCase()}
+                      </p>
+                      <p className="mt-1 text-zinc-500 dark:text-zinc-300">
+                        {order.email || '—'}
+                      </p>
                     </div>
-                    <div className="mt-4 grid grid-cols-2 gap-3 text-[rgb(var(--admin-muted-rgb))]">
-                      <div>
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[rgba(var(--admin-muted-rgb),0.72)]">
-                          Total
-                        </p>
-                        <p className="text-base font-semibold text-[var(--foreground)]">
-                          {fmtCurrency(
-                            typeof order.amountTotal === 'number'
-                              ? order.amountTotal
-                              : Number(order.amountTotal) || 0,
-                            order.currency || primaryCurrency || 'USD'
-                          )}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[rgba(var(--admin-muted-rgb),0.72)]">
-                          Date
-                        </p>
-                        <p className="text-base font-semibold text-[var(--foreground)]">
-                          {formatDate(order.createdAt)}
-                        </p>
-                      </div>
+                    <span
+                      className={
+                        DASHBOARD_STATUS_STYLES[
+                          (order.status || 'paid').toLowerCase()
+                        ] ?? DASHBOARD_STATUS_STYLES.paid
+                      }
+                    >
+                      {(order.status || 'paid').toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="mt-4 grid grid-cols-2 gap-3 text-xs text-zinc-500 dark:text-zinc-300">
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-zinc-500 dark:text-zinc-400">
+                        Total
+                      </p>
+                      <p className="text-base font-semibold text-[#0d141c] dark:text-white">
+                        {fmtCurrency(
+                          typeof order.amountTotal === 'number'
+                            ? order.amountTotal
+                            : Number(order.amountTotal) || 0,
+                          order.currency || primaryCurrency || 'USD'
+                        )}
+                      </p>
                     </div>
-                  </article>
-                )
-              })
+                    <div className="text-right">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-zinc-500 dark:text-zinc-400">
+                        Date
+                      </p>
+                      <p className="text-base font-semibold text-[#0d141c] dark:text-white">
+                        {formatDate(order.createdAt)}
+                      </p>
+                    </div>
+                  </div>
+                </article>
+              ))
             )}
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
     </div>
   )
 }
@@ -601,19 +614,27 @@ function ActionLink({
   description?: ReactNode
 }) {
   return (
-    <Link href={href} className="admin-quick-link">
-      <span className="admin-quick-link-icon">{icon}</span>
+    <Link
+      href={href}
+      className="group flex items-start gap-4 rounded-2xl border border-zinc-200 bg-white px-4 py-4 text-left shadow-[0_18px_36px_-28px_rgba(15,23,42,0.18)] transition hover:-translate-y-1 hover:shadow-[0_24px_48px_rgba(15,23,42,0.22)] dark:border-zinc-700 dark:bg-[#101828]"
+    >
+      <span className="flex size-10 items-center justify-center rounded-xl bg-[#eef2ff] text-[#4338ca] shadow-sm dark:bg-[#1e2337] dark:text-indigo-200">
+        {icon}
+      </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-sm font-semibold tracking-tight">
+        <span className="block text-sm font-semibold text-[#0d141c] dark:text-white">
           {children}
         </span>
         {description ? (
-          <span className="mt-1 block text-xs text-[rgb(var(--admin-muted-rgb))]">
+          <span className="mt-1 block text-xs text-zinc-500 dark:text-zinc-300">
             {description}
           </span>
         ) : null}
       </span>
-      <ArrowUpRight className="admin-quick-link-chevron" strokeWidth={1.75} />
+      <ArrowUpRight
+        className="size-4 shrink-0 text-zinc-400 transition group-hover:translate-x-1 group-hover:text-[#4338ca] dark:text-zinc-500"
+        strokeWidth={1.75}
+      />
     </Link>
   )
 }
@@ -630,10 +651,14 @@ function KpiCard({
   loading?: boolean
 }) {
   return (
-    <div className="admin-kpi-card">
-      <dt className="admin-kpi-label">{label}</dt>
-      <dd className="admin-kpi-value">{loading ? '—' : value}</dd>
-      <p className="admin-kpi-description">{description}</p>
+    <div className="space-y-2 rounded-3xl border border-zinc-200 bg-white px-5 py-6 shadow-[0_24px_48px_-32px_rgba(15,23,42,0.22)] dark:border-zinc-700 dark:bg-[#101828]">
+      <dt className="text-xs font-semibold uppercase tracking-[0.25em] text-zinc-500 dark:text-zinc-400">
+        {label}
+      </dt>
+      <dd className="text-2xl font-semibold text-[#0d141c] dark:text-white">
+        {loading ? '—' : value}
+      </dd>
+      <p className="text-sm text-zinc-500 dark:text-zinc-300">{description}</p>
     </div>
   )
 }
@@ -647,18 +672,20 @@ function MiniStat({
   value: ReactNode
   tone?: 'default' | 'warning' | 'danger'
 }) {
+  const base =
+    'rounded-2xl border border-zinc-200 bg-white px-4 py-4 shadow-[0_18px_36px_-28px_rgba(15,23,42,0.18)] dark:border-zinc-700 dark:bg-[#101828]'
+  const toneClass =
+    tone === 'danger'
+      ? 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-200'
+      : tone === 'warning'
+      ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-200'
+      : 'text-[#0d141c] dark:text-white'
   return (
-    <div
-      className={`admin-mini-stat ${
-        tone === 'danger'
-          ? 'admin-mini-stat--danger'
-          : tone === 'warning'
-          ? 'admin-mini-stat--warning'
-          : ''
-      }`}
-    >
-      <p className="admin-mini-stat-label">{label}</p>
-      <p className="admin-mini-stat-value">{value}</p>
+    <div className={`${base} ${toneClass}`}>
+      <p className="text-xs font-semibold uppercase tracking-[0.25em] text-zinc-500 dark:text-zinc-400">
+        {label}
+      </p>
+      <p className="text-xl font-semibold">{value}</p>
     </div>
   )
 }

@@ -59,7 +59,7 @@
   --surface-card-bg: rgba(255, 255, 255, 0.92);
   --surface-card-shadow: 0 18px 36px rgba(91, 91, 214, 0.08);
   --color-secondary: #f97316;
-  --admin-background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 45%, #f1f5f9 100%);
+  --admin-background: linear-gradient(180deg, rgb(var(--background-rgb)) 0%, rgb(var(--background-muted-rgb)) 100%);
   --admin-text-rgb: 15 23 42;
   --admin-muted-rgb: 71 85 105;
   --admin-accent-rgb: 59 130 246;
@@ -140,7 +140,7 @@
   --surface-card-border: rgba(129, 140, 248, 0.24);
   --surface-card-bg: rgba(12, 14, 28, 0.92);
   --surface-card-shadow: 0 30px 66px -34px rgba(3, 7, 21, 0.7);
-  --admin-background: linear-gradient(180deg, #0f172a 0%, #0b1220 100%);
+  --admin-background: linear-gradient(180deg, rgba(var(--background-rgb), 1) 0%, rgba(var(--background-muted-rgb), 0.82) 100%);
   --admin-text-rgb: 226 232 240;
   --admin-muted-rgb: 148 163 184;
   --admin-accent-rgb: 96 165 250;
@@ -283,7 +283,7 @@
       radial-gradient(circle at 14% 18%, rgba(var(--admin-accent-rgb), 0.14), transparent 52%),
       radial-gradient(circle at 82% 16%, rgba(var(--admin-info-rgb), 0.08), transparent 55%),
       radial-gradient(circle at 18% 82%, rgba(var(--admin-success-rgb), 0.08), transparent 50%);
-    opacity: 0.45;
+    opacity: 0.25;
     z-index: -1;
   }
 
@@ -294,7 +294,7 @@
     pointer-events: none;
     background: linear-gradient(180deg, rgba(var(--admin-surface-soft-rgb), 0.12), transparent 65%);
     z-index: -2;
-    opacity: 0.6;
+    opacity: 0.35;
   }
 
   .admin-card {

@@ -140,7 +140,7 @@ export default function AdminLayout({
         className="admin-shell relative flex min-h-screen transition-colors"
       >
         {/* Sidebar (desktop) */}
-        <aside className="admin-sidebar hidden w-72 shrink-0 flex-col px-6 py-8 text-[rgb(var(--admin-muted-rgb))] lg:flex">
+        <aside className="admin-sidebar hidden w-72 shrink-0 flex-col px-6 py-8 text-[rgb(var(--admin-muted-rgb))] lg:flex lg:sticky lg:top-6 lg:self-start lg:max-h-[calc(100vh-48px)]">
           <div className="admin-sidebar-section">
             <Link href="/" className="inline-flex items-center gap-3">
               <span className="flex size-11 items-center justify-center rounded-3xl border border-blue-500/35 bg-blue-500/15 text-blue-600 shadow-[0_20px_48px_-30px_rgba(37,99,235,0.55)]">
