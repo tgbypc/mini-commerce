@@ -66,6 +66,23 @@ export default function LoginPage() {
     }
   }, [authLoading, user, role, router, nextParam])
 
+  const ensureAdminCookie = async (firebaseUser: User | null) => {
+    if (!firebaseUser) return
+    try {
+      const token = await firebaseUser.getIdToken()
+      await fetch('/api/admin/impersonate', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ via: 'token' }),
+      })
+    } catch (err) {
+      console.error('Failed to ensure admin cookie', err)
+    }
+  }
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -90,6 +107,10 @@ export default function LoginPage() {
         : resolvedRole === 'admin'
         ? '/admin'
         : '/user/profile'
+
+      if (destination.startsWith('/admin')) {
+        await ensureAdminCookie(credential.user)
+      }
 
       toast.success('Logged in successfully')
       router.replace(destination)
@@ -130,6 +151,9 @@ export default function LoginPage() {
         : resolvedRole === 'admin'
         ? '/admin'
         : '/user/profile'
+      if (destination.startsWith('/admin')) {
+        await ensureAdminCookie(credential.user)
+      }
       toast.success(t('auth.login.googleSuccess'))
       router.replace(destination)
     } catch (error) {

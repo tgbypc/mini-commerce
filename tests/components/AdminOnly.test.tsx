@@ -2,7 +2,7 @@ import React from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import AdminOnly from '@/components/AdminOnly'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 
 const authState = vi.hoisted(() => ({
   user: null as null | { uid: string },
@@ -39,6 +39,7 @@ describe('AdminOnly', () => {
         back: vi.fn(),
       } as ReturnType<typeof useRouter>
     )
+    vi.mocked(usePathname).mockReturnValue('/admin')
 
     authState.user = { uid: '123' }
     authState.role = 'user'
@@ -51,7 +52,7 @@ describe('AdminOnly', () => {
     )
 
     await waitFor(() =>
-      expect(replace).toHaveBeenCalledWith('/user/login?next=/admin')
+      expect(replace).toHaveBeenCalledWith('/unlock?next=%2Fadmin')
     )
     expect(screen.queryByText('Should not render')).not.toBeInTheDocument()
   })

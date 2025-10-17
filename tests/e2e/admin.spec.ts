@@ -13,6 +13,6 @@ test.describe('Admin guard', () => {
 
     await page.goto('/admin')
 
-    await expect(page).toHaveURL(/user\/login/)
+    await expect(page).toHaveURL(/\/unlock/)
   })
 })

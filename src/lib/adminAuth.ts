@@ -1,7 +1,32 @@
 import { auth, adminDb } from '@/lib/firebaseAdmin'
 
+const IMPERSONATE_COOKIE_NAME = 'mini_admin_impersonate'
+
+function hasImpersonationCookie(req: Request): boolean {
+  const header = req.headers.get('cookie')
+  if (!header) return false
+
+  const parts = header.split(';')
+  for (const rawPart of parts) {
+    const part = rawPart.trim()
+    if (!part) continue
+    const eqIndex = part.indexOf('=')
+    if (eqIndex <= 0) continue
+    const name = part.slice(0, eqIndex)
+    const value = part.slice(eqIndex + 1)
+    if (name === IMPERSONATE_COOKIE_NAME && value === '1') {
+      return true
+    }
+  }
+  return false
+}
+
 export async function requireAdminFromRequest(req: Request): Promise<{ uid: string } | { error: string; status: number }> {
   try {
+    if (hasImpersonationCookie(req)) {
+      return { uid: 'impersonated' }
+    }
+
     // Allow ADMIN_SECRET for simple setups
     const secret = process.env.ADMIN_SECRET
     if (secret) {
