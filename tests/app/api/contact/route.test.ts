@@ -1,14 +1,24 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { POST } from '@/app/api/contact/route'
 import { adminDb, FieldValue } from '@/lib/firebaseAdmin'
 
+const baseTimestamp = FieldValue.serverTimestamp()
+
 let mockTimestamp: ReturnType<typeof FieldValue.serverTimestamp>
+let restoreServerTimestamp: (() => void) | undefined
 
 describe('/api/contact POST', () => {
   beforeEach(() => {
     vi.mocked(adminDb.collection).mockClear()
-    mockTimestamp = 'mock-ts' as ReturnType<typeof FieldValue.serverTimestamp>
-    vi.mocked(FieldValue.serverTimestamp).mockReturnValue(mockTimestamp)
+    mockTimestamp = baseTimestamp
+    const spy = vi.spyOn(FieldValue, 'serverTimestamp').mockReturnValue(
+      mockTimestamp
+    )
+    restoreServerTimestamp = () => spy.mockRestore()
+  })
+
+  afterEach(() => {
+    restoreServerTimestamp?.()
   })
 
   it('stores trimmed payload and returns ok', async () => {

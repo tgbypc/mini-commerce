@@ -1,18 +1,10 @@
 import '@testing-library/jest-dom'
 
 import type { Mock } from 'vitest'
-import type { firestore } from 'firebase-admin'
 
 declare module 'vitest' {
   interface Assertion {
     toHaveBeenCalledWith(...expected: unknown[]): void
-  }
-}
-
-declare module '@/lib/firebaseAdmin' {
-  const FieldValue: {
-    serverTimestamp: Mock<[] , firestore.FieldValue>
-    delete: Mock<[] , firestore.FieldValue>
   }
 }
 
