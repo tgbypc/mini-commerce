@@ -26,9 +26,8 @@ export default function AdminSecretForm() {
     setError(null)
     setMessage(feedback)
     setSecret('')
-    setTimeout(() => {
-      router.replace(redirectTarget)
-    }, 500)
+    router.replace(redirectTarget)
+    router.refresh()
   }
 
   const submitSecret = async (e: React.FormEvent) => {

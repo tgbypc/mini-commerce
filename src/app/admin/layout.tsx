@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import type { LucideIcon } from 'lucide-react'
 import {
   ArrowUpRight,
@@ -115,6 +115,7 @@ export default function AdminLayout({
   children: React.ReactNode
 }) {
   const pathname = usePathname()
+  const router = useRouter()
   const { user } = useAuth()
   const { theme } = useTheme()
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -129,8 +130,12 @@ export default function AdminLayout({
   }, [pathname])
 
   const handleSignOut = async () => {
-    if (!user) return
-    await signOut(auth)
+    await fetch('/api/admin/impersonate', { method: 'DELETE' }).catch(() => null)
+    if (user) {
+      await signOut(auth)
+    }
+    router.replace('/')
+    router.refresh()
   }
 
   return (
