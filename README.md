@@ -1,5 +1,11 @@
 # 🛍️ MiniCommerce
 
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=nextdotjs)](https://nextjs.org/)
+[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-v4-38B2AC?logo=tailwindcss)](https://tailwindcss.com/)
+[![Firebase](https://img.shields.io/badge/Firebase-FFCA28?logo=firebase&logoColor=black)](https://firebase.google.com/)
+[![Stripe](https://img.shields.io/badge/Stripe-635BFF?logo=stripe&logoColor=white)](https://stripe.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue)](LICENSE)
+
 _Modern, production-ready e-commerce starter built with Next.js App Router._
 
 MiniCommerce delivers a polished shopper journey, role-based administration, and first-class integrations with **Firebase**, **Stripe**, **Vercel Blob**, and **Resend**. The project is structured to help teams launch quickly while keeping enterprise guardrails in place.
